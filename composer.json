@@ -1,0 +1,20 @@
+{
+    "name": "loy/framework",
+    "description": "Loy Framework Set",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "ckwongloy",
+            "email": "ckwongloy@gmail.com"
+        }
+    ],
+	"autoload": {
+		"psr-4": {
+			"Loy\\Framework\\": "./"
+		},
+		"exclude-from-classmap": [
+       ]
+    },
+    "require": {}
+}

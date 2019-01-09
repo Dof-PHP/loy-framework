@@ -1,0 +1,6 @@
+/* Composer */
+vendor/
+
+/* Vim  */
+.php_cs.cache
+/**/tags
