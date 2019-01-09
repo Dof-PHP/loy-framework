@@ -8,6 +8,6 @@ class App
 {
     public static function run(string $rootPath)
     {
-        echo 'current project root absolute path is: ', $rootPath;
+        echo 'absolute path of current project root is: ', $rootPath;
     }
 }
