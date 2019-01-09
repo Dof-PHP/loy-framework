@@ -6,8 +6,11 @@ namespace Loy\Framework\Web;
 
 class App
 {
-    public static function run(string $rootPath)
+    public function errorReporting()
     {
-        echo 'absolute path of current project root is: ', $rootPath;
+        error_reporting(E_ALL);
+
+        ini_set('display_errors', 1);
+        ini_set('display_startup_errors', 1);
     }
 }
