@@ -9,15 +9,16 @@ use ReflectionClass;
 use ReflectionException;
 use Loy\Framework\Web\Exception\InvalidHttpPortNamespaceException;
 use Loy\Framework\Web\Exception\DuplicateRouteDefinitionException;
+use Loy\Framework\Web\Exception\DuplicateRouteAliasDefinitionException;
 
 final class RouteManager
 {
     const ROUTE_DIR = 'Port/Http';
     const REGEX = '#@([a-zA-z]+)\((.*)\)#';
 
-    private static $routes = [];
-    private static $dirs   = [];
-
+    private static $aliases = [];
+    private static $routes  = [];
+    private static $dirs    = [];
 
     public static function findRouteByUriAndMethod(string $uri, string $method)
     {
@@ -103,6 +104,7 @@ final class RouteManager
 
     public static function assembleRoutesFromAnnotations(array $ofClass, array $ofMethods)
     {
+        $classNamespace = $ofClass['namespace'] ?? '?';
         $routePrefix    = $ofClass['ROUTE']   ?? '';
         $defaultVerbs   = $ofClass['VERB']    ?? [];
         $defaultMimein  = $ofClass['MIMEIN']  ?? null;
@@ -142,14 +144,25 @@ final class RouteManager
             $urlpath = join('/', $urlpath);
             foreach ($verbs as $verb) {
                 if (self::$routes[$urlpath][$verb] ?? false) {
-                    throw new DuplicateRouteDefinitionException("{$verb} $urlpath");
+                    throw new DuplicateRouteDefinitionException("{$verb} {$urlpath} ({$classNamespace}@{$method})");
                     continue;
                 }
+                if ($alias && (self::$aliases[$alias] ?? false)) {
+                    throw new DuplicateRouteAliasDefinitionException("{$alias} => {$verb} {$urlpath} ({$classNamespace}@{$method})");
+                }
+
+                if ($alias) {
+                    self::$aliases[$alias] = [
+                        'urlpath' => $urlpath,
+                        'verb'    => $verb,
+                    ];
+                }
+
                 self::$routes[$urlpath][$verb] = [
                     'urlpath' => $urlpath,
                     'verb'    => $verb,
                     'alias'   => $alias,
-                    'class'   => $ofClass['namespace'] ?? '',
+                    'class'   => $classNamespace,
                     'method'  => $method,
                     'pipes'   => $middles,
                     'params'  => [
@@ -188,19 +201,34 @@ final class RouteManager
         return $res;
     }
 
+    public static function parseStringMimeOut(string $val) : string
+    {
+        return trim($val);
+    }
+
+    public static function parseStringMimein(string $val) : string
+    {
+        return trim($val);
+    }
+
+    public static function parseStringAlias(string $val) : string
+    {
+        return trim($val);
+    }
+
     public static function parseStringPipe(string $val) : array
     {
-        return array_trim(array_filter(explode(',', trim($val))));
+        return array_trim(explode(',', trim($val)));
     }
 
     public static function parseStringVerb(string $val) : array
     {
-        return array_trim(array_filter(explode(',', strtoupper(trim($val)))));
+        return array_trim(explode(',', strtoupper(trim($val))));
     }
 
-    public static function parseStringForRoute(string $val)
+    public static function parseStringRoute(string $val)
     {
-        return array_trim(array_filter(join('/', explode('/', trim($val)))));
+        return join('/', array_trim(explode('/', trim($val))));
     }
 
     public static function parseAnnotationsByNamespace(string $namespace) : array
@@ -231,6 +259,11 @@ final class RouteManager
             $ofClass,
             $ofMethods,
         ];
+    }
+
+    public static function getAliases() : array
+    {
+        return self::$aliases;
     }
 
     public static function getRoutes() : array

@@ -15,7 +15,7 @@ class BadHttpPortCallException extends Exception
         $this->message = $call;
         $this->code    = $code;
 
-        $error = strtoupper((new ReflectionClass($this))->getShortName()).': '.$this->message;
+        $error = (new ReflectionClass($this))->getShortName().': '.$this->message;
 
         Response::setBody($error)->setStatus($this->code)->send();
     }

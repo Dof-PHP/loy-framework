@@ -52,6 +52,7 @@ final class Kernel
         $method = Request::getMethod();
         $uri    = Request::getUri();
         $route  = RouteManager::findRouteByUriAndMethod($uri, $method);
+        pt(RouteManager::getRoutes())->die();
         if ($route === false) {
             throw new RouteNotExistsException("{$method} {$uri}");
         }

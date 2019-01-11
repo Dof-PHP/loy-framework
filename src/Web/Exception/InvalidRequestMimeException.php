@@ -15,7 +15,7 @@ class InvalidRequestMimeException extends Exception
         $this->message = $mimes;
         $this->code    = $code;
 
-        $error = strtoupper((new ReflectionClass($this))->getShortName()).': '.$this->message;
+        $error = (new ReflectionClass($this))->getShortName().': '.$this->message;
 
         Response::setBody($error)->setStatus($this->code)->send();
     }

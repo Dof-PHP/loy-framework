@@ -8,11 +8,11 @@ use Exception;
 use ReflectionClass;
 use Loy\Framework\Web\Response;
 
-class DuplicateRouteDefinitionException extends Exception
+class DuplicateRouteAliasDefinitionException extends Exception
 {
-    public function __construct(string $route, int $code = 500)
+    public function __construct(string $alias, int $code = 500)
     {
-        $this->message = $route;
+        $this->message = $alias;
         $this->code    = $code;
 
         $error = (new ReflectionClass($this))->getShortName().': '.$this->message;
