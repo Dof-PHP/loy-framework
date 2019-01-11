@@ -7,6 +7,7 @@ namespace Loy\Framework\Web;
 use Exception;
 use ReflectionClass;
 use ReflectionException;
+use Loy\Framework\Web\Exception\InvalidRouteDirException;
 use Loy\Framework\Web\Exception\InvalidHttpPortNamespaceException;
 use Loy\Framework\Web\Exception\DuplicateRouteDefinitionException;
 use Loy\Framework\Web\Exception\DuplicateRouteAliasDefinitionException;
@@ -66,7 +67,7 @@ final class RouteManager
             $routeDir = join('/', [$dir, self::ROUTE_DIR]);
 
             if (! is_dir($routeDir)) {
-                throw new Exception('INVALID_ROUTE_DIR:'.$routeDir);
+                throw new InvalidRouteDirException($routeDir);
             }
 
             self::compileHttpPortDir($routeDir);
