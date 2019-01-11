@@ -103,30 +103,30 @@ final class RouteManager
 
     public static function assembleRoutesFromAnnotations(array $ofClass, array $ofMethods)
     {
-        $routePrefix    = $ofClass['Route']   ?? '';
-        $defaultVerbs   = $ofClass['Verb']    ?? [];
-        $defaultMimein  = $ofClass['MimeIn']  ?? null;
-        $defaultMimeout = $ofClass['MimeOut'] ?? null;
-        $middlewares    = $ofClass['Pipe']    ?? [];
+        $routePrefix    = $ofClass['ROUTE']   ?? '';
+        $defaultVerbs   = $ofClass['VERB']    ?? [];
+        $defaultMimein  = $ofClass['MIMEIN']  ?? null;
+        $defaultMimeout = $ofClass['MIMEOUT'] ?? null;
+        $middlewares    = $ofClass['PIPE']    ?? [];
 
         foreach ($ofMethods as $method => $attrs) {
-            $route   = $attrs['Route']  ?? '';
-            $alias   = $attrs['Alias']  ?? null;
-            $verbs   = $attrs['Verb'] ?? [];
+            $route   = $attrs['ROUTE']  ?? '';
+            $alias   = $attrs['ALIAS']  ?? null;
+            $verbs   = $attrs['VERB'] ?? [];
             $params  = [];
             if (! $verbs) {
                 $verbs = $defaultVerbs;
             }
-            $mimein  = $attrs['MimeIn']  ?? null;
+            $mimein  = $attrs['MIMEIN']  ?? null;
             if (! $mimein) {
                 $mimein  = $defaultMimein;
             }
-            $mimeout = $attrs['MimeOut'] ?? null;
+            $mimeout = $attrs['MIMEOUT'] ?? null;
             if (! $mimeout) {
                 $mimeout = $defaultMimeout;
             }
 
-            $middles = $attrs['Pipe'] ?? [];
+            $middles = $attrs['PIPE'] ?? [];
             $middles = array_unique(array_merge($middlewares, $middles));
             $urlpath = join('/', [$routePrefix, $route]);
             $urlpath = array_filter(explode('/', $urlpath));
@@ -181,7 +181,7 @@ final class RouteManager
                 if (method_exists(__CLASS__, $filter)) {
                     $val = self::$filter($val);
                 }
-                $res[$key] = $val;
+                $res[strtoupper($key)] = $val;
             }
         }
 
