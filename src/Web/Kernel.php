@@ -13,6 +13,7 @@ use Loy\Framework\Web\Request;
 use Loy\Framework\Web\Response;
 use Loy\Framework\Web\Route;
 use Loy\Framework\Web\Exception\RouteNotExistsException;
+use Loy\Framework\Web\Exception\InvalidRequestMimeException;
 use Loy\Framework\Web\Exception\BadHttpPortCallException;
 use Loy\Framework\Web\Exception\PortNotExistException;
 use Loy\Framework\Web\Exception\PortMethodNotExistException;
@@ -48,11 +49,20 @@ final class Kernel
 
     public static function processRequest()
     {
-        $route  = RouteManager::findRouteByUriAndMethod(Request::getUri(), Request::getMethod());
+        $method = Request::getMethod();
+        $uri    = Request::getUri();
+        $route  = RouteManager::findRouteByUriAndMethod($uri, $method);
         if ($route === false) {
             throw new RouteNotExistsException("{$method} {$uri}");
         }
         Route::setData($route);
+
+        $mimein = $route['mimein'] ?? false;
+        if ($mimein && (! Request::isMimeAlias($mimein))) {
+            $_mimein  = Request::getMime();
+            $__mimein = Request::getMimeByAlias($mimein);
+            throw new InvalidRequestMimeException("{$_mimein} (NEED => {$__mimein})");
+        }
 
         $class  = $route['class']  ?? '-';
         $method = $route['method'] ?? '-';

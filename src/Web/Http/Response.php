@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web\Http;
 
+use Loy\Framework\Web\Http\Http;
+
 class Response
 {
+    use Http;
+
     private $body    = '';
     private $status  = 200;
     private $mime    = 'text/html';
     private $headers = [];
-
-    const MIMES = [
-        'text' => 'text/plain',
-        'json' => 'application/json',
-        'html' => 'text/html',
-        'view' => 'text/html',
-        'xml'  => 'application/xml',
-    ];
 
     public function text($body, int $status = 200, array $headers = [])
     {
@@ -125,7 +121,7 @@ class Response
     public function setMimeAlias(string $alias = null)
     {
         if (! is_null($alias)) {
-            $this->mime = self::MIMES[$alias] ?? 'text/html';
+            $this->mime = self::$mimes[$alias] ?? 'text/html';
         }
 
         return $this;
