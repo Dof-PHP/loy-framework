@@ -161,3 +161,27 @@ if (! function_exists('subsets')) {
         return $result;
     }
 }
+if (! function_exists('array_trim')) {
+    function array_trim(array $arr) : array
+    {
+        array_filter($arr, function (&$val, $key) use (&$arr) {
+            if (! is_scalar($val)) {
+                return true;
+            }
+            $val = trim($val);
+            if (empty($val)) {
+                if (is_numeric($val)) {
+                    return true;
+                }
+
+                unset($arr[$key]);
+                return false;
+            }
+
+            $arr[$key] = $val;
+            return true;
+        }, ARRAY_FILTER_USE_BOTH);
+
+        return $arr;
+    }
+}

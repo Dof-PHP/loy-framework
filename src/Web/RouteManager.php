@@ -190,17 +190,17 @@ final class RouteManager
 
     public static function parseStringPipe(string $val) : array
     {
-        return array_filter(explode(',', $val));
+        return array_trim(array_filter(explode(',', trim($val))));
     }
 
     public static function parseStringVerb(string $val) : array
     {
-        return array_filter(explode(',', strtoupper($val)));
+        return array_trim(array_filter(explode(',', strtoupper(trim($val)))));
     }
 
     public static function parseStringForRoute(string $val)
     {
-        return $val;
+        return array_trim(array_filter(join('/', explode('/', trim($val)))));
     }
 
     public static function parseAnnotationsByNamespace(string $namespace) : array
