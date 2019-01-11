@@ -11,8 +11,11 @@
     ],
 	"autoload": {
 		"psr-4": {
-			"Loy\\Framework\\": "./"
+			"Loy\\Framework\\": "./src/"
 		},
+		"files": [
+			"./src/functions.php"
+		],
 		"exclude-from-classmap": [
        ]
     },
