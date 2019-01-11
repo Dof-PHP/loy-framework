@@ -59,7 +59,7 @@ final class Kernel
 
         $mimein = $route['mimein'] ?? false;
         if ($mimein && (! Request::isMimeAlias($mimein))) {
-            $_mimein  = Request::getMime();
+            $_mimein  = Request::getMimeShort();
             $__mimein = Request::getMimeByAlias($mimein);
             throw new InvalidRequestMimeException("{$_mimein} (NEED => {$__mimein})");
         }

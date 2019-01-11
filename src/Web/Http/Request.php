@@ -10,9 +10,17 @@ class Request
 {
     use Http;
 
+    public function getMimeShort() : ?string
+    {
+        $mime  = explode(';', $this->getMime());
+        $short = $mime[0] ?? false;
+
+        return ($short === false) ? '?' : trim($short);
+    }
+
     public function getMime() : ?string
     {
-        return $_SERVER['HTTP_CONTENT_TYPE'] ?? '?';
+        return trim(strtolower($_SERVER['HTTP_CONTENT_TYPE'] ?? '?'));
     }
 
     public function getMethod() : string
@@ -45,8 +53,7 @@ class Request
             return false;
         }
 
-        $mime = explode(';', $mime);
-        if (($mime[0] ?? false) === $_mime) {
+        if ($this->getMimeShort() === $_mime) {
             return true;
         }
 
