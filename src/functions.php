@@ -268,7 +268,9 @@ if (! function_exists('is_xml')) {
         ))) {
             $error = libxml_get_last_error();    // LibXMLError object
             libxml_clear_errors();
-            return 'Illegal XML: '.$error->message;
+            if ($error !== false) {
+                return 'Illegal XML: '.$error->message;
+            }
         }
 
         return true;
