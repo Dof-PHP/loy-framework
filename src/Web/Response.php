@@ -4,15 +4,44 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web;
 
+use Closure;
 use Loy\Framework\Web\Http\Response as Instance;
 use Loy\Framework\Core\Facade;
 
 class Response extends Facade
 {
     public static $singleton = true;
-    public static $namespace = Instance::class;
+    protected static $namespace = Instance::class;
 
-    private static $wappers = [];
+    protected static $wrappers = [];
+
+    public static function setWrapperOnResult($result, $wrapper)
+    {
+        $data = [];
+        $idx  = -1;
+        foreach ($wrapper as $key) {
+            ++$idx;
+            if (is_object($result)) {
+                $getter = 'get'.ucfirst(strtolower($key));
+                $val = null;
+                if (method_exists($result, $getter)) {
+                    $val = $result->{$getter}();
+                }
+                $data[$key] = $val;
+                continue;
+            }
+
+            $val = $result[$key] ?? ($result[$idx] ?? null);
+            $data[$key] = $val;
+        }
+
+        return $data;
+    }
+
+    public static function getWrappers()
+    {
+        return self::$wrappers;
+    }
 
     public static function addWrapper(string $key, array $wrapper)
     {

@@ -10,5 +10,5 @@ use Loy\Framework\Core\Facade;
 class Request extends Facade
 {
     public static $singleton = true;
-    public static $namespace = Instance::class;
+    protected static $namespace = Instance::class;
 }

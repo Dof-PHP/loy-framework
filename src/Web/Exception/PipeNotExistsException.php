@@ -8,18 +8,15 @@ use Exception;
 use ReflectionClass;
 use Loy\Framework\Web\Response;
 
-class BadHttpPortCallException extends Exception
+class PipeNotExistsException extends Exception
 {
-    public function __construct(string $call, int $code = 500)
+    public function __construct(string $pipe, int $code = 404)
     {
-        $this->message = $call;
+        $this->message = $pipe;
         $this->code    = $code;
 
         $error = (new ReflectionClass($this))->getShortName().': '.$this->message;
 
-        Response::setMimeAlias('text')
-            ->setBody($error)
-            ->setStatus($this->code)
-            ->send();
+        Response::setBody($error)->setStatus($this->code)->send();
     }
 }

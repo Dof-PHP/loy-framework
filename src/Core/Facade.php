@@ -35,4 +35,9 @@ abstract class Facade
 
         return $child::${$attr};
     }
+
+    public static function new()
+    {
+        return new static;
+    }
 }

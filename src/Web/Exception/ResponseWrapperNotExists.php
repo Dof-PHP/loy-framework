@@ -8,7 +8,7 @@ use Exception;
 use ReflectionClass;
 use Loy\Framework\Web\Response;
 
-class BadHttpPortCallException extends Exception
+class ResponseWrapperNotExists extends Exception
 {
     public function __construct(string $call, int $code = 500)
     {
@@ -17,9 +17,6 @@ class BadHttpPortCallException extends Exception
 
         $error = (new ReflectionClass($this))->getShortName().': '.$this->message;
 
-        Response::setMimeAlias('text')
-            ->setBody($error)
-            ->setStatus($this->code)
-            ->send();
+        Response::setBody($error)->setStatus($this->code)->send();
     }
 }

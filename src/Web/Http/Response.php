@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web\Http;
 
+use Loy\Framework\Core\Exception\InvalidXmlException;
 use Loy\Framework\Web\Http\Http;
 
 class Response
 {
     use Http;
 
-    private $body    = '';
-    private $status  = 200;
-    private $mime    = 'text/html';
-    private $headers = [];
+    private $body     = '';
+    private $status   = 200;
+    private $mime     = 'text/html';
+    private $headers  = [];
 
     public function text($body, int $status = 200, array $headers = [])
     {
@@ -42,7 +43,7 @@ class Response
 
     public function xml($body, int $status = 200, array $headers = [])
     {
-        $this->body    = $body;
+        $this->body    = enxml($body);
         $this->status  = $status;
         $this->headers = $headers;
         $this->mime    = 'application/xml';
@@ -98,6 +99,13 @@ class Response
 
     private function stringBody($body)
     {
+        $alias = array_search($this->mime, self::$mimes);
+        if ($alias) {
+            $formatter = 'formatBody'.ucfirst($alias);
+            if (method_exists($this, $formatter)) {
+                return $this->{$formatter}($body);
+            }
+        }
         if (is_scalar($body)) {
             return $this->body = (string) $body;
         }
@@ -121,16 +129,35 @@ class Response
         return $this->body = '__UNSTRINGABLE_RESPONSE__';
     }
 
+    public function formatBodyXml($body = null)
+    {
+        $xml = enxml($body ?: $this->body);
+        if (true !== ($error = is_xml($xml))) {
+            throw new InvalidXmlException("{$error}");
+        }
+            
+        return $this->body = $xml;
+    }
+
+    public function formatBodyJson($body = null)
+    {
+        return $this->body = enjson($body ?: $this->body);
+    }
+
     public function setMimeAlias(string $alias = null)
     {
-        if (! is_null($alias)) {
-            if ($alias === '_') {
-                $this->mime = false;
-            }
-            $this->mime = self::$mimes[$alias] ?? 'text/html';
+        if (is_null($alias) || ($alias === '_')) {
+            $this->mime = false;
+            return $this;
         }
 
+        $this->mime = self::$mimes[$alias] ?? 'text/html';
         return $this;
+    }
+
+    public function getMime()
+    {
+        return $this->mime;
     }
 
     public function setMime(string $mime)
@@ -140,11 +167,21 @@ class Response
         return $this;
     }
 
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
     public function setStatus(int $status)
     {
         $this->status = $status;
 
         return $this;
+    }
+
+    public function getBody()
+    {
+        return $this->body;
     }
 
     public function setBody($body)

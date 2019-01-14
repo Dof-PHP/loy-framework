@@ -61,4 +61,9 @@ final class PipeManager
             self::$pipes[$name] = $namespace;
         }
     }
+
+    public static function getPipes()
+    {
+        return self::$pipes;
+    }
 }

@@ -129,6 +129,41 @@ if (! function_exists('get_namespace_of_file')) {
         return join('\\', [trim($ns), $cn]);
     }
 }
+if (! function_exists('enxml')) {
+    function enxml($data)
+    {
+        $xml = $_xml = '';
+        $arr2xml = function (
+            array $array,
+            string &$xml,
+            callable $arr2xml
+        ): string {
+            foreach ($array as $key => &$val) {
+                if (is_array($val)) {
+                    $_xml = '';
+                    $val  = $arr2xml($val, $_xml, $arr2xml);
+                }
+                $xml .= "<{$key}>{$val}</{$key}>";
+            }
+            unset($val);
+            return $xml;
+        };
+
+        if (true
+            && is_object($data)
+            && method_exists($data, 'toArray')
+            && is_array($ret = $data->toArray())
+        ) {
+            $_xml = $arr2xml($ret, $xml, $arr2xml);
+        } elseif (is_array($data)) {
+            $_xml = $arr2xml($data, $xml, $arr2xml);
+        }
+        unset($xml);
+
+        return '<?xml version="1.0" encoding="utf-8"?><xml>'.$_xml.'</xml>';
+    }
+}
+
 if (! function_exists('enjson')) {
     function enjson($data)
     {
@@ -195,5 +230,47 @@ if (! function_exists('collect')) {
         }
 
         return new \Loy\Framework\Core\Collection($data, $origin);
+    }
+}
+if (! function_exists('string_literal')) {
+    function string_literal($val)
+    {
+        if (is_null($val)) {
+            return 'null';
+        }
+        if (is_bool($val)) {
+            return ($val ? 'true' : 'false');
+        }
+        if (is_scalar($val)) {
+            return (string) $val;
+        }
+        if (is_array($val)) {
+            return enjson($val);
+        }
+        if ($val instanceof \Closure) {
+            return 'closure';
+        }
+        if (is_object($val)) {
+            return get_class($val);
+        }
+
+        return 'unknown';
+    }
+}
+if (! function_exists('is_xml')) {
+    function is_xml(string $xml)
+    {
+        libxml_use_internal_errors(true);
+        if (! ($doc = simplexml_load_string(
+            $xml,
+            'SimpleXMLElement',
+            LIBXML_NOCDATA
+        ))) {
+            $error = libxml_get_last_error();    // LibXMLError object
+            libxml_clear_errors();
+            return 'Illegal XML: '.$error->message;
+        }
+
+        return true;
     }
 }

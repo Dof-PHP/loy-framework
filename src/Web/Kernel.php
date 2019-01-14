@@ -12,6 +12,8 @@ use Loy\Framework\Web\RouteManager;
 use Loy\Framework\Web\Request;
 use Loy\Framework\Web\Response;
 use Loy\Framework\Web\Route;
+use Loy\Framework\Web\Exception\PipeNotExistsException;
+use Loy\Framework\Web\Exception\PipeThroughFailedException;
 use Loy\Framework\Web\Exception\RouteNotExistsException;
 use Loy\Framework\Web\Exception\InvalidRequestMimeException;
 use Loy\Framework\Web\Exception\BadHttpPortCallException;
@@ -19,10 +21,12 @@ use Loy\Framework\Web\Exception\PortNotExistException;
 use Loy\Framework\Web\Exception\PortMethodNotExistException;
 use Loy\Framework\Web\Exception\PortMethodParameterMissingException;
 use Loy\Framework\Web\Exception\BrokenHttpPortMethodDefinitionException;
+use Loy\Framework\Web\Exception\ResponseWrapperNotExists;
 
 final class Kernel
 {
-    const DOMAIN_DIR = 'domain';
+    const DOMAIN_DIR   = 'domain';
+    const PIPE_HANDLER = 'through';
 
     private static $projectRoot = null;
 
@@ -82,9 +86,48 @@ final class Kernel
             throw new PortMethodNotExistException("{$class}@{$method}");
         }
 
+        $pipes = PipeManager::getPipes();
+        foreach (($route['pipes'] ?? []) as $alias) {
+            $pipe = $pipes[$alias] ?? false;
+            if (! $pipe) {
+                throw new PipeNotExistsException($alias.' (ALIAS)');
+            }
+            if (! class_exists($pipe)) {
+                throw new PipeNotExistsException($pipe.' (NAMESPACE)');
+            }
+            $_pipe = new $pipe;
+            if (! method_exists($_pipe, self::PIPE_HANDLER)) {
+                throw new PipeNotExistsException($pipe.' (HANDLER)');
+            }
+
+            try {
+                if (true !== ($res = call_user_func_array([$_pipe, self::PIPE_HANDLER], [
+                    Request::getInstance(),
+                    Response::getInstance(),
+                ]))) {
+                    $res = string_literal($res);
+                    throw new PipeThroughFailedException($pipe." ({$res})");
+                }
+            } catch (Exception | Error $e) {
+                throw new PipeThroughFailedException($pipe." ({$e->getMessage()})");
+            }
+        }
+
+        $wrapper = false;
+        if ($wrapout = ($route['wrapout'] ?? false)) {
+            $wrappers = Response::getWrappers();
+            $wrapper  = $wrappers[$wrapout] ?? false;
+            if (! $wrapper) {
+                throw new ResponseWrapperNotExists($wrapout);
+            }
+        }
+
         try {
             $params = self::buildPortMethodParameters($route);
             $result = call_user_func_array([$port, $method], $params);
+            if ($wrapper) {
+                $result = Response::setWrapperOnResult($result, $wrapper);
+            }
 
             Response::setMimeAlias($route['mimeout'] ?? null)->send($result);
         } catch (Exception | Error $e) {
