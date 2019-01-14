@@ -125,8 +125,15 @@ final class RouteManager
                     throw new DuplicateRouteDefinitionException("{$verb} {$urlpath} ({$classNamespace}@{$method})");
                     continue;
                 }
-                if ($alias && (self::$aliases[$alias] ?? false)) {
-                    throw new DuplicateRouteAliasDefinitionException("{$alias} => {$verb} {$urlpath} ({$classNamespace}@{$method})");
+                if ($alias && ($_alias = (self::$aliases[$alias] ?? false))) {
+                    $_urlpath = $_alias['urlpath'] ?? '?';
+                    $_verb    = $_alias['verb']    ?? '?';
+                    $_route   = self::$routes[$_urlpath][$_verb] ?? [];
+                    $_classns = $_route['class']   ?? '?';
+                    $_method  = $_route['method']  ?? '?';
+                    throw new DuplicateRouteAliasDefinitionException(
+                        "{$alias} => ({$verb} {$urlpath} | {$classNamespace}@{$method}) <=> ({$_verb} {$_urlpath} | {$_classns}@{$_method})"
+                    );
                 }
 
                 if ($alias) {

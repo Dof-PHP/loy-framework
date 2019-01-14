@@ -13,6 +13,8 @@ class Route
 
     public static function setData(array $data)
     {
+        $data['all'] = RouteManager::getRoutes();
+        
         self::$data = $data;
     }
 

@@ -52,6 +52,8 @@ class Collection implements
         if (is_object($this->origin) && method_exists($this->origin, $method)) {
             return $this->origin->{$name}($argvs);
         }
+
+        return $this->__get($method);
     }
 
     public function __get(string $key)
