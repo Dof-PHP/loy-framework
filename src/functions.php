@@ -151,8 +151,11 @@ if (! function_exists('enxml')) {
 
         if (true
             && is_object($data)
-            && method_exists($data, 'toArray')
-            && is_array($ret = $data->toArray())
+            && (
+                false
+            || (method_exists($data, '__toArray') && is_array($ret = $data->__toArray()))
+            || (method_exists($data, 'toArray') && is_array($ret = $data->toArray()))
+            )
         ) {
             $_xml = $arr2xml($ret, $xml, $arr2xml);
         } elseif (is_array($data)) {
@@ -167,6 +170,18 @@ if (! function_exists('enxml')) {
 if (! function_exists('enjson')) {
     function enjson($data)
     {
+        if (is_object($data)) {
+            if (method_exists($data, '__toArray')) {
+                $data = $data->__toArray();
+            } elseif (method_exists($data, 'toArray')) {
+                $data = $data->toArray();
+            }
+
+            if (! is_array($data)) {
+                return '';
+            }
+        }
+
         $json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         return $json ?: '';
