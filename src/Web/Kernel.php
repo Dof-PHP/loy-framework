@@ -17,6 +17,8 @@ use Loy\Framework\Web\Exception\InvalidRequestMimeException;
 use Loy\Framework\Web\Exception\BadHttpPortCallException;
 use Loy\Framework\Web\Exception\PortNotExistException;
 use Loy\Framework\Web\Exception\PortMethodNotExistException;
+use Loy\Framework\Web\Exception\PortMethodParameterMissingException;
+use Loy\Framework\Web\Exception\BrokenHttpPortMethodDefinitionException;
 
 final class Kernel
 {
@@ -65,9 +67,7 @@ final class Kernel
         }
 
         $class  = $route['class']  ?? '-';
-        $method = $route['method'] ?? '-';
-        $params = $route['params']['res'] ?? [];
-
+        $method = $route['method']['name'] ?? '-';
         if (! class_exists($class)) {
             throw new PortNotExistException($class);
         }
@@ -77,12 +77,50 @@ final class Kernel
         }
 
         try {
+            $params = self::buildPortMethodParameters($route);
             $result = call_user_func_array([$port, $method], $params);
 
             Response::setMimeAlias($route['mimeout'] ?? null)->send($result);
         } catch (Exception | Error $e) {
             throw new BadHttpPortCallException("{$class}@{$method}: {$e->getMessage()}");
         }
+    }
+
+    private static function buildPortMethodParameters(array $route) : array
+    {
+        $paramsMethod = $route['method']['params'] ?? [];
+        $paramsRoute  = $route['params'] ?? [];
+        if ((! $paramsMethod) && (! $paramsRoute)) {
+            return [];
+        }
+
+        $class  = $route['class'] ?? '?';
+        $method = $route['method']['name'] ?? '?';
+        $params = [];
+        $vflag  = '$';
+        foreach ($paramsMethod as $paramMethod) {
+            $name = $paramMethod['name'] ?? '';
+            if (array_key_exists($name, ($paramsRoute['raw'] ?? []))) {
+                $params[] = $paramsRoute['kv'][$name] ?? null;
+                continue;
+            }
+            if ($paramMethod['optional'] ?? false) {
+                break;
+            }
+            $type  = $paramMethod['type']['type'] ?? false;
+            $error = "{$class}@{$method}(... {$type} {$vflag}{$name} ...)";
+            if ($paramMethod['type']['builtin'] ?? false) {
+                throw new PortMethodParameterMissingException($error);
+            }
+
+            try {
+                $params[] = new $type;
+            } catch (Exception | Error $e) {
+                throw new BrokenHttpPortMethodDefinitionException("{$error} => {$e->getMessage()}");
+            }
+        }
+
+        return $params;
     }
 
     public static function getProjectRoot()

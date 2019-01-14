@@ -6,6 +6,6 @@ namespace Loy\Framework\Core\Exception;
 
 use Exception;
 
-class InvalidAnnotationNamespaceException extends Exception
+class ApplicationServiceNotExistsException extends Exception
 {
 }

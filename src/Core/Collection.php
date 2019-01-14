@@ -73,7 +73,7 @@ class Collection implements
     
     public function next()
     {
-        ++ $this->pointer;
+        ++$this->pointer;
     }
     
     public function rewind()

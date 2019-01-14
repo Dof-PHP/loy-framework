@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Core\Exception;
 
-class InvalidAnnotationDirException
+use Exception;
+
+class InvalidAnnotationDirException extends Exception
 {
 }

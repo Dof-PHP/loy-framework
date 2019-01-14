@@ -22,7 +22,7 @@ class Annotation
     ) {
         foreach ($dirs as $dir) {
             if (! is_dir($dir)) {
-                throw new InvalidAnnotationDirException($routeDir);
+                throw new InvalidAnnotationDirException($dir);
             }
 
             self::parseClassDir($dir, $regex, $callback, $origin);
@@ -91,9 +91,27 @@ class Annotation
         $ofMethods = [];
         $methods   = $reflector->getMethods();
         foreach ($methods as $method) {
+            $nsMethod = get_namespace_of_file($method->getFileName(), true);
+            if ($namespace !== $nsMethod) {
+                continue;
+            }
             $comment = $method->getDocComment();
             if (false !== $comment) {
                 $ofMethods[$method->name] = self::parseComment($comment, $regex, $origin);
+            }
+            foreach ($method->getParameters() as $parameter) {
+                $type    = $parameter->hasType() ? $parameter->getType()->getName() : null;
+                $builtin = $type ? $parameter->getType()->isBuiltin() : null;
+                $default = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
+                $ofMethods[$method->name]['parameters'][] = [
+                    'name' => $parameter->getName(),
+                    'type' => [
+                        'type'    => $type,
+                        'builtin' => $builtin,
+                    ],
+                    'optional' => $parameter->isOptional(),
+                    'default'  => $default,
+                ];
             }
         }
 

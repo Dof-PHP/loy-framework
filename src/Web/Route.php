@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web;
 
-use Loy\Framework\Core\Collection;
-
 class Route
 {
     private static $data = [];
@@ -21,7 +19,7 @@ class Route
     public static function getInstance()
     {
         if (! self::$instance) {
-            self::$instance = new Collection(self::$data, __CLASS__);
+            self::$instance = collect(self::$data, __CLASS__);
         }
 
         return self::$instance;

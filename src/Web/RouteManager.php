@@ -15,7 +15,7 @@ use Loy\Framework\Web\Exception\DuplicateRouteAliasDefinitionException;
 
 final class RouteManager
 {
-    const ROUTE_DIR = 'Port/Http';
+    const ROUTE_DIR = 'Http/Port';
     const REGEX = '#@([a-zA-z]+)\((.*)\)#';
 
     private static $aliases = [];
@@ -73,7 +73,7 @@ final class RouteManager
                     self::assembleRoutesFromAnnotations($ofClass, $ofMethods);
                 }
             }, __CLASS__);
-        } catch (InvalidAnnotationNamespaceException $e) {
+        } catch (InvalidAnnotationDirException $e) {
             throw new InvalidRouteDirException($e->getMessage());
         } catch (InvalidAnnotationNamespaceException $e) {
             throw new InvalidHttpPortNamespaceException($e->getMessage());
@@ -90,9 +90,13 @@ final class RouteManager
         $middlewares    = $ofClass['PIPE']    ?? [];
 
         foreach ($ofMethods as $method => $attrs) {
+            $notroute = $attrs['NOTROUTE'] ?? false;
+            if ($notroute) {
+                continue;
+            }
             $route   = $attrs['ROUTE']  ?? '';
             $alias   = $attrs['ALIAS']  ?? null;
-            $verbs   = $attrs['VERB'] ?? [];
+            $verbs   = $attrs['VERB']   ?? [];
             $params  = [];
             if (! $verbs) {
                 $verbs = $defaultVerbs;
@@ -148,7 +152,10 @@ final class RouteManager
                     'verb'    => $verb,
                     'alias'   => $alias,
                     'class'   => $classNamespace,
-                    'method'  => $method,
+                    'method'  => [
+                        'name'   => $method,
+                        'params' => $attrs['parameters'] ?? [],
+                    ],
                     'pipes'   => $middles,
                     'params'  => [
                         'raw' => $params,

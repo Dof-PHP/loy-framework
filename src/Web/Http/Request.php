@@ -10,17 +10,27 @@ class Request
 {
     use Http;
 
+    public function get(string $key)
+    {
+        return 'getting '.$key;
+    }
+
+    public function getDomain() : ?string
+    {
+        return $_SERVER['HTTP_HOST'] ?? null;
+    }
+
     public function getMimeShort() : ?string
     {
         $mime  = explode(';', $this->getMime());
         $short = $mime[0] ?? false;
 
-        return ($short === false) ? '?' : trim($short);
+        return ($short === false) ? null : trim($short);
     }
 
-    public function getMime() : ?string
+    public function getMime() : string
     {
-        return trim(strtolower($_SERVER['HTTP_CONTENT_TYPE'] ?? '?'));
+        return trim(strtolower($_SERVER['HTTP_CONTENT_TYPE'] ?? null));
     }
 
     public function getMethod() : string
@@ -44,7 +54,7 @@ class Request
     public function isMimeAlias(string $alias) : bool
     {
         $mime = $this->getMime();
-        if ('?' === $mime) {
+        if (! $mime) {
             return false;
         }
 
@@ -58,5 +68,13 @@ class Request
         }
 
         return false;
+    }
+
+    public function __get(string $key)
+    {
+        $method = 'get'.ucfirst($key);
+        if (method_exists($this, $method)) {
+            return $this->{$method}();
+        }
     }
 }

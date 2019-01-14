@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Core\Exception;
 
-class InvalidProjectRootException
+use Exception;
+
+class InvalidProjectRootException extends Exception
 {
 }

@@ -185,3 +185,15 @@ if (! function_exists('array_trim')) {
         return $arr;
     }
 }
+if (! function_exists('collect')) {
+    function collect(array $data, $origin = null)
+    {
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $data[$key] = collect($value, $origin);
+            }
+        }
+
+        return new \Loy\Framework\Core\Collection($data, $origin);
+    }
+}
