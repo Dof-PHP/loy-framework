@@ -35,6 +35,7 @@ final class Kernel
 
         self::compileDomains();
         self::compileRoutes();
+        self::compilePipes();
         self::processRequest();
     }
 
@@ -42,6 +43,11 @@ final class Kernel
     {
         $domainRoot = join(DIRECTORY_SEPARATOR, [self::$projectRoot, self::DOMAIN_DIR]);
         DomainManager::compile($domainRoot);
+    }
+
+    public static function compilePipes()
+    {
+        PipeManager::compile(DomainManager::getDomains());
     }
 
     public static function compileRoutes()

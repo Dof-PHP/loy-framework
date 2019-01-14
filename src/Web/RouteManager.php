@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web;
 
-use Exception;
 use Loy\Framework\Core\Annotation;
 use Loy\Framework\Core\Exception\InvalidAnnotationDirException;
 use Loy\Framework\Core\Exception\InvalidAnnotationNamespaceException;
@@ -87,6 +86,7 @@ final class RouteManager
         $defaultVerbs   = $ofClass['VERB']    ?? [];
         $defaultMimein  = $ofClass['MIMEIN']  ?? null;
         $defaultMimeout = $ofClass['MIMEOUT'] ?? null;
+        $defaultWrapout = $ofClass['WRAPOUT'] ?? null;
         $middlewares    = $ofClass['PIPE']    ?? [];
 
         foreach ($ofMethods as $method => $attrs) {
@@ -108,6 +108,10 @@ final class RouteManager
             $mimeout = $attrs['MIMEOUT'] ?? null;
             if (! $mimeout) {
                 $mimeout = $defaultMimeout;
+            }
+            $wrapout = $attrs['WRAPOUT'] ?? null;
+            if (! $wrapout) {
+                $wrapout = $defaultWrapout;
             }
 
             $middles = $attrs['PIPE'] ?? [];
@@ -162,6 +166,7 @@ final class RouteManager
                     ],
                     'mimein'  => $mimein,
                     'mimeout' => $mimeout,
+                    'wrapout' => $wrapout,
                 ];
             }
         }
