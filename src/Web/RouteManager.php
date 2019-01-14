@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Loy\Framework\Web;
 
 use Exception;
-use ReflectionClass;
-use ReflectionException;
+use Loy\Framework\Core\Annotation;
+use Loy\Framework\Core\Exception\InvalidAnnotationDirException;
+use Loy\Framework\Core\Exception\InvalidAnnotationNamespaceException;
 use Loy\Framework\Web\Exception\InvalidRouteDirException;
 use Loy\Framework\Web\Exception\InvalidHttpPortNamespaceException;
 use Loy\Framework\Web\Exception\DuplicateRouteDefinitionException;
@@ -61,43 +62,21 @@ final class RouteManager
             return;
         }
 
-        foreach ($dirs as $dir) {
-            $routeDir = join(DIRECTORY_SEPARATOR, [$dir, self::ROUTE_DIR]);
+        self::$dirs = array_map(function ($item) {
+            return join(DIRECTORY_SEPARATOR, [$item, self::ROUTE_DIR]);
+        }, $dirs);
 
-            if (! is_dir($routeDir)) {
-                throw new InvalidRouteDirException($routeDir);
-            }
-
-            self::compileHttpPortDir($routeDir);
-        }
-    }
-
-    public static function compileHttpPortDir(string $dir)
-    {
-        walk_dir($dir, function ($path) {
-            if ($path->isFile() && ('php' === $path->getExtension())) {
-                self::compileHttpPortFile($path->getRealpath());
-                return;
-            }
-
-            if ($path->isDir()) {
-                self::compileHttpPortDir($path->getRealpath());
-                return;
-            }
-        });
-    }
-
-    public static function compileHttpPortFile(string $path)
-    {
-        $ns = get_namespace_of_file($path, true);
-        if (! class_exists($ns)) {
-            throw new InvalidHttpPortNamespaceException($ns);
-        }
-
-        $annotations = self::parseAnnotationsByNamespace($ns);
-        if ($annotations) {
-            list($ofClass, $ofMethods) = $annotations;
-            self::assembleRoutesFromAnnotations($ofClass, $ofMethods);
+        try {
+            Annotation::parseClassDirs(self::$dirs, self::REGEX, function ($annotations) {
+                if ($annotations) {
+                    list($ofClass, $ofMethods) = $annotations;
+                    self::assembleRoutesFromAnnotations($ofClass, $ofMethods);
+                }
+            }, __CLASS__);
+        } catch (InvalidAnnotationNamespaceException $e) {
+            throw new InvalidRouteDirException($e->getMessage());
+        } catch (InvalidAnnotationNamespaceException $e) {
+            throw new InvalidHttpPortNamespaceException($e->getMessage());
         }
     }
 
@@ -174,90 +153,19 @@ final class RouteManager
         }
     }
 
-    public static function parseAnnotationFromSingleComment(string $comment) : array
-    {
-        if (! $comment) {
-            return [];
-        }
-
-        $arr = explode(PHP_EOL, $comment);
-        foreach ($arr as $line) {
-            $matches = [];
-            if (1 === preg_match(self::REGEX, $line, $matches)) {
-                $key = $matches[1] ?? false;
-                $val = $matches[2] ?? false;
-                if ((! $key) || (! $val)) {
-                    continue;
-                }
-                $filter = 'parseString'.ucfirst(strtolower($key));
-                if (method_exists(__CLASS__, $filter)) {
-                    $val = self::$filter($val);
-                }
-                $res[strtoupper($key)] = $val;
-            }
-        }
-
-        return $res;
-    }
-
-    public static function parseStringMimeOut(string $val) : string
-    {
-        return trim($val);
-    }
-
-    public static function parseStringMimein(string $val) : string
-    {
-        return trim($val);
-    }
-
-    public static function parseStringAlias(string $val) : string
-    {
-        return trim($val);
-    }
-
-    public static function parseStringPipe(string $val) : array
+    public static function filterAnnotationPipe(string $val) : array
     {
         return array_trim(explode(',', trim($val)));
     }
 
-    public static function parseStringVerb(string $val) : array
+    public static function filterAnnotationVerb(string $val) : array
     {
         return array_trim(explode(',', strtoupper(trim($val))));
     }
 
-    public static function parseStringRoute(string $val)
+    public static function filterAnnotationRoute(string $val)
     {
         return join('/', array_trim(explode('/', trim($val))));
-    }
-
-    public static function parseAnnotationsByNamespace(string $namespace) : array
-    {
-        try {
-            $reflector = new ReflectionClass($namespace);
-        } catch (ReflectionException $e) {
-            return [];
-        }
-
-        $classDocComment = $reflector->getDocComment();
-        $ofClass = [];
-        if (false !== $classDocComment) {
-            $ofClass = self::parseAnnotationFromSingleComment($classDocComment);
-        }
-        $ofClass['namespace'] = $namespace;
-
-        $ofMethods = [];
-        $methods   = $reflector->getMethods();
-        foreach ($methods as $method) {
-            $comment = $method->getDocComment();
-            if (false !== $comment) {
-                $ofMethods[$method->name] = self::parseAnnotationFromSingleComment($comment);
-            }
-        }
-
-        return [
-            $ofClass,
-            $ofMethods,
-        ];
     }
 
     public static function getAliases() : array
