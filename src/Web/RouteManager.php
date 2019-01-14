@@ -61,10 +61,8 @@ final class RouteManager
             return;
         }
 
-        self::$dirs = $dirs;
-
         foreach ($dirs as $dir) {
-            $routeDir = join('/', [$dir, self::ROUTE_DIR]);
+            $routeDir = join(DIRECTORY_SEPARATOR, [$dir, self::ROUTE_DIR]);
 
             if (! is_dir($routeDir)) {
                 throw new InvalidRouteDirException($routeDir);

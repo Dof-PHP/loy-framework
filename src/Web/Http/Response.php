@@ -87,7 +87,10 @@ class Response
             }
         }
 
-        header("Content-Type: {$this->mime}; charset=UTF-8");
+        if ($this->mime) {
+            header("Content-Type: {$this->mime}; charset=UTF-8");
+        }
+
         http_response_code($this->status);
         echo (string) $this->body;
         exit(0);
@@ -121,6 +124,9 @@ class Response
     public function setMimeAlias(string $alias = null)
     {
         if (! is_null($alias)) {
+            if ($alias === '_') {
+                $this->mime = false;
+            }
             $this->mime = self::$mimes[$alias] ?? 'text/html';
         }
 
