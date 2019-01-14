@@ -6,6 +6,7 @@ namespace Loy\Framework\Web;
 
 use Exception;
 use Error;
+use Loy\Framework\Core\Kernel as CoreKernel;
 use Loy\Framework\Core\DomainManager;
 use Loy\Framework\Core\Exception\InvalidProjectRootException;
 use Loy\Framework\Web\RouteManager;
@@ -13,6 +14,7 @@ use Loy\Framework\Web\Request;
 use Loy\Framework\Web\Response;
 use Loy\Framework\Web\Route;
 use Loy\Framework\Web\Exception\PipeNotExistsException;
+use Loy\Framework\Web\Exception\FrameworkCoreException;
 use Loy\Framework\Web\Exception\PipeThroughFailedException;
 use Loy\Framework\Web\Exception\RouteNotExistsException;
 use Loy\Framework\Web\Exception\InvalidRequestMimeException;
@@ -23,30 +25,21 @@ use Loy\Framework\Web\Exception\PortMethodParameterMissingException;
 use Loy\Framework\Web\Exception\BrokenHttpPortMethodDefinitionException;
 use Loy\Framework\Web\Exception\ResponseWrapperNotExists;
 
-final class Kernel
+final class Kernel extends CoreKernel
 {
-    const DOMAIN_DIR   = 'domain';
     const PIPE_HANDLER = 'through';
-
-    private static $projectRoot = null;
 
     public static function handle(string $projectRoot)
     {
-        if (! is_dir($projectRoot)) {
-            throw new InvalidProjectRootException($projectRoot);
+        try {
+            parent::handle($projectRoot);
+        } catch (InvalidProjectRootException $e) {
+            throw new FrameworkCoreException("InvalidProjectRootException => {$e->getMessage()}");
         }
-        self::$projectRoot = $projectRoot;
 
-        self::compileDomains();
         self::compileRoutes();
         self::compilePipes();
         self::processRequest();
-    }
-
-    public static function compileDomains()
-    {
-        $domainRoot = join(DIRECTORY_SEPARATOR, [self::$projectRoot, self::DOMAIN_DIR]);
-        DomainManager::compile($domainRoot);
     }
 
     public static function compilePipes()
@@ -170,10 +163,5 @@ final class Kernel
         }
 
         return $params;
-    }
-
-    public static function getProjectRoot()
-    {
-        return self::$projectRoot;
     }
 }
