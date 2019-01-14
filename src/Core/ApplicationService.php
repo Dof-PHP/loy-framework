@@ -4,13 +4,27 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Core;
 
-class ApplicationService
+abstract class ApplicationService
 {
     protected $__status = 0;
     protected $__error  = null;
     protected $__data   = null;
 
-    public function __toArray()
+    public function exec()
+    {
+        $this->__data = $this->execute();
+
+        return $this;
+    }
+
+    abstract public function execute();
+
+    public function toArray() : array
+    {
+        return $this->__toArray();
+    }
+    
+    public function __toArray() : array
     {
         return [
             'status' => $this->__status,
@@ -38,7 +52,7 @@ class ApplicationService
         return $this;
     }
 
-    public function __getError()
+    public function __getError() : string
     {
         return $this->__error;
     }
@@ -53,6 +67,11 @@ class ApplicationService
     public function __getStatus()
     {
         return $this->__status;
+    }
+
+    public function isSuccess() : bool
+    {
+        return $this->__status === 0;
     }
 
     public static function init($data = null)
