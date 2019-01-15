@@ -4,19 +4,12 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web\Exception;
 
-use Exception;
-use ReflectionClass;
-use Loy\Framework\Web\Response;
+use Loy\Framework\Web\Exception\BaseWebException;
 
-class InvalidHttpPipeNamespaceException extends Exception
+class InvalidHttpPipeNamespaceException extends BaseWebException
 {
     public function __construct(string $ns, int $code = 500)
     {
-        $this->message = $ns;
-        $this->code    = $code;
-
-        $error = (new ReflectionClass($this))->getShortName().': '.$this->message;
-
-        Response::setBody($error)->setStatus($this->code)->send();
+        parent::__construct($ns, $code);
     }
 }

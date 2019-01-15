@@ -14,7 +14,7 @@ class BadHttpPortCallException extends Exception
         $this->message = $call;
         $this->code    = $code;
 
-        $error = objectname($this).': '.$this->message;
+        $error = join(':', [objectname($this), $this->message]);
 
         Response::setMimeAlias('text')
             ->setBody($error)

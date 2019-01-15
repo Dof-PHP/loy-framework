@@ -4,19 +4,12 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web\Exception;
 
-use Exception;
-use ReflectionClass;
-use Loy\Framework\Web\Response;
+use Loy\Framework\Web\Exception\BaseWebException;
 
-class PipeThroughFailedException extends Exception
+class PipeThroughFailedException extends BaseWebException
 {
-    public function __construct(string $pipe, int $code = 404)
+    public function __construct(string $pipe, int $code = 400)
     {
-        $this->message = $pipe;
-        $this->code    = $code;
-
-        $error = (new ReflectionClass($this))->getShortName().': '.$this->message;
-
-        Response::setBody($error)->setStatus($this->code)->send();
+        parent::__construct($pipe, $code);
     }
 }

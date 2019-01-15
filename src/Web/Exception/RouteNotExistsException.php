@@ -4,19 +4,12 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web\Exception;
 
-use Exception;
-use ReflectionClass;
-use Loy\Framework\Web\Response;
+use Loy\Framework\Web\Exception\BaseWebException;
 
-class RouteNotExistsException extends Exception
+class RouteNotExistsException extends BaseWebException
 {
     public function __construct(string $route, int $code = 404)
     {
-        $this->message = $route;
-        $this->code    = $code;
-
-        $error = (new ReflectionClass($this))->getShortName().': '.$this->message;
-
-        Response::setBody($error)->setStatus($this->code)->send();
+        parent::__construct($route, $code);
     }
 }

@@ -14,7 +14,7 @@ class BaseWebException extends Exception
         $this->message = $message;
         $this->code    = $code;
 
-        $error = objectname($this).': '.$this->message;
+        $error = join(':', [objectname($this), $this->message]);
 
         Response::setBody($error)->setStatus($this->code)->send();
     }

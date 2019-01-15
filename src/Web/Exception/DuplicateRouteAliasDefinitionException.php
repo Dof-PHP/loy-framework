@@ -4,18 +4,12 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web\Exception;
 
-use Exception;
-use Loy\Framework\Web\Response;
+use Loy\Framework\Web\Exception\BaseWebException;
 
-class DuplicateRouteAliasDefinitionException extends Exception
+class DuplicateRouteAliasDefinitionException extends BaseWebException
 {
     public function __construct(string $alias, int $code = 500)
     {
-        $this->message = $alias;
-        $this->code    = $code;
-
-        $error = join(':', [objectname($this), $this->message]);
-
-        Response::setBody($error)->setStatus($this->code)->send();
+        parent::__construct($alias, $code);
     }
 }

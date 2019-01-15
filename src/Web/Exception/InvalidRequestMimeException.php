@@ -4,19 +4,12 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web\Exception;
 
-use Exception;
-use ReflectionClass;
-use Loy\Framework\Web\Response;
+use Loy\Framework\Web\Exception\BaseWebException;
 
-class InvalidRequestMimeException extends Exception
+class InvalidRequestMimeException extends BaseWebException
 {
     public function __construct(string $mimes, int $code = 400)
     {
-        $this->message = $mimes;
-        $this->code    = $code;
-
-        $error = (new ReflectionClass($this))->getShortName().': '.$this->message;
-
-        Response::setBody($error)->setStatus($this->code)->send();
+        parent::__construct($mimes, $code);
     }
 }
