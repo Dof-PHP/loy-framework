@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web\Exception;
 
-use Loy\Framework\Web\Exception\BaseWebException;
+use Loy\Framework\Web\Response;
+use Exception;
 
 class BadHttpPortCallException extends Exception
 {

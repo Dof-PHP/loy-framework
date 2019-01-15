@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Loy\Framework\Web\Exception;
 
 use Exception;
+use Loy\Framework\Web\Response;
 
 class BaseWebException extends Exception
 {
