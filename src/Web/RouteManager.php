@@ -82,38 +82,30 @@ final class RouteManager
     public static function assembleRoutesFromAnnotations(array $ofClass, array $ofMethods)
     {
         $classNamespace = $ofClass['namespace'] ?? '?';
-        $routePrefix    = $ofClass['ROUTE']   ?? '';
-        $defaultVerbs   = $ofClass['VERB']    ?? [];
-        $defaultMimein  = $ofClass['MIMEIN']  ?? null;
-        $defaultMimeout = $ofClass['MIMEOUT'] ?? null;
-        $defaultWrapout = $ofClass['WRAPOUT'] ?? null;
-        $middlewares    = $ofClass['PIPE']    ?? [];
+        $routePrefix    = $ofClass['ROUTE']     ?? '';
+        $middlewares    = $ofClass['PIPE']      ?? [];
+        $defaultVerbs   = $ofClass['VERB']      ?? [];
+        $defaultMimein  = $ofClass['MIMEIN']    ?? null;
+        $defaultMimeout = $ofClass['MIMEOUT']   ?? null;
+        $defaultWrapin  = $ofClass['WRAPIN']    ?? null;
+        $defaultWrapout = $ofClass['WRAPOUT']   ?? null;
+        $defaultWraperr = $ofClass['WRAPERR']   ?? null;
 
         foreach ($ofMethods as $method => $attrs) {
             $notroute = $attrs['NOTROUTE'] ?? false;
             if ($notroute) {
                 continue;
             }
-            $route   = $attrs['ROUTE']  ?? '';
-            $alias   = $attrs['ALIAS']  ?? null;
-            $verbs   = $attrs['VERB']   ?? [];
-            $params  = [];
-            if (! $verbs) {
-                $verbs = $defaultVerbs;
-            }
-            $mimein  = $attrs['MIMEIN']  ?? null;
-            if (! $mimein) {
-                $mimein  = $defaultMimein;
-            }
-            $mimeout = $attrs['MIMEOUT'] ?? null;
-            if (! $mimeout) {
-                $mimeout = $defaultMimeout;
-            }
-            $wrapout = $attrs['WRAPOUT'] ?? null;
-            if (! $wrapout) {
-                $wrapout = $defaultWrapout;
-            }
+            $route   = $attrs['ROUTE']   ?? '';
+            $alias   = $attrs['ALIAS']   ?? null;
+            $verbs   = $attrs['VERB']    ?? $defaultVerbs;
+            $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
+            $mimeout = $attrs['MIMEOUT'] ?? $defaultMimeout;
+            $wrapin  = $attrs['WRAPIN']  ?? $defaultWrapin;
+            $wrapout = $attrs['WRAPOUT'] ?? $defaultWrapout;
+            $wraperr = $attrs['WRAPERR'] ?? $defaultWraperr;
 
+            $params  = [];
             $middles = $attrs['PIPE'] ?? [];
             $middles = array_unique(array_merge($middlewares, $middles));
             $urlpath = join('/', [$routePrefix, $route]);
@@ -166,7 +158,9 @@ final class RouteManager
                     ],
                     'mimein'  => $mimein,
                     'mimeout' => $mimeout,
+                    'wrapin'  => $wrapin,
                     'wrapout' => $wrapout,
+                    'wraperr' => $wraperr,
                 ];
             }
         }

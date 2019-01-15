@@ -161,7 +161,8 @@ final class Kernel extends CoreKernel
                     try {
                         $val = TypeHint::convert($val, $type);
                     } catch (TypeHintConvertException $e) {
-                        dd($route, Response::new()->send($e->getMessage()));
+                        dd($route);
+                        Response::new()->send($e->getMessage());
                         dd($e->getMessage());
                     }
                 }
