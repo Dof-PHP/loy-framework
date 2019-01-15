@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Loy\Framework\Web\Exception;
 
 use Exception;
-use Loy\Framework\Web\Response;
 
-class BrokenHttpPortMethodDefinitionException extends Exception
+class BaseWebException extends Exception
 {
-    public function __construct(string $error, int $code = 500)
+    public function __construct(string $message, int $code)
     {
-        $this->message = $error;
+        $this->message = $message;
         $this->code    = $code;
 
         $error = objectname($this).': '.$this->message;

@@ -156,7 +156,7 @@ final class Kernel extends CoreKernel
                         $val = TypeHint::convert($val, $type);
                     } catch (TypeHintConverterNotExistsException | TypeHintConvertException $e) {
                         $code    = $e->getCode();
-                        $result  = [$e->getMessage(), $code];
+                        $result  = [objectname($e), $code, $e->getMessage()];
                         $wraperr = $route['wraperr'] ?? null;
                         $mimeout = $route['mimeout'] ?? null;
 

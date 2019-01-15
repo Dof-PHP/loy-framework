@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web\Exception;
 
-use Exception;
-use ReflectionClass;
-use Loy\Framework\Web\Response;
+use Loy\Framework\Web\Exception\BaseWebException;
 
 class BadHttpPortCallException extends Exception
 {
@@ -15,7 +13,7 @@ class BadHttpPortCallException extends Exception
         $this->message = $call;
         $this->code    = $code;
 
-        $error = (new ReflectionClass($this))->getShortName().': '.$this->message;
+        $error = objectname($this).': '.$this->message;
 
         Response::setMimeAlias('text')
             ->setBody($error)

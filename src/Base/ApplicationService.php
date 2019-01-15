@@ -6,7 +6,7 @@ namespace Loy\Framework\Base;
 
 abstract class ApplicationService
 {
-    protected $__code = 0;
+    protected $__code = 200;
     protected $__info = null;
     protected $__data = null;
 
@@ -71,7 +71,7 @@ abstract class ApplicationService
 
     public function isSuccess() : bool
     {
-        return $this->__status === 0;
+        return $this->__status === 200;
     }
 
     public static function init($data = null)

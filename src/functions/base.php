@@ -279,3 +279,11 @@ if (! function_exists('is_xml')) {
         return true;
     }
 }
+if (! function_exists('objectname')) {
+    function objectname($object) : ?string
+    {
+        if (is_object($object)) {
+            return (new \ReflectionClass($object))->getShortName();
+        }
+    }
+}

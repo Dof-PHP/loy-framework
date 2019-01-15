@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Loy\Framework\Web\Exception;
 
 use Exception;
-use ReflectionClass;
 use Loy\Framework\Web\Response;
 
 class DuplicateRouteAliasDefinitionException extends Exception
@@ -15,7 +14,7 @@ class DuplicateRouteAliasDefinitionException extends Exception
         $this->message = $alias;
         $this->code    = $code;
 
-        $error = (new ReflectionClass($this))->getShortName().': '.$this->message;
+        $error = join(':', [objectname($this), $this->message]);
 
         Response::setBody($error)->setStatus($this->code)->send();
     }

@@ -6,9 +6,9 @@ namespace Loy\Framework\Base\Exception;
 
 use Exception;
 
-class TypeHintConvertException extends Exception
+class TypeHintConverterNotExistsException extends Exception
 {
-    public function __construct(string $message, int $code = 400)
+    public function __construct(string $message, int $code = 500)
     {
         $this->message = $message;
         $this->code    = $code;
