@@ -10,6 +10,8 @@ use Loy\Framework\Base\Kernel as CoreKernel;
 use Loy\Framework\Base\DomainManager;
 use Loy\Framework\Base\TypeHint;
 use Loy\Framework\Base\Exception\InvalidProjectRootException;
+use Loy\Framework\Base\Exception\TypeHintConverterNotExistsException;
+use Loy\Framework\Base\Exception\TypeHintConvertException;
 use Loy\Framework\Web\RouteManager;
 use Loy\Framework\Web\Request;
 use Loy\Framework\Web\Response;
@@ -155,7 +157,13 @@ final class Kernel extends CoreKernel
                         throw new PortMethodParameterMissingException($error);
                     }
 
-                    $val = TypeHint::convert($val, $type);
+
+                    try {
+                        $val = TypeHint::convert($val, $type);
+                    } catch (TypeHintConvertException $e) {
+                        dd($route, Response::new()->send($e->getMessage()));
+                        dd($e->getMessage());
+                    }
                 }
                 $params[] = $val;
                 continue;

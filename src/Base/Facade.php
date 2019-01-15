@@ -38,6 +38,8 @@ abstract class Facade
 
     public static function new()
     {
-        return new static;
+        $proxy = self::proxy('namespace');
+
+        return new $proxy;
     }
 }
