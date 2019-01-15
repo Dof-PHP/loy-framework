@@ -111,9 +111,7 @@ final class Kernel extends CoreKernel
 
         $wrapper = false;
         if ($wrapout = ($route['wrapout'] ?? false)) {
-            $wrappers = Response::getWrappers();
-            $wrapper  = $wrappers[$wrapout] ?? false;
-            if (! $wrapper) {
+            if (! Reponse::hasWrapper($wrapout)) {
                 throw new ResponseWrapperNotExists($wrapout);
             }
         }
@@ -121,9 +119,7 @@ final class Kernel extends CoreKernel
         try {
             $params = self::buildPortMethodParameters($route);
             $result = call_user_func_array([$port, $method], $params);
-            if ($wrapper) {
-                $result = Response::setWrapperOnResult($result, $wrapper);
-            }
+            $result = Response::setWrapperOnResult($result, $wrapper);
 
             Response::setMimeAlias($route['mimeout'] ?? null)->send($result);
         } catch (Exception | Error $e) {
@@ -156,14 +152,18 @@ final class Kernel extends CoreKernel
                     if (is_null($val) && (! $optional)) {
                         throw new PortMethodParameterMissingException($error);
                     }
-
-
                     try {
                         $val = TypeHint::convert($val, $type);
-                    } catch (TypeHintConvertException $e) {
-                        dd($route);
-                        Response::new()->send($e->getMessage());
-                        dd($e->getMessage());
+                    } catch (TypeHintConverterNotExistsException | TypeHintConvertException $e) {
+                        $code    = $e->getCode();
+                        $result  = [$e->getMessage(), $code];
+                        $wraperr = $route['wraperr'] ?? null;
+                        $mimeout = $route['mimeout'] ?? null;
+
+                        Response::new()
+                        ->setMimeAlias($mimeout)
+                        ->setStatus($code)
+                        ->send(Response::setWrapperOnResult($result, $wraperr));
                     }
                 }
                 $params[] = $val;

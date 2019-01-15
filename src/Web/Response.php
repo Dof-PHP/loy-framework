@@ -15,8 +15,22 @@ class Response extends Facade
 
     protected static $wrappers = [];
 
-    public static function setWrapperOnResult($result, $wrapper)
+    public static function setWrapperOnResult($result, $wrapper = null)
     {
+        if (is_null($wrapper)) {
+            return $result;
+        }
+        if (is_string($wrapper)) {
+            if (! self::hasWrapper($wrapper)) {
+                return $result;
+            }
+
+            $wrapper = self::getWrapper($wrapper);
+        } elseif (is_array($wrapper)) {
+        } else {
+            return $result;
+        }
+
         $data = [];
         $idx  = -1;
         foreach ($wrapper as $key) {
@@ -36,6 +50,16 @@ class Response extends Facade
         }
 
         return $data;
+    }
+
+    public static function hasWrapper(string $key) : bool
+    {
+        return isset(self::$wrappers[$key]) && is_array(self::$wrappers[$key]);
+    }
+
+    public static function getWrapper(string $key) : ?array
+    {
+        return self::$wrappers[$key] ?? null;
     }
 
     public static function getWrappers()
