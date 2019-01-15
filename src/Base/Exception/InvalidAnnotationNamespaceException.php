@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Core\Exception;
+namespace Loy\Framework\Base\Exception;
 
 use Exception;
 

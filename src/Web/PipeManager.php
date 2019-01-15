@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web;
 
-use Loy\Framework\Core\Annotation;
-use Loy\Framework\Core\Exception\InvalidAnnotationDirException;
-use Loy\Framework\Core\Exception\InvalidAnnotationNamespaceException;
+use Loy\Framework\Base\Annotation;
+use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
+use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
 use Loy\Framework\Web\Exception\InvalidPipeDirException;
 use Loy\Framework\Web\Exception\InvalidHttpPipeNamespaceException;
 use Loy\Framework\Web\Exception\DuplicatePipeDefinitionException;

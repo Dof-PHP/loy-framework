@@ -7,7 +7,7 @@ namespace Loy\Framework\Web;
 use Loy\Framework\Web\Route;
 use Loy\Framework\Web\Request;
 use Loy\Framework\Web\Response;
-use Loy\Framework\Core\Exception\ApplicationServiceNotExistsExeception;
+use Loy\Framework\Base\Exception\ApplicationServiceNotExistsExeception;
 
 class Port
 {

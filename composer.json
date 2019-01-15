@@ -14,7 +14,8 @@
 			"Loy\\Framework\\": "./src/"
 		},
 		"files": [
-			"./src/functions.php"
+			"./src/functions/base.php",
+			"./src/functions/framework.php"
 		],
 		"exclude-from-classmap": [
        ]

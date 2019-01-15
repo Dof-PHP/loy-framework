@@ -235,18 +235,6 @@ if (! function_exists('array_trim')) {
         return $arr;
     }
 }
-if (! function_exists('collect')) {
-    function collect(array $data, $origin = null)
-    {
-        foreach ($data as $key => $value) {
-            if (is_array($value)) {
-                $data[$key] = collect($value, $origin);
-            }
-        }
-
-        return new \Loy\Framework\Core\Collection($data, $origin);
-    }
-}
 if (! function_exists('string_literal')) {
     function string_literal($val)
     {
@@ -269,7 +257,7 @@ if (! function_exists('string_literal')) {
             return get_class($val);
         }
 
-        return 'unknown';
+        return 'unknown variable type';
     }
 }
 if (! function_exists('is_xml')) {

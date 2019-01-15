@@ -6,7 +6,7 @@ namespace Loy\Framework\Web;
 
 use Closure;
 use Loy\Framework\Web\Http\Response as Instance;
-use Loy\Framework\Core\Facade;
+use Loy\Framework\Base\Facade;
 
 class Response extends Facade
 {

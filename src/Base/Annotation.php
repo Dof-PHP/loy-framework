@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Core;
+namespace Loy\Framework\Base;
 
 use Closure;
 use ReflectionClass;
 use ReflectionException;
-use Loy\Framework\Core\Exception\InvalidAnnotationDirException;
-use Loy\Framework\Core\Exception\InvalidAnnotationNamespaceException;
+use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
+use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
 
 class Annotation
 {

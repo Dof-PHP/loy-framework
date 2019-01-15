@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Core;
+namespace Loy\Framework\Base;
 
 abstract class ApplicationService
 {
-    protected $__status = 0;
-    protected $__error  = null;
-    protected $__data   = null;
+    protected $__code = 0;
+    protected $__info = null;
+    protected $__data = null;
 
     public function exec()
     {
@@ -27,9 +27,9 @@ abstract class ApplicationService
     public function __toArray() : array
     {
         return [
-            'status' => $this->__status,
-            'error'  => $this->__error,
-            'data'   => $this->__data,
+            'code' => $this->__code,
+            'info' => $this->__info,
+            'data' => $this->__data,
         ];
     }
 
@@ -45,28 +45,28 @@ abstract class ApplicationService
         return $this->__data;
     }
 
-    protected function __setError(string $error)
+    protected function __setInfo(string $info)
     {
-        $this->__error = $error;
+        $this->__info = $info;
 
         return $this;
     }
 
-    public function __getError() : string
+    public function __getInfo() : string
     {
-        return $this->__error;
+        return $this->__info;
     }
 
-    protected function __setStatus(int $status)
+    protected function __setCode(int $code)
     {
-        $this->__status = $status;
+        $this->__code = $code;
 
         return $this;
     }
 
-    public function __getStatus()
+    public function __getCode()
     {
-        return $this->__status;
+        return $this->__code;
     }
 
     public function isSuccess() : bool

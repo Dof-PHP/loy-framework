@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Core;
+namespace Loy\Framework\Base;
 
-use Loy\Framework\Core\DomainManager;
-use Loy\Framework\Core\Exception\InvalidProjectRootException;
+use Loy\Framework\Base\DomainManager;
+use Loy\Framework\Base\Exception\InvalidProjectRootException;
 
 class Kernel
 {
@@ -15,7 +15,6 @@ class Kernel
 
     public static function handle(string $projectRoot)
     {
-        throw new InvalidProjectRootException($projectRoot);
         if (! is_dir($projectRoot)) {
             throw new InvalidProjectRootException($projectRoot);
         }

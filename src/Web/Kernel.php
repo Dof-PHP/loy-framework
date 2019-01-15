@@ -6,9 +6,10 @@ namespace Loy\Framework\Web;
 
 use Exception;
 use Error;
-use Loy\Framework\Core\Kernel as CoreKernel;
-use Loy\Framework\Core\DomainManager;
-use Loy\Framework\Core\Exception\InvalidProjectRootException;
+use Loy\Framework\Base\Kernel as CoreKernel;
+use Loy\Framework\Base\DomainManager;
+use Loy\Framework\Base\TypeHint;
+use Loy\Framework\Base\Exception\InvalidProjectRootException;
 use Loy\Framework\Web\RouteManager;
 use Loy\Framework\Web\Request;
 use Loy\Framework\Web\Response;
@@ -142,16 +143,27 @@ final class Kernel extends CoreKernel
         $vflag  = '$';
         foreach ($paramsMethod as $paramMethod) {
             $name = $paramMethod['name'] ?? '';
+            $type = $paramMethod['type']['type'] ?? false;
+            $builtin  = $paramMethod['type']['builtin'] ?? false;
+            $optional = $paramMethod['optional'] ?? false;
+            $error    = "{$class}@{$method}(... {$type} {$vflag}{$name} ...)";
+
             if (array_key_exists($name, ($paramsRoute['raw'] ?? []))) {
-                $params[] = $paramsRoute['kv'][$name] ?? null;
+                $val = $paramsRoute['kv'][$name] ?? null;
+                if ($builtin) {
+                    if (is_null($val) && (! $optional)) {
+                        throw new PortMethodParameterMissingException($error);
+                    }
+
+                    $val = TypeHint::convert($val, $type);
+                }
+                $params[] = $val;
                 continue;
             }
-            if ($paramMethod['optional'] ?? false) {
+            if ($optional) {
                 break;
             }
-            $type  = $paramMethod['type']['type'] ?? false;
-            $error = "{$class}@{$method}(... {$type} {$vflag}{$name} ...)";
-            if ($paramMethod['type']['builtin'] ?? false) {
+            if ($builtin) {
                 throw new PortMethodParameterMissingException($error);
             }
 
