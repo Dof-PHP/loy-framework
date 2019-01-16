@@ -148,8 +148,8 @@ final class Kernel extends CoreKernel
     {
         $method = Request::getMethod();
         $uri    = Request::getUri();
-        $mimein = Request::getMimeAlias();
-        $route  = RouteManager::findRouteByUriAndMethod($uri, $method, $mimein);
+        $mimes  = Request::getMimeAliases();
+        $route  = RouteManager::findRouteByUriAndMethod($uri, $method, $mimes);
         if ($route === false) {
             throw new RouteNotExistsException("{$method} {$uri}");
         }
@@ -164,7 +164,6 @@ final class Kernel extends CoreKernel
             $__mimein = Request::getMimeByAlias($mimein);
             throw new InvalidRequestMimeException("{$_mimein} (NEED => {$__mimein})");
         }
-
         $wrapout = Route::get('wrapout');
         if ($wrapout && (! Response::hasWrapper($wrapout))) {
             throw new ResponseWrapperNotExists("{$wrapout} (WRAPOUT)");

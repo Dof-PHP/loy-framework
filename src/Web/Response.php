@@ -23,7 +23,8 @@ class Response extends Facade
         $result  = self::setWrapperOnResult($result, self::getWrapper($wrapout));
 
         try {
-            self::getInstance()->setMimeAlias(Route::get('mimeout'))->send($result);
+            $mimeout = Route::get('suffix.current') ?: Route::get('mimeout');
+            self::getInstance()->setMimeAlias($mimeout)->send($result);
         } catch (Exception | Error $e) {
             Response::new()
             ->setStatus(500)

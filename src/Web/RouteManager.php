@@ -17,18 +17,37 @@ final class RouteManager
     private static $routes  = [];
     private static $dirs    = [];
 
-    public static function findRouteByUriAndMethod(string $uri, string $method, ?string $mimein)
+    public static function findRouteByUriAndMethod(string $uri, string $method, ?array $mimes = [])
     {
         $route = self::$routes[$uri][$method] ?? false;
         if ($route) {
             return $route;
         }
-        if ($mimein) {
-            $arr = array_trim(explode(".{$mimein}", $uri));
-            $uri = implode('/', $arr);
-            $route = self::$routes[$uri][$method] ?? false;
-            if ($route) {
-                return $route;
+        $hasSuffix = false;
+        foreach ($mimes as $alias) {
+            $_length = mb_strlen($uri);
+            if (false === $_length) {
+                continue;
+            }
+            $_alias = ".{$alias}";
+            $length = mb_strlen($_alias);
+            if (false === $length) {
+                continue;
+            }
+            $suffix = mb_substr($uri, -$length, $length);
+            if ($suffix === $_alias) {
+                $hasSuffix = $alias;
+                $uri   = mb_substr($uri, 0, ($_length - $length));
+                $route = self::$routes[$uri][$method] ?? false;
+                if (! $route) {
+                    break;
+                }
+                if (in_array($alias, ($route['suffix']['allow'] ?? []))) {
+                    $route['suffix']['current'] = $alias;
+                    return $route;
+                }
+
+                return false;
             }
         }
 
@@ -44,16 +63,24 @@ final class RouteManager
             }
             $try = join('/', array_reverse($arr));
             $route = self::$routes[$try][$method] ?? false;
-            if ($route) {
-                $params = $route['params']['raw'] ?? [];
-                if (count($params) === count($replaced)) {
-                    $params   = array_keys($params);
-                    $replaced = array_reverse($replaced);
-                    $route['params']['kv']  = array_combine($params, $replaced);
-                    $route['params']['res'] = $replaced;
-                }
-                return $route;
+            if (! $route) {
+                continue;
             }
+            if ($hasSuffix) {
+                if (! in_array($hasSuffix, ($route['suffix']['allow'] ?? []))) {
+                    return false;
+                }
+                $route['suffix']['current'] = $hasSuffix;
+            }
+
+            $params = $route['params']['raw'] ?? [];
+            if (count($params) === count($replaced)) {
+                $params   = array_keys($params);
+                $replaced = array_reverse($replaced);
+                $route['params']['kv']  = array_combine($params, $replaced);
+                $route['params']['res'] = $replaced;
+            }
+            return $route;
         }
 
         return false;
@@ -87,6 +114,7 @@ final class RouteManager
         $routePrefix    = $ofClass['ROUTE']     ?? '';
         $middlewares    = $ofClass['PIPE']      ?? [];
         $defaultVerbs   = $ofClass['VERB']      ?? [];
+        $defaultSuffix  = $ofClass['SUFFIX']    ?? [];
         $defaultMimein  = $ofClass['MIMEIN']    ?? null;
         $defaultMimeout = $ofClass['MIMEOUT']   ?? null;
         $defaultWrapin  = $ofClass['WRAPIN']    ?? null;
@@ -106,6 +134,7 @@ final class RouteManager
             $wrapin  = $attrs['WRAPIN']  ?? $defaultWrapin;
             $wrapout = $attrs['WRAPOUT'] ?? $defaultWrapout;
             $wraperr = $attrs['WRAPERR'] ?? $defaultWraperr;
+            $suffix  = $attrs['SUFFIX']  ?? $defaultSuffix;
 
             $params  = [];
             $middles = $attrs['PIPE'] ?? [];
@@ -147,6 +176,10 @@ final class RouteManager
 
                 self::$routes[$urlpath][$verb] = [
                     'urlpath' => $urlpath,
+                    'suffix'  => [
+                        'allow'   => $suffix,
+                        'current' => null,
+                    ],
                     'verb'    => $verb,
                     'alias'   => $alias,
                     'class'   => $classNamespace,
@@ -171,6 +204,11 @@ final class RouteManager
     public static function filterAnnotationPipe(string $val) : array
     {
         return array_trim(explode(',', trim($val)));
+    }
+
+    public static function filterAnnotationSuffix(string $val) : array
+    {
+        return array_trim(explode(',', strtolower(trim($val))));
     }
 
     public static function filterAnnotationVerb(string $val) : array
