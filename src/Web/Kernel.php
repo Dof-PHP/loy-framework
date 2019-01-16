@@ -58,36 +58,22 @@ final class Kernel extends CoreKernel
 
     private static function processRequest()
     {
-        $method = Request::getMethod();
-        $uri    = Request::getUri();
-        $route  = RouteManager::findRouteByUriAndMethod($uri, $method);
-        if ($route === false) {
-            throw new RouteNotExistsException("{$method} {$uri}");
-        }
-        Route::setData($route);
-
-        $mimein = Route::get('mimein');
-        if ($mimein && (! Request::isMimeAlias($mimein))) {
-            $_mimein  = Request::getMimeShort();
-            $__mimein = Request::getMimeByAlias($mimein);
-            throw new InvalidRequestMimeException("{$_mimein} (NEED => {$__mimein})");
-        }
+        self::findAndSetRoute();
+        self::processRoutePipes();
+        self::validateRoute();
 
         $class  = Route::get('class');
         $method = Route::get('method.name');
         if (! class_exists($class)) {
             throw new PortNotExistException($class);
         }
-        $port = new $class;
-        if (! method_exists($port, $method)) {
+        if (! method_exists($class, $method)) {
             throw new PortMethodNotExistException("{$class}@{$method}");
         }
 
-        self::processRoutePipes();
-
         try {
             $params = self::buildPortMethodParameters();
-            $result = call_user_func_array([$port, $method], $params);
+            $result = call_user_func_array([(new $class), $method], $params);
 
             Response::send($result, false);
         } catch (Exception | Error $e) {
@@ -125,6 +111,36 @@ final class Kernel extends CoreKernel
             } catch (Exception | Error $e) {
                 throw new PipeThroughFailedException($pipe." ({$e->getMessage()})");
             }
+        }
+    }
+
+    private static function findAndSetRoute()
+    {
+        $method = Request::getMethod();
+        $uri    = Request::getUri();
+        $route  = RouteManager::findRouteByUriAndMethod($uri, $method);
+        if ($route === false) {
+            throw new RouteNotExistsException("{$method} {$uri}");
+        }
+        Route::setData($route);
+    }
+
+    private static function validateRoute()
+    {
+        $mimein = Route::get('mimein');
+        if ($mimein && (! Request::isMimeAlias($mimein))) {
+            $_mimein  = Request::getMimeShort();
+            $__mimein = Request::getMimeByAlias($mimein);
+            throw new InvalidRequestMimeException("{$_mimein} (NEED => {$__mimein})");
+        }
+
+        $wrapout = Route::get('wrapout');
+        if ($wrapout && (! Response::hasWrapper($wrapout))) {
+            throw new ResponseWrapperNotExists("{$wrapout} (WRAPOUT)");
+        }
+        $wraperr = Route::get('wraperr');
+        if ($wraperr && (! Response::hasWrapper($wraperr))) {
+            throw new ResponseWrapperNotExists("{$wraperr} (WRAPERR)");
         }
     }
 

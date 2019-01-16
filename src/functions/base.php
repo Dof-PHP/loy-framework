@@ -235,6 +235,35 @@ if (! function_exists('array_trim')) {
         return $arr;
     }
 }
+if (! function_exists('stringify')) {
+    function stringify($value)
+    {
+        if (is_scalar($value)) {
+            return (string) $value;
+        }
+        if (is_array($value)) {
+            return enjson($value);
+        }
+        if (is_object($value)) {
+            if (method_exists($value, '__toString')) {
+                $res = $value->__toString();
+                if (is_scalar($res)) {
+                    return (string) $res;
+                }
+            }
+            if (method_exists($value, '__toArray')) {
+                $res = $value->__toArray();
+                if (is_array($res)) {
+                    return ensjson($res);
+                }
+            }
+
+            return get_class($value);
+        }
+
+        return '__UNSTRINGABLE_VALUE__';
+    }
+}
 if (! function_exists('string_literal')) {
     function string_literal($val)
     {

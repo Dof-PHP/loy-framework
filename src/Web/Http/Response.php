@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web\Http;
 
-use Loy\Framework\Core\Exception\InvalidXmlException;
 use Loy\Framework\Web\Http\Http;
 
 class Response
@@ -133,7 +132,11 @@ class Response
     {
         $xml = enxml($body ?: $this->body);
         if (true !== ($error = is_xml($xml))) {
-            throw new InvalidXmlException("{$error}");
+            $this->setMimeAlias('json');
+            return $this->body = enjson([
+                'error' => $body,
+                'extra'  => 'InvalidOriginAsXML',
+            ]);
         }
             
         return $this->body = $xml;

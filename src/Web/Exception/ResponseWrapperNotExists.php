@@ -8,8 +8,8 @@ use Loy\Framework\Web\Exception\BaseWebException;
 
 class ResponseWrapperNotExists extends BaseWebException
 {
-    public function __construct(string $call, int $code = 500)
+    public function __construct(string $wrapper, int $code = 500)
     {
-        parent::__construct($call, $code);
+        parent::__construct($wrapper, $code);
     }
 }

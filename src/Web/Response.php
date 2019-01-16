@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Loy\Framework\Web;
 
 use Closure;
-use Loy\Framework\Web\Http\Response as Instance;
+use Exception;
+use Error;
 use Loy\Framework\Base\Facade;
+use Loy\Framework\Web\Http\Response as Instance;
 use Loy\Framework\Web\Route;
 
 class Response extends Facade
@@ -18,13 +20,20 @@ class Response extends Facade
     public static function send($result, bool $error = false)
     {
         $wrapout = $error ? Route::get('wraperr') : Route::get('wrapout');
-        if ($wrapout && (! self::hasWrapper($wrapout))) {
-            throw new ResponseWrapperNotExists($wrapout);
+        $result  = self::setWrapperOnResult($result, self::getWrapper($wrapout));
+
+
+        try {
+            self::getInstance()->setMimeAlias(Route::get('mimeout'))->send($result);
+        } catch (Exception | Error $e) {
+            Response::new()
+            ->setStatus(500)
+            ->send(self::setWrapperOnResult([
+                objectname($e),
+                $e->getCode(),
+                $e->getMessage(),
+            ], Route::get('wraperr')));
         }
-
-        $result = self::setWrapperOnResult($result, self::getWrapper($wrapout));
-
-        self::getInstance()->setMimeAlias(Route::get('mimeout'))->send($result);
     }
 
     public static function setWrapperOnResult($result, $wrapper = null)
