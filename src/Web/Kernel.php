@@ -12,10 +12,18 @@ use Loy\Framework\Base\TypeHint;
 use Loy\Framework\Base\Exception\InvalidProjectRootException;
 use Loy\Framework\Base\Exception\TypeHintConverterNotExistsException;
 use Loy\Framework\Base\Exception\TypeHintConvertException;
+use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
+use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
+use Loy\Framework\Base\Exception\DuplicateRouteDefinitionException;
+use Loy\Framework\Base\Exception\DuplicateRouteAliasDefinitionException;
 use Loy\Framework\Web\RouteManager;
 use Loy\Framework\Web\Request;
 use Loy\Framework\Web\Response;
 use Loy\Framework\Web\Route;
+use Loy\Framework\Web\Exception\InvalidRouteDirException;
+use Loy\Framework\Web\Exception\InvalidHttpPortNamespaceException;
+use Loy\Framework\Web\Exception\DuplicateRouteDefinitionException as DuplicateRouteDefinitionExceptionWeb;
+use Loy\Framework\Web\Exception\DuplicateRouteAliasDefinitionException as DuplicateRouteAliasDefinitionWeb;
 use Loy\Framework\Web\Exception\PipeNotExistsException;
 use Loy\Framework\Web\Exception\FrameworkCoreException;
 use Loy\Framework\Web\Exception\PipeThroughFailedException;
@@ -53,7 +61,17 @@ final class Kernel extends CoreKernel
 
     public static function compileRoutes()
     {
-        RouteManager::compile(DomainManager::getDomains());
+        try {
+            RouteManager::compile(DomainManager::getDomains());
+        } catch (DuplicateRouteDefinitionException $e) {
+            throw new DuplicateRouteDefinitionExceptionWeb($e->getMessage());
+        } catch (DuplicateRouteAliasDefinitionException $e) {
+            throw new DuplicateRouteAliasDefinitionExceptionWeb($e->getMessage());
+        } catch (InvalidAnnotationDirException $e) {
+            throw new InvalidRouteDirException($e->getMessage());
+        } catch (InvalidAnnotationNamespaceException $e) {
+            throw new InvalidHttpPortNamespaceException($e->getMessage());
+        }
     }
 
     private static function processRequest()

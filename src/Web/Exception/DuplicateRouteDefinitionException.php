@@ -10,6 +10,6 @@ class DuplicateRouteDefinitionException extends BaseWebException
 {
     public function __construct(string $route, int $code = 500)
     {
-        paren::__construct($route, $code);
+        parent::__construct($route, $code);
     }
 }

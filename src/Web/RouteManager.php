@@ -5,12 +5,8 @@ declare(strict_types=1);
 namespace Loy\Framework\Web;
 
 use Loy\Framework\Base\Annotation;
-use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
-use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
-use Loy\Framework\Web\Exception\InvalidRouteDirException;
-use Loy\Framework\Web\Exception\InvalidHttpPortNamespaceException;
-use Loy\Framework\Web\Exception\DuplicateRouteDefinitionException;
-use Loy\Framework\Web\Exception\DuplicateRouteAliasDefinitionException;
+use Loy\Framework\Base\Exception\DuplicateRouteDefinitionException;
+use Loy\Framework\Base\Exception\DuplicateRouteAliasDefinitionException;
 
 final class RouteManager
 {
@@ -65,18 +61,16 @@ final class RouteManager
             return join(DIRECTORY_SEPARATOR, [$item, self::ROUTE_DIR]);
         }, $dirs);
 
-        try {
-            Annotation::parseClassDirs(self::$dirs, self::REGEX, function ($annotations) {
-                if ($annotations) {
-                    list($ofClass, $ofMethods) = $annotations;
-                    self::assembleRoutesFromAnnotations($ofClass, $ofMethods);
-                }
-            }, __CLASS__);
-        } catch (InvalidAnnotationDirException $e) {
-            throw new InvalidRouteDirException($e->getMessage());
-        } catch (InvalidAnnotationNamespaceException $e) {
-            throw new InvalidHttpPortNamespaceException($e->getMessage());
-        }
+        // Excetions may thrown but let invoker to catch for different scenarios
+        //
+        // use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
+        // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
+        Annotation::parseClassDirs(self::$dirs, self::REGEX, function ($annotations) {
+            if ($annotations) {
+                list($ofClass, $ofMethods) = $annotations;
+                self::assembleRoutesFromAnnotations($ofClass, $ofMethods);
+            }
+        }, __CLASS__);
     }
 
     public static function assembleRoutesFromAnnotations(array $ofClass, array $ofMethods)

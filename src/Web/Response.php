@@ -22,7 +22,6 @@ class Response extends Facade
         $wrapout = $error ? Route::get('wraperr') : Route::get('wrapout');
         $result  = self::setWrapperOnResult($result, self::getWrapper($wrapout));
 
-
         try {
             self::getInstance()->setMimeAlias(Route::get('mimeout'))->send($result);
         } catch (Exception | Error $e) {
