@@ -4,21 +4,12 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web\Exception;
 
-use Loy\Framework\Web\Response;
-use Exception;
+use Loy\Framework\Web\Exception\BaseWebException;
 
-class BadHttpPortCallException extends Exception
+class BadHttpPortCallException extends BaseWebException
 {
     public function __construct(string $call, int $code = 500)
     {
-        $this->message = $call;
-        $this->code    = $code;
-
-        $error = join(':', [objectname($this), $this->message]);
-
-        Response::setMimeAlias('text')
-            ->setBody($error)
-            ->setStatus($this->code)
-            ->send();
+        parent::__construct($call, $code);
     }
 }

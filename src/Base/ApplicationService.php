@@ -6,9 +6,11 @@ namespace Loy\Framework\Base;
 
 abstract class ApplicationService
 {
-    protected $__code = 200;
-    protected $__info = null;
-    protected $__data = null;
+    protected $__code  = 200;
+    protected $__info  = null;
+    protected $__data  = null;
+    protected $__meta  = null;
+    protected $__extra = null;
 
     public function exec()
     {
@@ -27,9 +29,11 @@ abstract class ApplicationService
     public function __toArray() : array
     {
         return [
-            'code' => $this->__code,
-            'info' => $this->__info,
-            'data' => $this->__data,
+            'code'  => $this->__code,
+            'info'  => $this->__info,
+            'data'  => $this->__data,
+            'meta'  => $this->__meta,
+            'extra' => $this->__extra,
         ];
     }
 
