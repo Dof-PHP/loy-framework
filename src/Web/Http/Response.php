@@ -135,8 +135,8 @@ class Response
             $this->setStatus(500)->setMimeAlias('json');
 
             return $this->body = enxml([
-                'error' => stringify($body),
-                'extra' => 'InvalidOriginAsXML',
+                'error' => 'InvalidOriginAsXML',
+                'extra' => stringify($body),
             ]);
         }
             
