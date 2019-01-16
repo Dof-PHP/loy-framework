@@ -5,11 +5,7 @@ declare(strict_types=1);
 namespace Loy\Framework\Web;
 
 use Loy\Framework\Base\Annotation;
-use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
-use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
-use Loy\Framework\Web\Exception\InvalidPipeDirException;
-use Loy\Framework\Web\Exception\InvalidHttpPipeNamespaceException;
-use Loy\Framework\Web\Exception\DuplicatePipeDefinitionException;
+use Loy\Framework\Base\Exception\DuplicatePipeDefinitionException;
 
 final class PipeManager
 {
@@ -29,18 +25,16 @@ final class PipeManager
             return join(DIRECTORY_SEPARATOR, [$item, self::PIPE_DIR]);
         }, $dirs);
 
-        try {
-            Annotation::parseClassDirs(self::$dirs, self::REGEX, function ($annotations) {
-                if ($annotations) {
-                    list($ofClass, $ofMethods) = $annotations;
-                    self::assemblePipesFromAnnotations($ofClass, $ofMethods);
-                }
-            }, __CLASS__);
-        } catch (InvalidAnnotationDirException $e) {
-            throw new InvalidPipeDirException($e->getMessage());
-        } catch (InvalidAnnotationNamespaceException $e) {
-            throw new InvalidHttpPipeNamespaceException($e->getMessage());
-        }
+        // Excetions may thrown but let invoker to catch for different scenarios
+        //
+        // use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
+        // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
+        Annotation::parseClassDirs(self::$dirs, self::REGEX, function ($annotations) {
+            if ($annotations) {
+                list($ofClass, $ofMethods) = $annotations;
+                self::assemblePipesFromAnnotations($ofClass, $ofMethods);
+            }
+        }, __CLASS__);
     }
 
     public static function assemblePipesFromAnnotations(array $ofClass, array $ofMethods)

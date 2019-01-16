@@ -36,6 +36,8 @@ use Loy\Framework\Web\Exception\PortMethodNotExistException;
 use Loy\Framework\Web\Exception\PortMethodParameterMissingException;
 use Loy\Framework\Web\Exception\BrokenHttpPortMethodDefinitionException;
 use Loy\Framework\Web\Exception\ResponseWrapperNotExists;
+use Loy\Framework\Web\Exception\InvalidPipeDirException;
+use Loy\Framework\Web\Exception\InvalidHttpPipeNamespaceException;
 
 final class Kernel extends CoreKernel
 {
@@ -56,7 +58,11 @@ final class Kernel extends CoreKernel
 
     public static function compilePipes()
     {
-        PipeManager::compile(DomainManager::getDomains());
+        try {
+            PipeManager::compile(DomainManager::getDomains());
+        } catch (InvalidAnnotationDirException $e) {
+        } catch (InvalidAnnotationNamespaceException $e) {
+        }
     }
 
     public static function compileRoutes()
