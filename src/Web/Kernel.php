@@ -146,8 +146,9 @@ final class Kernel extends CoreKernel
 
     private static function buildPortMethodParameters() : array
     {
-        $paramsMethod = Route::get('method.params');
-        $paramsRoute  = Route::get('params');
+        $route = Route::getData();
+        $paramsMethod = $route['method']['params'] ?? [];
+        $paramsRoute  = $route['params'] ?? [];
         if ((! $paramsMethod) && (! $paramsRoute)) {
             return [];
         }
@@ -156,12 +157,14 @@ final class Kernel extends CoreKernel
         $method = Route::get('method.name');
         $params = [];
         $vflag  = '$';
+        $count  = count($paramsMethod);
         foreach ($paramsMethod as $idx => $paramMethod) {
-            $name = $paramMethod['name'] ?? '';
-            $type = $paramMethod['type']['type'] ?? false;
-            $builtin  = $paramMethod['type']['builtin'] ?? false;
-            $optional = $paramMethod['optional'] ?? false;
-            $error    = "{$class}@{$method}(... {$type} {$vflag}{$name} ...)";
+            $name  = $paramMethod['name'] ?? '';
+            $type  = $paramMethod['type']['type'] ?? false;
+            $error = "{$class}@{$method}(... {$type} {$vflag}{$name} ...)";
+            $builtin    = $paramMethod['type']['builtin'] ?? false;
+            $optional   = $paramMethod['optional'] ?? false;
+            $hasDefault = $paramMethod['default']['status'] ?? false;
 
             $paramExistsInRouteByName = array_key_exists($name, ($paramsRoute['raw'] ?? []));
             $paramExistsInRouteByIdx  = isset($paramsRoute['res'][$idx]);
@@ -183,16 +186,15 @@ final class Kernel extends CoreKernel
                 $params[] = $val;
                 continue;
             }
-            if ($optional) {
+            if ($optional && (($idx + 1) !== $count)) {
                 break;
-            }
-            if ($builtin) {
-                throw new PortMethodParameterMissingException($error);
             }
             try {
                 $params[] = new $type;
             } catch (Exception | Error $e) {
-                throw new BrokenHttpPortMethodDefinitionException("{$error} => {$e->getMessage()}");
+                throw ($builtin || (! $optional) || (! $hasDefault))
+                ? new PortMethodParameterMissingException($error)
+                : new BrokenHttpPortMethodDefinitionException("{$e->getMessage()} ({$error})");
             }
         }
 

@@ -28,6 +28,11 @@ class Collection implements
         $this->keys   = array_keys($data);
     }
 
+    public function getKeys() : array
+    {
+        return $this->keys;
+    }
+
     public function getData() : array
     {
         return $this->data;

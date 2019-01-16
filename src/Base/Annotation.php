@@ -102,15 +102,20 @@ class Annotation
             foreach ($method->getParameters() as $parameter) {
                 $type    = $parameter->hasType() ? $parameter->getType()->getName() : null;
                 $builtin = $type ? $parameter->getType()->isBuiltin() : null;
-                $default = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
+                $hasDefault = $parameter->isDefaultValueAvailable();
+                $defaultVal = $hasDefault ? $parameter->getDefaultValue() : null;
                 $ofMethods[$method->name]['parameters'][] = [
                     'name' => $parameter->getName(),
                     'type' => [
                         'type'    => $type,
                         'builtin' => $builtin,
                     ],
+                    'nullable' => $parameter->allowsNull(),
                     'optional' => $parameter->isOptional(),
-                    'default'  => $default,
+                    'default'  => [
+                        'status' => $hasDefault,
+                        'value'  => $defaultVal,
+                    ]
                 ];
             }
         }
