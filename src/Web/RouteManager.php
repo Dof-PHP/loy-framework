@@ -38,6 +38,7 @@ final class RouteManager
             if ($suffix === $_alias) {
                 $hasSuffix = $alias;
                 $uri   = mb_substr($uri, 0, ($_length - $length));
+                $uri   = join('/', array_filter(explode('/', $uri)));
                 $route = self::$routes[$uri][$method] ?? false;
                 if (! $route) {
                     break;
