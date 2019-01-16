@@ -132,7 +132,8 @@ class Response
     {
         $xml = enxml($body ?: $this->body);
         if (true !== ($error = is_xml($xml))) {
-            $this->setMimeAlias('json');
+            $this->setStatus(500)->setMimeAlias('json');
+
             return $this->body = enjson([
                 'error' => $body,
                 'extra'  => 'InvalidOriginAsXML',
