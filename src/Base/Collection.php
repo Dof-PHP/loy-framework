@@ -21,7 +21,7 @@ class Collection implements
     private $count   = -1;
     private $pointer = 0;
 
-    public function __construct(array $data, $origin = null)
+    public function __construct(array $data = [], $origin = null)
     {
         $this->origin = $origin;
         $this->data   = $data;

@@ -17,7 +17,40 @@ class Request
 
     public function getDomain() : ?string
     {
-        return $_SERVER['HTTP_HOST'] ?? null;
+        return $this->getOrSet('domain', function () {
+            $host = $this->getHost();
+            if (filter_var($host, FILTER_VALIDATE_IP)) {
+                return $host;
+            }
+            $arr = explode('.', $host);
+            $cnt = count($arr);
+            if ($cnt === 1) {
+                return $host;
+            }
+
+            $domain = '';
+            for ($i = $cnt - 1; $i >= 0; --$i) {
+                if ($i == ($cnt - 1)) {
+                    $domain = $arr[$i];
+                    continue;
+                }
+                if ($i == ($cnt - 2)) {
+                    $domain = $arr[$i].'.'.$domain;
+                    continue;
+                }
+
+                break;
+            }
+
+            return $domain;
+        });
+    }
+
+    public function getHost() : ?string
+    {
+        return $this->getOrSet('host', function () {
+            return $_SERVER['SERVER_NAME'] ?? ($_SERVER['HTTP_HOST'] ?? null);
+        });
     }
 
     public function getMime() : ?string
@@ -45,20 +78,51 @@ class Request
 
     public function getMethod() : string
     {
-        return $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN';
+        return $this->getOrSet('method', function () {
+            return $_SERVER['REQUEST_METHOD'] ?? null;
+        });
+    }
+
+    public function getQueryString() : string
+    {
+        return $this->getOrSet('queryString', function () {
+            $res = $_SERVER['QUERY_STRING'] ?? null;
+            if (! is_null($res)) {
+                return $res;
+            }
+
+            $uri = $this->getRequestUri();
+            $res = (string) parse_url("http://loy{$uri}", PHP_URL_QUERY);
+
+            return $res;
+        });
     }
 
     public function getUri() : string
     {
-        $uri = self::getUriRaw();
-        $uri = join('/', array_filter(explode('/', $uri)));
+        return $this->getOrSet('uri', function () {
+            $uri = $this->getUriRaw();
+            $uri = join('/', array_filter(explode('/', $uri)));
 
-        return $uri ?: '/';
+            return $uri ?: '/';
+        });
+    }
+
+    public function getRequestUri() : string
+    {
+        return $this->getOrSet('uriRequest', function () {
+            return urldecode($_SERVER['REQUEST_URI'] ?? '/');
+        });
     }
 
     public function getUriRaw() : string
     {
-        return urldecode($_SERVER['REQUEST_URI'] ?? 'UNKNOWN');
+        return $this->getOrSet('uriRaw', function () {
+            $uri = $this->getRequestUri();
+            $uri = (string) parse_url("http://loy{$uri}", PHP_URL_PATH);
+
+            return $uri;
+        });
     }
 
     public function isMimeAlias(string $alias) : bool
