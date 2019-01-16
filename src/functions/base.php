@@ -11,7 +11,11 @@ if (! function_exists('pt')) {
         }
 
         return new class {
-            public function die()
+            public function __get($key)
+            {
+                exit;
+            }
+            public function __call($method, $argvs)
             {
                 exit;
             }
@@ -22,7 +26,11 @@ if (! function_exists('pt')) {
     {
         var_dump(...$vars);
         return new class {
-            public function die()
+            public function __get($key)
+            {
+                exit;
+            }
+            public function __call($method, $argvs)
             {
                 exit;
             }

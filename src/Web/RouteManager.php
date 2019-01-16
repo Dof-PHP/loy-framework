@@ -131,6 +131,7 @@ final class RouteManager
             $alias   = $attrs['ALIAS']   ?? null;
             $verbs   = $attrs['VERB']    ?? $defaultVerbs;
             $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
+            $mimein  = ($mimein === '_') ? null : $mimein;
             $mimeout = $attrs['MIMEOUT'] ?? $defaultMimeout;
             $wrapin  = $attrs['WRAPIN']  ?? $defaultWrapin;
             $wrapout = $attrs['WRAPOUT'] ?? $defaultWrapout;

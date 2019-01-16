@@ -10,9 +10,40 @@ class Request
 {
     use Http;
 
+    public function input(string $key = null)
+    {
+        $input = $this->getInput();
+
+        if (is_array($input)) {
+            return $key ? ($input[$key] ?? null) : $input;
+        }
+
+        return $key ? null : $input;
+    }
+
     public function get(string $key)
     {
-        return 'getting '.$key;
+        $get = $this->getGet();
+
+        return $get[$key] ?? null;
+    }
+
+    public function getInput()
+    {
+        return $this->getOrSet('input', function () {
+            $input = file_get_contents('php://input');
+            // $mime  = $this->getMimeShort();
+            // $this->convertInputToArray($input, $mime);
+
+            return $input;
+        });
+    }
+
+    public function getGet() : array
+    {
+        return $this->getOrSet('get', function () {
+            return $_GET;
+        });
     }
 
     public function getDomain() : ?string
