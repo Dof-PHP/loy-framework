@@ -17,11 +17,19 @@ final class RouteManager
     private static $routes  = [];
     private static $dirs    = [];
 
-    public static function findRouteByUriAndMethod(string $uri, string $method)
+    public static function findRouteByUriAndMethod(string $uri, string $method, ?string $mimein)
     {
         $route = self::$routes[$uri][$method] ?? false;
         if ($route) {
             return $route;
+        }
+        if ($mimein) {
+            $arr = array_trim(explode(".{$mimein}", $uri));
+            $uri = implode('/', $arr);
+            $route = self::$routes[$uri][$method] ?? false;
+            if ($route) {
+                return $route;
+            }
         }
 
         $arr = $_arr = array_reverse(explode('/', $uri));

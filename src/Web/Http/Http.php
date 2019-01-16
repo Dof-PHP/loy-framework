@@ -14,6 +14,14 @@ trait Http
         'xml'  => 'application/xml',
     ];
 
+    public function getMimeAlias() : ?string
+    {
+        $mime  = $this->getMime();
+        $alias = array_search($mime, self::$mimes);
+
+        return ($alias === false) ? null : $alias;
+    }
+
     public function getMimeByAlias(string $alias) : ?string
     {
         return self::$mimes[$alias] ?? '?';

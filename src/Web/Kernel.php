@@ -148,7 +148,8 @@ final class Kernel extends CoreKernel
     {
         $method = Request::getMethod();
         $uri    = Request::getUri();
-        $route  = RouteManager::findRouteByUriAndMethod($uri, $method);
+        $mimein = Request::getMimeAlias();
+        $route  = RouteManager::findRouteByUriAndMethod($uri, $method, $mimein);
         if ($route === false) {
             throw new RouteNotExistsException("{$method} {$uri}");
         }

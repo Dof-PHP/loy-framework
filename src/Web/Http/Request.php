@@ -20,17 +20,27 @@ class Request
         return $_SERVER['HTTP_HOST'] ?? null;
     }
 
+    public function getMime() : ?string
+    {
+        return $this->getMimeShort();
+    }
+
     public function getMimeShort() : ?string
     {
-        $mime  = explode(';', $this->getMime());
+        if (! ($mime = $this->getMimeLong())) {
+            return null;
+        }
+        $mime  = explode(';', $mime);
         $short = $mime[0] ?? false;
 
         return ($short === false) ? null : trim($short);
     }
 
-    public function getMime() : string
+    public function getMimeLong() : ?string
     {
-        return trim(strtolower($_SERVER['HTTP_CONTENT_TYPE'] ?? null));
+        $mime = $_SERVER['HTTP_CONTENT_TYPE'] ?? false;
+
+        return $mime ? trim(strtolower($mime)) : null;
     }
 
     public function getMethod() : string
