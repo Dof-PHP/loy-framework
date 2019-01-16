@@ -16,6 +16,7 @@ use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
 use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
 use Loy\Framework\Base\Exception\DuplicateRouteDefinitionException;
 use Loy\Framework\Base\Exception\DuplicateRouteAliasDefinitionException;
+use Loy\Framework\Base\Exception\DuplicatePipeDefinitionException;
 use Loy\Framework\Web\RouteManager;
 use Loy\Framework\Web\Request;
 use Loy\Framework\Web\Response;
@@ -36,8 +37,9 @@ use Loy\Framework\Web\Exception\PortMethodNotExistException;
 use Loy\Framework\Web\Exception\PortMethodParameterMissingException;
 use Loy\Framework\Web\Exception\BrokenHttpPortMethodDefinitionException;
 use Loy\Framework\Web\Exception\ResponseWrapperNotExists;
-use Loy\Framework\Web\Exception\InvalidPipeDirException;
+use Loy\Framework\Web\Exception\InvalidHttpPipeDirException;
 use Loy\Framework\Web\Exception\InvalidHttpPipeNamespaceException;
+use Loy\Framework\Web\Exception\DuplicatePipeDefinitionException as DuplicatePipeDefinitionExceptionWeb;
 
 final class Kernel extends CoreKernel
 {
@@ -60,8 +62,12 @@ final class Kernel extends CoreKernel
     {
         try {
             PipeManager::compile(DomainManager::getDomains());
+        } catch (DuplicatePipeDefinitionException $e) {
+            throw new DuplicatePipeDefinitionExceptionWeb($e->getMessage());
         } catch (InvalidAnnotationDirException $e) {
+            throw new InvalidHttpPipeDirException($e->getMessage());
         } catch (InvalidAnnotationNamespaceException $e) {
+            throw new InvalidHttpPipeNamespaceException($e->getMessage());
         }
     }
 

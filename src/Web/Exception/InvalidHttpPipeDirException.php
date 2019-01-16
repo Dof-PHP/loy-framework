@@ -6,7 +6,7 @@ namespace Loy\Framework\Web\Exception;
 
 use Loy\Framework\Web\Exception\BaseWebException;
 
-class InvalidPipeDirException extends BaseWebException
+class InvalidHttpPipeDirException extends BaseWebException
 {
     public function __construct(string $dir, int $code = 500)
     {
