@@ -28,9 +28,16 @@ class Collection implements
         $this->keys   = array_keys($data);
     }
 
-    public function get(string $key)
+    public function getData() : array
     {
-        return $this->data[$key] ?? null;
+        return $this->data;
+    }
+
+    public function get($key)
+    {
+        if (is_scalar($key)) {
+            return $this->data[(string) $key] ?? null;
+        }
     }
 
     public function set(string $key, $value)

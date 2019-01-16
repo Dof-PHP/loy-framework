@@ -7,17 +7,29 @@ namespace Loy\Framework\Web;
 use Closure;
 use Loy\Framework\Web\Http\Response as Instance;
 use Loy\Framework\Base\Facade;
+use Loy\Framework\Web\Route;
 
 class Response extends Facade
 {
-    public static $singleton = true;
+    public static $singleton    = true;
     protected static $namespace = Instance::class;
+    protected static $wrappers  = [];
 
-    protected static $wrappers = [];
+    public static function send($result, bool $error = false)
+    {
+        $wrapout = $error ? Route::get('wraperr') : Route::get('wrapout');
+        if ($wrapout && (! self::hasWrapper($wrapout))) {
+            throw new ResponseWrapperNotExists($wrapout);
+        }
+
+        $result = self::setWrapperOnResult($result, self::getWrapper($wrapout));
+
+        self::getInstance()->setMimeAlias(Route::get('mimeout'))->send($result);
+    }
 
     public static function setWrapperOnResult($result, $wrapper = null)
     {
-        if (is_null($wrapper)) {
+        if ((! $wrapper) || is_string($result)) {
             return $result;
         }
         if (is_string($wrapper)) {
@@ -52,12 +64,12 @@ class Response extends Facade
         return $data;
     }
 
-    public static function hasWrapper(string $key) : bool
+    public static function hasWrapper(string $key = null) : bool
     {
-        return isset(self::$wrappers[$key]) && is_array(self::$wrappers[$key]);
+        return $key && isset(self::$wrappers[$key]) && is_array(self::$wrappers[$key]);
     }
 
-    public static function getWrapper(string $key) : ?array
+    public static function getWrapper(string $key = null) : ?array
     {
         return self::$wrappers[$key] ?? null;
     }

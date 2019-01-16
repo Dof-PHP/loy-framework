@@ -21,6 +21,7 @@ use Loy\Framework\Web\Exception\FrameworkCoreException;
 use Loy\Framework\Web\Exception\PipeThroughFailedException;
 use Loy\Framework\Web\Exception\RouteNotExistsException;
 use Loy\Framework\Web\Exception\InvalidRequestMimeException;
+use Loy\Framework\Web\Exception\InvalidUrlParameterException;
 use Loy\Framework\Web\Exception\BadHttpPortCallException;
 use Loy\Framework\Web\Exception\PortNotExistException;
 use Loy\Framework\Web\Exception\PortMethodNotExistException;
@@ -55,7 +56,7 @@ final class Kernel extends CoreKernel
         RouteManager::compile(DomainManager::getDomains());
     }
 
-    public static function processRequest()
+    private static function processRequest()
     {
         $method = Request::getMethod();
         $uri    = Request::getUri();
@@ -65,15 +66,15 @@ final class Kernel extends CoreKernel
         }
         Route::setData($route);
 
-        $mimein = $route['mimein'] ?? false;
+        $mimein = Route::get('mimein');
         if ($mimein && (! Request::isMimeAlias($mimein))) {
             $_mimein  = Request::getMimeShort();
             $__mimein = Request::getMimeByAlias($mimein);
             throw new InvalidRequestMimeException("{$_mimein} (NEED => {$__mimein})");
         }
 
-        $class  = $route['class']  ?? '-';
-        $method = $route['method']['name'] ?? '-';
+        $class  = Route::get('class');
+        $method = Route::get('method.name');
         if (! class_exists($class)) {
             throw new PortNotExistException($class);
         }
@@ -82,8 +83,26 @@ final class Kernel extends CoreKernel
             throw new PortMethodNotExistException("{$class}@{$method}");
         }
 
-        $pipes = PipeManager::getPipes();
-        foreach (($route['pipes'] ?? []) as $alias) {
+        self::processRoutePipes();
+
+        try {
+            $params = self::buildPortMethodParameters();
+            $result = call_user_func_array([$port, $method], $params);
+
+            Response::send($result, false);
+        } catch (Exception | Error $e) {
+            throw new BadHttpPortCallException("{$class}@{$method}: {$e->getMessage()}");
+        }
+    }
+
+    private static function processRoutePipes()
+    {
+        $pipes   = PipeManager::getPipes();
+        $aliases = Route::get('pipes');
+        if (! $aliases) {
+            return;
+        }
+        foreach ($aliases as $alias) {
             $pipe = $pipes[$alias] ?? false;
             if (! $pipe) {
                 throw new PipeNotExistsException($alias.' (ALIAS)');
@@ -91,13 +110,12 @@ final class Kernel extends CoreKernel
             if (! class_exists($pipe)) {
                 throw new PipeNotExistsException($pipe.' (NAMESPACE)');
             }
-            $_pipe = new $pipe;
-            if (! method_exists($_pipe, self::PIPE_HANDLER)) {
+            if (! method_exists($pipe, self::PIPE_HANDLER)) {
                 throw new PipeNotExistsException($pipe.' (HANDLER)');
             }
 
             try {
-                if (true !== ($res = call_user_func_array([$_pipe, self::PIPE_HANDLER], [
+                if (true !== ($res = call_user_func_array([(new $pipe), self::PIPE_HANDLER], [
                     Request::getInstance(),
                     Response::getInstance(),
                 ]))) {
@@ -108,63 +126,43 @@ final class Kernel extends CoreKernel
                 throw new PipeThroughFailedException($pipe." ({$e->getMessage()})");
             }
         }
-
-        $wrapper = false;
-        if ($wrapout = ($route['wrapout'] ?? false)) {
-            if (! Reponse::hasWrapper($wrapout)) {
-                throw new ResponseWrapperNotExists($wrapout);
-            }
-        }
-
-        try {
-            $params = self::buildPortMethodParameters($route);
-            $result = call_user_func_array([$port, $method], $params);
-            $result = Response::setWrapperOnResult($result, $wrapper);
-
-            Response::setMimeAlias($route['mimeout'] ?? null)->send($result);
-        } catch (Exception | Error $e) {
-            throw new BadHttpPortCallException("{$class}@{$method}: {$e->getMessage()}");
-        }
     }
 
-    private static function buildPortMethodParameters(array $route) : array
+    private static function buildPortMethodParameters() : array
     {
-        $paramsMethod = $route['method']['params'] ?? [];
-        $paramsRoute  = $route['params'] ?? [];
+        $paramsMethod = Route::get('method.params');
+        $paramsRoute  = Route::get('params');
         if ((! $paramsMethod) && (! $paramsRoute)) {
             return [];
         }
 
-        $class  = $route['class'] ?? '?';
-        $method = $route['method']['name'] ?? '?';
+        $class  = Route::get('class');
+        $method = Route::get('method.name');
         $params = [];
         $vflag  = '$';
-        foreach ($paramsMethod as $paramMethod) {
+        foreach ($paramsMethod as $idx => $paramMethod) {
             $name = $paramMethod['name'] ?? '';
             $type = $paramMethod['type']['type'] ?? false;
             $builtin  = $paramMethod['type']['builtin'] ?? false;
             $optional = $paramMethod['optional'] ?? false;
             $error    = "{$class}@{$method}(... {$type} {$vflag}{$name} ...)";
 
-            if (array_key_exists($name, ($paramsRoute['raw'] ?? []))) {
-                $val = $paramsRoute['kv'][$name] ?? null;
-                if ($builtin) {
-                    if (is_null($val) && (! $optional)) {
-                        throw new PortMethodParameterMissingException($error);
-                    }
-                    try {
-                        $val = TypeHint::convert($val, $type);
-                    } catch (TypeHintConverterNotExistsException | TypeHintConvertException $e) {
-                        $code    = $e->getCode();
-                        $result  = [objectname($e), $code, $e->getMessage()];
-                        $wraperr = $route['wraperr'] ?? null;
-                        $mimeout = $route['mimeout'] ?? null;
+            $paramExistsInRouteByName = array_key_exists($name, ($paramsRoute['raw'] ?? []));
+            $paramExistsInRouteByIdx  = isset($paramsRoute['res'][$idx]);
+            if ($paramExistsInRouteByName || $paramExistsInRouteByIdx) {
+                $val = $paramExistsInRouteByName
+                ? ($paramsRoute['kv'][$name] ?? null)
+                : ($paramsRoute['res'][$idx] ?? null);
 
-                        Response::new()
-                        ->setMimeAlias($mimeout)
-                        ->setStatus($code)
-                        ->send(Response::setWrapperOnResult($result, $wraperr));
-                    }
+                if (is_null($val) && (! $optional)) {
+                    throw new PortMethodParameterMissingException($error);
+                }
+                try {
+                    $val = TypeHint::convert($val, $type);
+                } catch (TypeHintConverterNotExistsException $e) {
+                    throw new FrameworkCoreException("TypeHintConverterNotExistsException => {$e->getMessage()}");
+                } catch (TypeHintConvertException $e) {
+                    throw new InvalidUrlParameterException($e->getMessage());
                 }
                 $params[] = $val;
                 continue;
@@ -175,7 +173,6 @@ final class Kernel extends CoreKernel
             if ($builtin) {
                 throw new PortMethodParameterMissingException($error);
             }
-
             try {
                 $params[] = new $type;
             } catch (Exception | Error $e) {
