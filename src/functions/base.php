@@ -2,29 +2,9 @@
 
 declare(strict_types=1);
 
-if (! function_exists('pt')) {
-    function pt(...$vars)
+if (! function_exists('bomb_class')) {
+    function bomb_class()
     {
-        foreach ($vars as $var) {
-            print_r($var);
-            echo PHP_EOL;
-        }
-
-        return new class {
-            public function __get($key)
-            {
-                exit;
-            }
-            public function __call($method, $argvs)
-            {
-                exit;
-            }
-        };
-    }
-} if (! function_exists('pp')) {
-    function pp(...$vars)
-    {
-        var_dump(...$vars);
         return new class {
             public function __get($key)
             {
@@ -37,12 +17,55 @@ if (! function_exists('pt')) {
         };
     }
 }
+if (! function_exists('pt')) {
+    function pt(...$vars)
+    {
+        foreach ($vars as $var) {
+            print_r($var);
+            echo PHP_EOL;
+        }
+
+        return bomb_class();
+    }
+}
+if (! function_exists('et')) {
+    function et(...$vars)
+    {
+        foreach ($vars as $var) {
+            if (is_scalar($var)) {
+                echo $var;
+            } else {
+                print_r($var);
+            }
+
+            if (false !== next($vars)) {
+                echo ' => ';
+            }
+        }
+
+        echo PHP_EOL;
+
+        return bomb_class();
+    }
+}
+if (! function_exists('ee')) {
+    function ee(...$vars)
+    {
+        et(...$vars)->die();
+    }
+}
+if (! function_exists('pp')) {
+    function pp(...$vars)
+    {
+        var_dump(...$vars);
+
+        return bomb_class();
+    }
+}
 if (! function_exists('dd')) {
     function dd(...$vars)
     {
-        pp(...$vars);
-
-        exit(0);
+        pp(...$vars)->die();
     }
 }
 if (! function_exists('load_php')) {
