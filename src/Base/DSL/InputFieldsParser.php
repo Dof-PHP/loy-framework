@@ -32,6 +32,38 @@ final class InputFieldsParser
         return $res;
     }
 
+    public static function parseParameterGrammer(string $parameter) : array
+    {
+        $parameter = trim($parameter);
+        if (! $parameter) {
+            return [];
+        }
+
+        $arr = str_split($parameter, 1);
+        $bracesLeft = $bracesRight = [];
+        foreach ($arr as $idx => $char) {
+            if ($char === '{') {
+                $bracesLeft[] = $idx;
+                continue;
+            }
+            if ($char === '}') {
+                $bracesRight[] = $idx;
+                continue;
+            }
+        }
+        if (count($bracesLeft) !== count($bracesRight)) {
+            throw new Exception('GrammerError: Braces Length Mismatch');
+        }
+
+        $braces = self::adjustBraces($bracesLeft, $bracesRight);
+
+        return [
+            'braces' => $braces,
+            'string' => $sentence,
+            'array'  => $arr,
+        ];
+    }
+
     public static function parseSentenceGrammer(string $sentence) : array
     {
         $sentence = trim($sentence);
@@ -50,37 +82,36 @@ final class InputFieldsParser
                 $parenthesesRight[] = $idx;
                 continue;
             }
-            if ($char === '{') {
-                $bracesLeft[] = $idx;
-                continue;
-            }
-            if ($char === '}') {
-                $bracesRight[] = $idx;
-                continue;
-            }
         }
         if (count($parenthesesLeft) !== count($parenthesesRight)) {
             throw new Exception('GrammerError: Parentheses Length Mismatch');
-        }
-        if (count($bracesLeft) !== count($bracesRight)) {
-            throw new Exception('GrammerError: Braces Length Mismatch');
         }
 
         $parentheses = self::adjustParentheses($parenthesesLeft, $parenthesesRight);
 
         return [
             'parentheses' => $parentheses,
-            'braces' => [
-                'left'  => $bracesLeft,
-                'right' => $bracesRight,
-            ],
             'string' => $sentence,
             'array'  => $arr,
         ];
     }
 
+    public static function adjustBraces(array $left, array $right) : array
+    {
+        return self::adjustBrackets($left, $right, '{', '}');
+    }
+
     public static function adjustParentheses(array $left, array $right) : array
     {
+        return self::adjustBrackets($left, $right, '(', ')');
+    }
+
+    public static function adjustBrackets(
+        array $left,
+        array $right,
+        string $charLeft,
+        string $charRight
+    ) : array {
         $_left  = array_flip($left);
         $_right = array_flip($right);
         $all = array_merge($left, $right);
@@ -94,16 +125,14 @@ final class InputFieldsParser
             if (isset($log[$now])) {
                 continue;
             }
-            $_now = isset($_left[$now]) ? '(' : ')';
-            // et('now', $now, $_now, 'i', $i);
+            $_now = isset($_left[$now]) ? $charLeft : $charRight;
             $lenNow = $lenCompare = 0;
             for ($j = $i + 1; $j < $cnt; ++$j) {
                 $compare  = $all[$j];
                 if (isset($log[$compare])) {
                     continue;
                 }
-                $_compare = isset($_left[$compare]) ? '(' : ')';
-                // et('compare', $compare, $_compare, 'j', $j);
+                $_compare = isset($_left[$compare]) ? $charLeft : $charRight;
 
                 if ($_now === $_compare) {
                     ++$lenNow;
@@ -112,7 +141,7 @@ final class InputFieldsParser
                 ++$lenCompare;
                 if ($lenCompare > $lenNow) {
                     $log[$now] = $log[$compare] = true;
-                    if ($_now === '(') {
+                    if ($_now === $charLeft) {
                         $res[$now] = $compare;
                     } else {
                         $res[$compare] = $now;
@@ -185,9 +214,5 @@ final class InputFieldsParser
 
             return [$name, self::parseSentenceContent($item)];
         }
-    }
-
-    public static function parseFields(string $fields) : array
-    {
     }
 }
