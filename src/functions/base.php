@@ -243,7 +243,7 @@ if (! function_exists('subsets')) {
     }
 }
 if (! function_exists('array_trim')) {
-    function array_trim(array $arr) : array
+    function array_trim(array $arr, bool $preserveKeys = false) : array
     {
         array_filter($arr, function (&$val, $key) use (&$arr) {
             if (! is_scalar($val)) {
@@ -263,7 +263,7 @@ if (! function_exists('array_trim')) {
             return true;
         }, ARRAY_FILTER_USE_BOTH);
 
-        return $arr;
+        return $preserveKeys ? $arr : array_values($arr);
     }
 }
 if (! function_exists('stringify')) {

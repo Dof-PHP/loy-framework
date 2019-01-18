@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Base\DSL;
 
-use Exception;
+use Loy\Framework\Base\Exception\InvalidInputFieldsSentenceTypeException;
+use Loy\Framework\Base\Exception\InputFieldsSentenceGrammerError;
+use Loy\Framework\Base\Exception\InputFieldsParameterGrammerError;
 
 final class InputFieldsParser
 {
@@ -20,7 +22,7 @@ final class InputFieldsParser
         $res = [];
         foreach ($arr as $item) {
             if (! is_string($item)) {
-                throw new Exception('InvalidSentenceType');
+                throw new InvalidInputFieldsSentenceTypeException;
             }
             if (! trim($item)) {
                 continue;
@@ -51,8 +53,12 @@ final class InputFieldsParser
                 continue;
             }
         }
-        if (count($bracesLeft) !== count($bracesRight)) {
-            throw new Exception('ParameterGrammerError: Braces Length Mismatch');
+        $leftCnt  = count($bracesLeft);
+        $rightCnt = count($bracesRight);
+        if ($leftCnt !== $rightCnt) {
+            throw new InputFieldsParameterGrammerError(
+                "Input Braces Mismatch => {$parameter} (L:{$leftCnt},R:{$rightCnt})"
+            );
         }
 
         $braces = self::adjustBraces($bracesLeft, $bracesRight);
@@ -83,8 +89,12 @@ final class InputFieldsParser
                 continue;
             }
         }
-        if (count($parenthesesLeft) !== count($parenthesesRight)) {
-            throw new Exception('SentenceGrammerError: Parentheses Length Mismatch');
+        $leftCnt  = count($parenthesesLeft);
+        $rightCnt = count($parenthesesRight);
+        if ($leftCnt !== $rightCnt) {
+            throw new InputFieldsSentenceGrammerError(
+                "Input Parentheses Mismatch => {$sentence} (L:{$leftCnt},R:{$rightCnt})"
+            );
         }
 
         $parentheses = self::adjustParentheses($parenthesesLeft, $parenthesesRight);
@@ -186,12 +196,19 @@ final class InputFieldsParser
                 continue;
             }
             list($name, $item) = $kv;
-            $item = explode(',', $item);
+            $item = array_unique(array_trim(explode(',', $item)));
             $result[$name] = $item;
         }
         $contentLeft = join('', $array);
         $params = explode(',', $contentLeft);
         foreach ($params as $param) {
+            if (! is_string($param)) {
+                continue;
+            }
+            $param = trim($param);
+            if (! $param) {
+                continue;
+            }
             $kv = explode(':', $param);
             if (count($kv) !== 2) {
                 continue;
@@ -297,5 +314,7 @@ final class InputFieldsParser
 
             return [$name, self::parseSentenceContent($item)];
         }
+
+        return $res;
     }
 }
