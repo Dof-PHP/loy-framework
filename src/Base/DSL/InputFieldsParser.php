@@ -52,14 +52,14 @@ final class InputFieldsParser
             }
         }
         if (count($bracesLeft) !== count($bracesRight)) {
-            throw new Exception('GrammerError: Braces Length Mismatch');
+            throw new Exception('ParameterGrammerError: Braces Length Mismatch');
         }
 
         $braces = self::adjustBraces($bracesLeft, $bracesRight);
 
         return [
             'braces' => $braces,
-            'string' => $sentence,
+            'string' => $parameter,
             'array'  => $arr,
         ];
     }
@@ -84,7 +84,7 @@ final class InputFieldsParser
             }
         }
         if (count($parenthesesLeft) !== count($parenthesesRight)) {
-            throw new Exception('GrammerError: Parentheses Length Mismatch');
+            throw new Exception('SentenceGrammerError: Parentheses Length Mismatch');
         }
 
         $parentheses = self::adjustParentheses($parenthesesLeft, $parenthesesRight);
@@ -171,32 +171,115 @@ final class InputFieldsParser
         return $res;
     }
 
+    public static function parseParameterContent(string $content) : ?array
+    {
+        $data   = self::parseParameterGrammer($content);
+        $braces = $data['braces'] ?? [];
+        $array  = $data['array']  ?? [];
+        $result = [];
+        foreach ($braces as $idxLeft => $idxRight) {
+            if (($array[$idxLeft] ?? false) !== '{') {
+                continue;
+            }
+            $kv = self::parseKVData($idxLeft, $idxRight, $array, $content);
+            if (! $kv) {
+                continue;
+            }
+            list($name, $item) = $kv;
+            $item = explode(',', $item);
+            $result[] = [$name => $item];
+        }
+        $contentLeft = join('', $array);
+        $params = explode(',', $contentLeft);
+        foreach ($params as $param) {
+            $kv = explode(':', $param);
+            if (count($kv) !== 2) {
+                continue;
+            }
+            list($key, $val) = $kv;
+            $result[] = [$key => $val];
+        }
+
+        return $result;
+    }
+
     public static function parseSentenceContent(string $content) : ?array
     {
-        $parentheses = self::parseSentenceGrammer($content)['parentheses'] ?? [];
-        if (! $parentheses) {
+        $content = trim($content);
+        if (! $content) {
             return [];
         }
-
-        et($content, $parentheses);
-
+        $contentData = self::parseSentenceGrammer($content);
+        $parentheses = $contentData['parentheses'] ?? [];
+        $charArray   = $contentData['array'] ?? [];
         $len = mb_strlen($content);
-        $res = [];
+        $res = [
+            'refs'   => [],
+            'fields' => [],
+        ];
         foreach ($parentheses as $idxStart => $idxEnd) {
-            $name = mb_strcut($content, 0, $idxStart);
-            if (false !== ($idx = mb_strripos($name, ','))) {
-                $name = mb_strcut($name, $idx+1);
+            if ($charArray[$idxStart] !== '(') {
+                continue;
             }
-            $item = mb_strcut($content, $idxStart+1, $idxEnd-$idxStart-1);
-            $lenCut = mb_strlen($item) + mb_strlen($name);
-
-            pt($idxStart, $idxEnd, $name, $item)->die();
-            $res[$name] = self::parseSentenceContent($item);
+            $kv = self::parseKVData($idxStart, $idxEnd, $charArray, $content);
+            if (! $kv) {
+                continue;
+            }
+            list($name, $item)  = $kv;
+            $res['refs'][$name] = self::parseSentenceContent($item);
         }
 
-        // pt($res)->die();
+        $fieldStr = join('', $charArray);
+        if (! $fieldStr) {
+            return $res;
+        }
+
+        $fieldData = self::parseParameterGrammer($fieldStr);
+        $braces  = $fieldData['braces'] ?? [];
+        $charArr = $fieldData['array']  ?? [];
+        foreach ($braces as $idxLeft => $idxRight) {
+            if ($charArr[$idxLeft] !== '{') {
+                continue;
+            }
+            $kv = self::parseKVData($idxLeft, $idxRight, $charArr, $fieldStr);
+            if (! $kv) {
+                continue;
+            }
+            list($name, $item)  = $kv;
+            $res['fields'][$name] = self::parseParameterContent($item);
+        }
+
+        $fieldsLeft = array_filter(explode(',', join('', $charArr)));
+        foreach ($fieldsLeft as $key) {
+            $res['fields'][$key] = [];
+        }
 
         return $res;
+    }
+
+    private static function parseKVData(
+        int $idxStart,
+        int $idxEnd,
+        array &$contentArr,
+        string $contentStr = null
+    ) : ?array {
+        $contentStr = $contentStr ?: join('', $contentArr);
+
+        $key = mb_strcut($contentStr, 0, $idxStart);
+        if (! $key) {
+            return false;
+        }
+        if (false !== ($idx = mb_strripos($key, ','))) {
+            $key = mb_strcut($key, $idx+1);
+        }
+        $val    = mb_strcut($contentStr, $idxStart+1, $idxEnd-$idxStart-1);
+        $keyLen = mb_strlen($key);
+        $idxReplaceStart  = $idxStart - $keyLen;
+        $idxReplaceLength = $idxEnd - $idxStart + $keyLen + 1;
+        $arrReplace = array_fill($idxReplaceStart, $idxReplaceLength, '');
+        $contentArr = array_replace($contentArr, $arrReplace);
+
+        return [$key, $val];
     }
 
     public static function parseSentenceData(array $sentence) : ?array
