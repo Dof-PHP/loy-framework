@@ -187,7 +187,7 @@ final class InputFieldsParser
             }
             list($name, $item) = $kv;
             $item = explode(',', $item);
-            $result[] = [$name => $item];
+            $result[$name] = $item;
         }
         $contentLeft = join('', $array);
         $params = explode(',', $contentLeft);
@@ -197,7 +197,7 @@ final class InputFieldsParser
                 continue;
             }
             list($key, $val) = $kv;
-            $result[] = [$key => $val];
+            $result[$key] = $val;
         }
 
         return $result;
