@@ -9,6 +9,9 @@ use Loy\Framework\Base\Collection;
 
 trait Http
 {
+    protected $status = 200;
+    private $headers  = [];
+
     protected static $mimes = [
         'text' => 'text/plain',
         'html' => 'text/html',

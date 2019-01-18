@@ -14,3 +14,9 @@ if (! function_exists('collect')) {
         return new \Loy\Framework\Base\Collection($data, $origin);
     }
 }
+if (! function_exists('validate')) {
+    function validate(array $data, array $rule = [], array $message = [])
+    {
+        return \Loy\Framework\Base\Validator::check($data, $rule, $message);
+    }
+}

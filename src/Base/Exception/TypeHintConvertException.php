@@ -4,13 +4,8 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Base\Exception;
 
-use Exception;
+use Loy\Framework\Base\Exception\BaseBaseException;
 
-class TypeHintConvertException extends Exception
+class TypeHintConvertException extends BaseBaseException
 {
-    public function __construct(string $message, int $code = 400)
-    {
-        $this->message = $message;
-        $this->code    = $code;
-    }
 }

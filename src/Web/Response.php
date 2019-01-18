@@ -10,21 +10,28 @@ use Error;
 use Loy\Framework\Base\Facade;
 use Loy\Framework\Web\Http\Response as Instance;
 use Loy\Framework\Web\Route;
+use Loy\Framework\Web\WrapperManager;
 
 class Response extends Facade
 {
     public static $singleton    = true;
     protected static $namespace = Instance::class;
-    protected static $wrappers  = [];
 
-    public static function send($result, bool $error = false)
+    public static function send($result, ?bool $error = null)
     {
+        $response = self::getInstance();
+        if (is_null($error)) {
+            $error = $response->getError();
+            $error = is_null($error) ? $response->isFailed() : $error;
+        }
+
         $wrapout = $error ? Route::get('wraperr') : Route::get('wrapout');
-        $result  = self::setWrapperOnResult($result, self::getWrapper($wrapout));
+        $wrapper = $error ? WrapperManager::getWrapperErr($wrapout) : WrapperManager::getWrapperOut($wrapout);
+        $result  = self::setWrapperOnResult($result, $wrapper);
 
         try {
             $mimeout = Route::get('suffix.current') ?: Route::get('mimeout');
-            self::getInstance()->setMimeAlias($mimeout)->send($result);
+            $response->setMimeAlias($mimeout)->send($result);
         } catch (Exception | Error $e) {
             Response::new()
             ->setStatus(500)
@@ -32,64 +39,48 @@ class Response extends Facade
                 objectname($e),
                 $e->getCode(),
                 $e->getMessage(),
-            ], Route::get('wraperr')));
+            ], WrapperManager::getWrapperErr(Route::get('wraperr'))));
         }
     }
 
-    public static function setWrapperOnResult($result, $wrapper = null)
+    public static function setWrapperOnResult($result, array $wrapper = null, bool $final = false)
     {
-        if ((! $wrapper) || is_string($result)) {
-            return $result;
-        }
-        if (is_string($wrapper)) {
-            if (! self::hasWrapper($wrapper)) {
-                return $result;
-            }
-
-            $wrapper = self::getWrapper($wrapper);
-        } elseif (is_array($wrapper)) {
-        } else {
+        $wrapper = $final ? $wrapper : WrapperManager::getWrapperFinal($wrapper);
+        if ((! $wrapper) || (! is_array($wrapper))) {
             return $result;
         }
 
         $data = [];
         $idx  = -1;
-        foreach ($wrapper as $key) {
+        foreach ($wrapper as $key => $default) {
+            $_key = is_int($key)    ? $default : $key;
+            $_val = is_string($key) ? $default : null;
             ++$idx;
+            $val = null;
             if (is_object($result)) {
-                $getter = 'get'.ucfirst(strtolower($key));
-                $val = null;
-                if (method_exists($result, $getter)) {
-                    $val = $result->{$getter}();
+                if (method_exists($result, '__toArray')) {
+                    $val = $result->__toArray();
+                } elseif (method_exists($result, 'toArray')) {
+                    $val = $result->toArray();
+                } else {
+                    $getter = 'get'.ucfirst(strtolower($key));
+                    if (method_exists($result, $getter)) {
+                        $val = $result->{$getter}();
+                    }
                 }
-                $data[$key] = $val;
-                continue;
+            } elseif (is_scalar($result)) {
+                if (0 === $idx) {
+                    $val = $result;
+                } else {
+                    $val = $_val;
+                }
+            } elseif (is_array($result)) {
+                $val = $result[$_key] ?? ($result[$idx] ?? $_val);
             }
 
-            $val = $result[$key] ?? ($result[$idx] ?? null);
-            $data[$key] = $val;
+            $data[$_key] = $val;
         }
 
         return $data;
-    }
-
-    public static function hasWrapper(string $key = null) : bool
-    {
-        return $key && isset(self::$wrappers[$key]) && is_array(self::$wrappers[$key]);
-    }
-
-    public static function getWrapper(string $key = null) : ?array
-    {
-        return self::$wrappers[$key] ?? null;
-    }
-
-    public static function getWrappers()
-    {
-        return self::$wrappers;
-    }
-
-    public static function addWrapper(string $key, array $wrapper)
-    {
-        self::$wrappers[$key] = $wrapper;
     }
 }

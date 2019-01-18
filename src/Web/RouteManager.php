@@ -112,7 +112,7 @@ final class RouteManager
     public static function assembleRoutesFromAnnotations(array $ofClass, array $ofMethods)
     {
         $classNamespace = $ofClass['namespace'] ?? '?';
-        $routePrefix    = $ofClass['ROUTE']     ?? '';
+        $routePrefix    = $ofClass['ROUTE']     ?? null;
         $middlewares    = $ofClass['PIPE']      ?? [];
         $defaultVerbs   = $ofClass['VERB']      ?? [];
         $defaultSuffix  = $ofClass['SUFFIX']    ?? [];
@@ -133,15 +133,19 @@ final class RouteManager
             $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
             $mimein  = ($mimein === '_') ? null : $mimein;
             $mimeout = $attrs['MIMEOUT'] ?? $defaultMimeout;
+            $mimeout = ($mimeout === '_') ? null : $mimeout;
             $wrapin  = $attrs['WRAPIN']  ?? $defaultWrapin;
+            $wrapin  = ($wrapin === '_') ? null : $wrapin;
             $wrapout = $attrs['WRAPOUT'] ?? $defaultWrapout;
+            $wrapout = ($wrapout === '_') ? null : $wrapout;
             $wraperr = $attrs['WRAPERR'] ?? $defaultWraperr;
+            $wraperr = ($wraperr === '_') ? null : $wraperr;
             $suffix  = $attrs['SUFFIX']  ?? $defaultSuffix;
 
             $params  = [];
             $middles = $attrs['PIPE'] ?? [];
             $middles = array_unique(array_merge($middlewares, $middles));
-            $urlpath = join('/', [$routePrefix, $route]);
+            $urlpath = $routePrefix ? join('/', [$routePrefix, $route]) : $route;
             $urlpath = array_filter(explode('/', $urlpath));
             array_walk($urlpath, function (&$val, $key) use (&$params) {
                 $matches = [];
@@ -192,6 +196,9 @@ final class RouteManager
                     'pipes'   => $middles,
                     'params'  => [
                         'raw' => $params,
+                        'res' => [],
+                        'api' => [],
+                        'kv'  => [],
                     ],
                     'mimein'  => $mimein,
                     'mimeout' => $mimeout,

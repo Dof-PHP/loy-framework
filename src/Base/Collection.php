@@ -73,6 +73,21 @@ class Collection implements
         return $this->get($key);
     }
     
+
+    public function last()
+    {
+        $key = $this->keys[$this->count - 1] ?? false;
+
+        return $key ? $this->get($key) : null;
+    }
+
+    public function first()
+    {
+        $key = $this->keys[0] ?? false;
+
+        return $key ? $this->get($key) : null;
+    }
+
     public function current()
     {
         return $this->data[$this->keys[$this->pointer]];

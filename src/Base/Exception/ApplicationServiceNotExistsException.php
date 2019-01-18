@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Base\Exception;
 
-use Exception;
+use Loy\Framework\Base\Exception\BaseBaseException;
 
-class ApplicationServiceNotExistsException extends Exception
+class ApplicationServiceNotExistsException extends BaseBaseException
 {
 }

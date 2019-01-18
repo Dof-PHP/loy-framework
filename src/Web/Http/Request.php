@@ -10,6 +10,8 @@ class Request
 {
     use Http;
 
+    private $route;
+
     public function input(string $key = null)
     {
         $input = $this->getInput();
@@ -21,11 +23,55 @@ class Request
         return $key ? null : $input;
     }
 
-    public function get(string $key)
+    public function all(string $key = null)
+    {
+        $all = $this->getOrSet('all', function () {
+            return array_merge(
+                $this->getGet(),
+                $this->getPost()
+            );
+        });
+
+        return $key ? ($all[$key] ?? null) : $all;
+    }
+
+    public function only(...$keys) : array
+    {
+        $params = $keys;
+        $cnt = count($keys);
+        if ($cnt === 1 && is_array($_keys = ($keys[0] ?? false))) {
+            $params = $_keys;
+        }
+        if (! $params) {
+            return [];
+        }
+
+        $all = $this->all();
+        $res = [];
+        foreach ($params as $key) {
+            if (! is_string($key)) {
+                continue;
+            }
+            if (array_key_exists($key, $all)) {
+                $res[$key] = $all[$key];
+            }
+        }
+
+        return $res;
+    }
+
+    public function post(string $key, $default = null)
+    {
+        $post = $this->getPost();
+
+        return $post[$key] ?? $default;
+    }
+
+    public function get(string $key, $default = null)
     {
         $get = $this->getGet();
 
-        return $get[$key] ?? null;
+        return $get[$key] ?? $default;
     }
 
     public function getInput()
@@ -36,6 +82,13 @@ class Request
             // $this->convertInputToArray($input, $mime);
 
             return $input;
+        });
+    }
+
+    public function getPost() : array
+    {
+        return $this->getOrSet('post', function () {
+            return $_POST;
         });
     }
 
@@ -173,6 +226,18 @@ class Request
         }
 
         return false;
+    }
+
+    public function getRoute()
+    {
+        return $this->route;
+    }
+
+    public function setRoute($route)
+    {
+        $this->route = $route;
+
+        return $this;
     }
 
     public function __get(string $key)

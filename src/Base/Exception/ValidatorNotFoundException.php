@@ -6,6 +6,6 @@ namespace Loy\Framework\Base\Exception;
 
 use Loy\Framework\Base\Exception\BaseBaseException;
 
-class InvalidAnnotationDirException extends BaseBaseException
+class ValidatorNotFoundException extends BaseBaseException
 {
 }

@@ -10,10 +10,9 @@ class Response
 {
     use Http;
 
-    private $body     = '';
-    private $status   = 200;
-    private $mime     = 'text/html';
-    private $headers  = [];
+    private $error = null;
+    private $body  = '';
+    private $mime  = 'text/html';
 
     public function text($body, int $status = 200, array $headers = [])
     {
@@ -193,6 +192,33 @@ class Response
         $this->body = $body;
 
         return $this;
+    }
+
+    public function setError(bool $error)
+    {
+        $this->error = $error;
+
+        return $this;
+    }
+
+    public function getError()
+    {
+        return $this->error;
+    }
+
+    public function hasError() : bool
+    {
+        return $this->error === true;
+    }
+
+    public function isFailed() : bool
+    {
+        return $this->status >= 400;
+    }
+
+    public function isSuccess() : bool
+    {
+        return !$this->isFailed();
     }
 
     public function __descruct()

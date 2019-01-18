@@ -12,17 +12,21 @@ use Loy\Framework\Base\TypeHint;
 use Loy\Framework\Base\Exception\InvalidProjectRootException;
 use Loy\Framework\Base\Exception\TypeHintConverterNotExistsException;
 use Loy\Framework\Base\Exception\TypeHintConvertException;
+use Loy\Framework\Base\Exception\ValidationFailureException;
 use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
 use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
 use Loy\Framework\Base\Exception\DuplicateRouteDefinitionException;
 use Loy\Framework\Base\Exception\DuplicateRouteAliasDefinitionException;
 use Loy\Framework\Base\Exception\DuplicatePipeDefinitionException;
+use Loy\Framework\Base\Exception\DuplicateWrapperDefinitionException;
 use Loy\Framework\Web\RouteManager;
 use Loy\Framework\Web\Request;
 use Loy\Framework\Web\Response;
 use Loy\Framework\Web\Route;
 use Loy\Framework\Web\Exception\InvalidRouteDirException;
 use Loy\Framework\Web\Exception\InvalidHttpPortNamespaceException;
+use Loy\Framework\Web\Exception\BadRouteWrapperInExecutionException;
+use Loy\Framework\Web\Exception\WrapperInNotExistsException;
 use Loy\Framework\Web\Exception\DuplicateRouteDefinitionException as DuplicateRouteDefinitionExceptionWeb;
 use Loy\Framework\Web\Exception\DuplicateRouteAliasDefinitionException as DuplicateRouteAliasDefinitionWeb;
 use Loy\Framework\Web\Exception\PipeNotExistsException;
@@ -32,14 +36,18 @@ use Loy\Framework\Web\Exception\RouteNotExistsException;
 use Loy\Framework\Web\Exception\InvalidRequestMimeException;
 use Loy\Framework\Web\Exception\InvalidUrlParameterException;
 use Loy\Framework\Web\Exception\BadHttpPortCallException;
+use Loy\Framework\Web\Exception\BadRequestParameterException;
 use Loy\Framework\Web\Exception\PortNotExistException;
 use Loy\Framework\Web\Exception\PortMethodNotExistException;
 use Loy\Framework\Web\Exception\PortMethodParameterMissingException;
 use Loy\Framework\Web\Exception\BrokenHttpPortMethodDefinitionException;
 use Loy\Framework\Web\Exception\ResponseWrapperNotExists;
 use Loy\Framework\Web\Exception\InvalidHttpPipeDirException;
+use Loy\Framework\Web\Exception\InvalidHttpWrapperNamespaceException;
+use Loy\Framework\Web\Exception\InvalidHttpWrapperDirException;
 use Loy\Framework\Web\Exception\InvalidHttpPipeNamespaceException;
 use Loy\Framework\Web\Exception\DuplicatePipeDefinitionException as DuplicatePipeDefinitionExceptionWeb;
+use Loy\Framework\Web\Exception\DuplicateWrapperDefinitionException as DuplicateWrapperDefinitionExceptionWeb;
 
 final class Kernel extends CoreKernel
 {
@@ -55,7 +63,21 @@ final class Kernel extends CoreKernel
 
         self::compileRoutes();
         self::compilePipes();
+        self::compileWrappers();
         self::processRequest();
+    }
+
+    public static function compileWrappers()
+    {
+        try {
+            WrapperManager::compile(DomainManager::getDomains());
+        } catch (DuplicateWrapperDefinitionException $e) {
+            throw new DuplicateWrapperDefinitionExceptionWeb($e->getMessage());
+        } catch (InvalidAnnotationDirException $e) {
+            throw new InvalidHttpWrapperDirException($e->getMessage());
+        } catch (InvalidAnnotationNamespaceException $e) {
+            throw new InvalidHttpWrapperNamespaceException($e->getMessage());
+        }
     }
 
     public static function compilePipes()
@@ -91,6 +113,7 @@ final class Kernel extends CoreKernel
         self::findAndSetRoute();
         self::processRoutePipes();
         self::validateRoute();
+        self::processRouteWrapperin();
 
         $class  = Route::get('class');
         $method = Route::get('method.name');
@@ -105,9 +128,43 @@ final class Kernel extends CoreKernel
             $params = self::buildPortMethodParameters();
             $result = call_user_func_array([(new $class), $method], $params);
 
-            Response::send($result, false);
+            Response::send($result);
         } catch (Exception | Error $e) {
             throw new BadHttpPortCallException("{$class}@{$method}: {$e->getMessage()}");
+        }
+    }
+
+    private static function processRouteWrapperin()
+    {
+        $wrapin = Route::get('wrapin');
+        if (! $wrapin) {
+            return;
+        }
+        $wrapper = WrapperManager::getWrapperIn($wrapin);
+        if (! $wrapper) {
+            return;
+        }
+
+        $class  = $wrapper['class']  ?? '?';
+        $method = $wrapper['method'] ?? '?';
+        if (! class_exists($class)) {
+            throw new WrapperInNotExistsException("{$class} (NAMESPACE)");
+        }
+        if (! method_exists($class, $method)) {
+            throw new WrapperInNotExistsException("{$class}@{$method} (METHOD)");
+        }
+
+        try {
+            $res = call_user_func_array([(new $class), $method], [
+                Request::getInstance(),
+                Response::getInstance()
+            ]);
+
+            Route::getInstance()->params->api = $res;
+        } catch (ValidationFailureException $e) {
+            throw new BadRequestParameterException($e->getMessage(), 400);
+        } catch (Exception | Error $e) {
+            throw new BadRouteWrapperInExecutionException($e->getMessage());
         }
     }
 
@@ -153,24 +210,32 @@ final class Kernel extends CoreKernel
         if ($route === false) {
             throw new RouteNotExistsException("{$method} {$uri}");
         }
+
         Route::setData($route);
+        Request::setRoute(Route::getInstance());
     }
 
     private static function validateRoute()
     {
+        $class  = Route::get('class') ?: '?';
+        $method = Route::get('method.name') ?: '?';
         $mimein = Route::get('mimein');
         if ($mimein && (! Request::isMimeAlias($mimein))) {
             $_mimein  = Request::getMimeShort();
             $__mimein = Request::getMimeByAlias($mimein);
             throw new InvalidRequestMimeException("{$_mimein} (NEED => {$__mimein})");
         }
+        $wrapin = Route::get('wrapin');
+        if ($wrapin && (! WrapperManager::hasWrapperIn($wrapin))) {
+            throw new ResponseWrapperNotExists("{$wrapin} (WRAPIN: {$class}@{$method})");
+        }
         $wrapout = Route::get('wrapout');
-        if ($wrapout && (! Response::hasWrapper($wrapout))) {
-            throw new ResponseWrapperNotExists("{$wrapout} (WRAPOUT)");
+        if ($wrapout && (! WrapperManager::hasWrapperOut($wrapout))) {
+            throw new ResponseWrapperNotExists("{$wrapout} (WRAPOUT: {$class}@{$method})");
         }
         $wraperr = Route::get('wraperr');
-        if ($wraperr && (! Response::hasWrapper($wraperr))) {
-            throw new ResponseWrapperNotExists("{$wraperr} (WRAPERR)");
+        if ($wraperr && (! WrapperManager::hasWrapperErr($wraperr))) {
+            throw new ResponseWrapperNotExists("{$wraperr} (WRAPERR: {$class}@{$method})");
         }
     }
 
