@@ -25,8 +25,11 @@ final class WrapperManager
             return;
         }
 
-        self::$dirs = array_map(function ($item) {
-            return join(DIRECTORY_SEPARATOR, [$item, self::WRAPPER_DIR]);
+        array_map(function ($item) {
+            $dir = join(DIRECTORY_SEPARATOR, [$item, self::WRAPPER_DIR]);
+            if (is_dir($dir)) {
+                self::$dirs[] = $dir;
+            }
         }, $dirs);
 
         // Excetions may thrown but let invoker to catch for different scenarios
@@ -35,7 +38,7 @@ final class WrapperManager
         // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
         Annotation::parseClassDirs(self::$dirs, self::REGEX, function ($annotations) {
             if ($annotations) {
-                list($ofClass, $ofMethods) = $annotations;
+                list($ofClass, $ofProperties, $ofMethods) = $annotations;
                 self::assembleWrappersFromAnnotations($ofClass, $ofMethods);
             }
         }, __CLASS__);
@@ -48,9 +51,10 @@ final class WrapperManager
             return;
         }
 
-        $namePrefix  = $ofClass['PREFIX'] ?? null;
-        $typeDefault = $ofClass['TYPE']   ?? null;
-        foreach ($ofMethods as $method => $attrs) {
+        $namePrefix  = $ofClass['doc']['PREFIX'] ?? null;
+        $typeDefault = $ofClass['doc']['TYPE']   ?? null;
+        foreach ($ofMethods as $method => $_attrs) {
+            $attrs = $_attrs['doc'] ?? [];
             $notwrapper = $attrs['NOTWRAPPER'] ?? false;
             if ($notwrapper) {
                 continue;

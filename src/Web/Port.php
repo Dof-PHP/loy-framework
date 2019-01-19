@@ -11,6 +11,9 @@ use Loy\Framework\Base\Exception\ApplicationServiceNotExistsExeception;
 
 class Port
 {
+    /**
+     * The route collection instance related to current request
+     */
     protected $route;
     protected $request;
     protected $response;

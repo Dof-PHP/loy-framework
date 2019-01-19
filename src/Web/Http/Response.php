@@ -211,14 +211,17 @@ class Response
         return $this->error === true;
     }
 
-    public function isFailed() : bool
+    public function isFailed(int $success = null) : bool
     {
-        return $this->status >= 400;
+        return !$this->isSuccess();
     }
 
-    public function isSuccess() : bool
+    public function isSuccess(int $success = null) : bool
     {
-        return !$this->isFailed();
+        if ($success) {
+            return $this->status === $success;
+        }
+        return (100 <= $this->status) && ($this->status < 400);
     }
 
     public function __descruct()

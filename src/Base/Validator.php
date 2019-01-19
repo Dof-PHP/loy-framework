@@ -30,7 +30,6 @@ class Validator
 
     public function execute()
     {
-        pp($this->data, $this->rule, $this->message);
         foreach ($this->rule as $key => $rules) {
             if (! is_string($key)) {
                 // TODO: BAD RULE
@@ -52,7 +51,6 @@ class Validator
                 if (! method_exists($this, $validator)) {
                     throw new ValidatorNotFoundException($rule);
                 }
-
                 $param = $arr[1] ?? [];
             }
         }
@@ -60,7 +58,39 @@ class Validator
         // throw new ValidationFailureException('以下参数必须是正整数: id');
     }
 
+    public function validateIp()
+    {
+    }
+
+    public function validateMax()
+    {
+    }
+
+    public function validateMin()
+    {
+    }
+
+    public function validateInt()
+    {
+    }
+
+    public function validateString()
+    {
+    }
+
+    public function validateNeedifhas()
+    {
+    }
+
+    public function validateNeedifno()
+    {
+    }
+
     public function validateNeed()
+    {
+    }
+
+    public function validateEmail()
     {
     }
 

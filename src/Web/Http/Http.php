@@ -18,6 +18,7 @@ trait Http
         'view' => 'text/html',
         'json' => 'application/json',
         'xml'  => 'application/xml',
+        'form' => 'application/x-www-form-urlencoded',
     ];
 
     private $data = [];
@@ -54,5 +55,25 @@ trait Http
         }
 
         return $value;
+    }
+
+
+    public function convertStringAsMime(string $input, string $mime = null)
+    {
+        if ($mime === 'json') {
+            $data = json_decode($input, true);
+            return is_array($data) ? $data : [];
+        }
+        if ($mime === 'xml') {
+            $data = json_decode($input, true);
+            return is_array($data) ? $data : [];
+        }
+        if ($mime === 'form') {
+            $data = [];
+            parse_str($input, $data);
+            return $data;
+        }
+
+        return $input;
     }
 }

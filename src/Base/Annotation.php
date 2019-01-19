@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Loy\Framework\Base;
 
 use Closure;
+use Reflection;
 use ReflectionClass;
 use ReflectionException;
+// use ReflectionMethod;
+// use ReflectionProperty;
 use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
 use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
 
@@ -21,8 +24,8 @@ class Annotation
         string $origin = null
     ) {
         foreach ($dirs as $dir) {
-            if (! is_dir($dir)) {
-                throw new InvalidAnnotationDirException($dir);
+            if ((! is_string($dir)) || (! is_dir($dir))) {
+                throw new InvalidAnnotationDirException(stringify($dir));
             }
 
             self::parseClassDir($dir, $regex, $callback, $origin);
@@ -73,8 +76,11 @@ class Annotation
         return $annotations;
     }
 
-    public static function parseNamespace(string $namespace, string $regex = null, string $origin = null) : array
-    {
+    public static function parseNamespace(
+        string $namespace,
+        string $regex = null,
+        string $origin = null
+    ) : array {
         try {
             $reflector = new ReflectionClass($namespace);
         } catch (ReflectionException $e) {
@@ -84,27 +90,81 @@ class Annotation
         $classDocComment = $reflector->getDocComment();
         $ofClass = [];
         if (false !== $classDocComment) {
-            $ofClass = self::parseComment($classDocComment, $regex, $origin);
+            $ofClass['doc'] = self::parseComment($classDocComment, $regex, $origin);
         }
         $ofClass['namespace'] = $namespace;
+        $ofProperties = self::parseProperties($namespace, $regex, $origin, $reflector->getProperties());
+        $ofMethods = self::parseMethods($namespace, $regex, $origin, $reflector->getMethods());
 
-        $ofMethods = [];
-        $methods   = $reflector->getMethods();
+        return [
+            $ofClass,
+            $ofProperties,
+            $ofMethods,
+        ];
+    }
+
+    public static function parseProperties(
+        string $namespace,
+        string $regex,
+        string $origin,
+        array $properties = null
+    ) : array {
+        if (! $properties) {
+            return [];
+        }
+
+        $res = [];
+        foreach ($properties as $property) {
+            $res[$property->name]['meta']['modifiers'] = Reflection::getModifierNames(
+                $property->getModifiers()
+            );
+            $comment = $property->getDocComment();
+            if ($comment) {
+                $res[$property->name]['doc'] = self::parseComment($comment, $regex, $origin);
+            }
+        }
+
+        return $res;
+    }
+
+    public static function parseMethods(
+        string $namespace,
+        string $regex,
+        string $origin,
+        array $methods = null
+    ) : array {
+        if (! $methods) {
+            return [];
+        }
+
+        $res = [];
         foreach ($methods as $method) {
-            $nsMethod = get_namespace_of_file($method->getFileName(), true);
+            $mfile = $method->getFileName();
+            if (! $mfile) {
+                continue;
+            }
+            $nsMethod = get_namespace_of_file($mfile, true);
             if ($namespace !== $nsMethod) {
                 continue;
             }
             $comment = $method->getDocComment();
             if (false !== $comment) {
-                $ofMethods[$method->name] = self::parseComment($comment, $regex, $origin);
+                $res[$method->name]['doc'] = self::parseComment($comment, $regex, $origin);
             }
-            foreach ($method->getParameters() as $parameter) {
+            $res[$method->name]['meta']['modifiers'] = Reflection::getModifierNames(
+                $method->getModifiers()
+            );
+            $parameters = $method->getParameters();
+            if (! $parameters) {
+                $res[$method->name]['parameters'] = [];
+                continue;
+            }
+            foreach ($parameters as $parameter) {
                 $type    = $parameter->hasType() ? $parameter->getType()->getName() : null;
                 $builtin = $type ? $parameter->getType()->isBuiltin() : null;
                 $hasDefault = $parameter->isDefaultValueAvailable();
                 $defaultVal = $hasDefault ? $parameter->getDefaultValue() : null;
-                $ofMethods[$method->name]['parameters'][] = [
+                $res[$method->name]['parameters'][] = [
                     'name' => $parameter->getName(),
                     'type' => [
                         'type'    => $type,
@@ -120,10 +180,7 @@ class Annotation
             }
         }
 
-        return [
-            $ofClass,
-            $ofMethods,
-        ];
+        return $res;
     }
 
     public static function parseComment(string $comment, string $regex = null, string $origin = null) : array
@@ -133,6 +190,7 @@ class Annotation
         }
 
         $regex = $regex ?: self::DEFAULT_REGEX;
+        $res = [];
         $arr = explode(PHP_EOL, $comment);
         foreach ($arr as $line) {
             $matches = [];

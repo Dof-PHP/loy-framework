@@ -8,17 +8,33 @@ use Closure;
 use Exception;
 use Error;
 use Loy\Framework\Base\Facade;
+use Loy\Framework\Base\ApplicationService;
 use Loy\Framework\Web\Http\Response as Instance;
 use Loy\Framework\Web\Route;
 use Loy\Framework\Web\WrapperManager;
 
 class Response extends Facade
 {
-    public static $singleton    = true;
+    public static $singleton = true;
     protected static $namespace = Instance::class;
+
+    public static function parseResult($result)
+    {
+        if ($result instanceof ApplicationService) {
+            if ($result->isSuccess()) {
+                return $result->__getData();
+            }
+
+            self::getInstance()->setStatus($result->__getCode());
+            return array_values($result->__toArray());
+        }
+
+        return $result;
+    }
 
     public static function send($result, ?bool $error = null)
     {
+        $result   = self::parseResult($result);
         $response = self::getInstance();
         if (is_null($error)) {
             $error = $response->getError();
@@ -63,7 +79,7 @@ class Response extends Facade
                 } elseif (method_exists($result, 'toArray')) {
                     $val = $result->toArray();
                 } else {
-                    $getter = 'get'.ucfirst(strtolower($key));
+                    $getter = 'get'.ucfirst(strtolower($_key));
                     if (method_exists($result, $getter)) {
                         $val = $result->{$getter}();
                     }
@@ -76,6 +92,14 @@ class Response extends Facade
                 }
             } elseif (is_array($result)) {
                 $val = $result[$_key] ?? ($result[$idx] ?? $_val);
+            }
+
+            if (is_object($val)) {
+                if (method_exists($val, '__toArray')) {
+                    $val = $val->__toArray();
+                } elseif (method_exists($val, 'toArray')) {
+                    $val = $val->toArray();
+                }
             }
 
             $data[$_key] = $val;

@@ -73,9 +73,11 @@ abstract class ApplicationService
         return $this->__code;
     }
 
-    public function isSuccess() : bool
+    public function isSuccess(int $success = null) : bool
     {
-        return $this->__status === 200;
+        $code = $success ?: 200;
+
+        return $this->__code === $code;
     }
 
     public static function init($data = null)

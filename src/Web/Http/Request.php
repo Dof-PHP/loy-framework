@@ -26,10 +26,12 @@ class Request
     public function all(string $key = null)
     {
         $all = $this->getOrSet('all', function () {
-            return array_merge(
-                $this->getGet(),
-                $this->getPost()
-            );
+            $input = $this->getInput();
+            if (is_array($input)) {
+                return array_merge($_REQUEST, $input);
+            }
+
+            return $_REQUEST;
         });
 
         return $key ? ($all[$key] ?? null) : $all;
@@ -77,11 +79,16 @@ class Request
     public function getInput()
     {
         return $this->getOrSet('input', function () {
-            $input = file_get_contents('php://input');
-            // $mime  = $this->getMimeShort();
-            // $this->convertInputToArray($input, $mime);
+            $input = $this->getInputRaw();
+            $mime  = $this->getMimeAlias();
+            return $this->convertStringAsMime($input, $mime);
+        });
+    }
 
-            return $input;
+    public function getInputRaw() : string
+    {
+        return $this->getOrSet('inputRaw', function () {
+            return urldecode(trim((string) file_get_contents('php://input')));
         });
     }
 
@@ -160,7 +167,7 @@ class Request
         return $mime ? trim(strtolower($mime)) : null;
     }
 
-    public function getMethod() : string
+    public function getMethod() : ?string
     {
         return $this->getOrSet('method', function () {
             return $_SERVER['REQUEST_METHOD'] ?? null;

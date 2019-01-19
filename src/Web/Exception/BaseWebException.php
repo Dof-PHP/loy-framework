@@ -9,12 +9,14 @@ use Loy\Framework\Web\Response;
 
 class BaseWebException extends Exception
 {
-    public function __construct(string $message, int $code)
+    public function __construct(string $message, int $code, string $lastTrace = null)
     {
         $this->message = $message;
         $this->code    = $code;
 
-        Response::setStatus($code);
-        Response::send([$code, objectname($this), $message], true);
+        $lastTrace= $lastTrace ? explode(PHP_EOL, $this->lastTrace) : [];
+
+        Response::setStatus($this->code);
+        Response::send([$this->code, join(' => ', [objectname($this), $this->message]), $lastTrace], true);
     }
 }

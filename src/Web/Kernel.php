@@ -28,7 +28,7 @@ use Loy\Framework\Web\Exception\InvalidHttpPortNamespaceException;
 use Loy\Framework\Web\Exception\BadRouteWrapperInExecutionException;
 use Loy\Framework\Web\Exception\WrapperInNotExistsException;
 use Loy\Framework\Web\Exception\DuplicateRouteDefinitionException as DuplicateRouteDefinitionExceptionWeb;
-use Loy\Framework\Web\Exception\DuplicateRouteAliasDefinitionException as DuplicateRouteAliasDefinitionWeb;
+use Loy\Framework\Web\Exception\DuplicateRouteAliasDefinitionException as DuplicateRouteAliasDefinitionExceptionWeb;
 use Loy\Framework\Web\Exception\PipeNotExistsException;
 use Loy\Framework\Web\Exception\FrameworkCoreException;
 use Loy\Framework\Web\Exception\PipeThroughFailedException;
@@ -55,6 +55,11 @@ final class Kernel extends CoreKernel
 
     public static function handle(string $projectRoot)
     {
+        if (! in_array(PHP_SAPI, ['fpm-fcgi', 'cgi-fcgi', 'cgi'])) {
+            echo 'WEB_KERNEL_IN_NONCGI';
+            exit(-1);
+        }
+
         try {
             parent::handle($projectRoot);
         } catch (InvalidProjectRootException $e) {
@@ -124,13 +129,18 @@ final class Kernel extends CoreKernel
             throw new PortMethodNotExistException("{$class}@{$method}");
         }
 
-        try {
-            $params = self::buildPortMethodParameters();
-            $result = call_user_func_array([(new $class), $method], $params);
+        $params = self::buildPortMethodParameters();
 
-            Response::send($result);
+        try {
+            $result = call_user_func_array([(new $class), $method], $params);
         } catch (Exception | Error $e) {
             throw new BadHttpPortCallException("{$class}@{$method}: {$e->getMessage()}");
+        }
+
+        try {
+            Response::send($result);
+        } catch (Exception | Error $e) {
+            throw new FrameworkCoreException("ResponseError => {$e->getMessage()}", 500, $e->getTraceAsString());
         }
     }
 

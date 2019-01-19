@@ -84,7 +84,7 @@ if (! function_exists('list_dir')) {
     function list_dir(string $dir, $callback)
     {
         if (! is_dir($dir)) {
-            throw new \Exception('LIST_DIR_NOT_EXISTS');
+            throw new \Exception('LIST_DIR_NOT_EXISTS => '.$dir);
         }
 
         $list = (array) scandir($dir);
@@ -96,7 +96,7 @@ if (! function_exists('walk_dir')) {
     function walk_dir(string $dir, $callback)
     {
         if (! is_dir($dir)) {
-            throw new \Exception('WALK_DIR_NOT_EXISTS');
+            throw new \Exception('WALK_DIR_NOT_EXISTS => '.$dir);
         }
 
         $fsi = new \FilesystemIterator($dir);
@@ -197,7 +197,30 @@ if (! function_exists('enxml')) {
         return '<?xml version="1.0" encoding="utf-8"?><xml>'.$_xml.'</xml>';
     }
 }
+if (! function_exists('dexml')) {
+    function dexml(string $xml, bool $loaded = false) : array
+    {
+        if (! extension_loaded('libxml')) {
+            throw new \Exception('PHP extension missing: libxml');
+        }
+        
+        libxml_use_internal_errors(true);
+        $xml = $loaded
+        ? $xml
+        : simplexml_load_string(
+            $xml,
+            'SimpleXMLElement',
+            LIBXML_NOCDATA
+        );
+        if (($error = libxml_get_last_error()) && isset($error->message)) {
+            libxml_clear_errors();
+            // throw new \Exception('Illegal XML format: '.$error->message);
+            return [];
+        }
 
+        return dejson(enjson($xml), true);
+    }
+}
 if (! function_exists('enjson')) {
     function enjson($data)
     {
@@ -216,6 +239,14 @@ if (! function_exists('enjson')) {
         $json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         return $json ?: '';
+    }
+}
+if (! function_exists('dejson')) {
+    function dejson(string $json, bool $assoc = true)
+    {
+        $res = json_decode($json, $assoc);
+
+        return (is_array($res) || is_object($res)) ? $res : [];
     }
 }
 if (! function_exists('subsets')) {

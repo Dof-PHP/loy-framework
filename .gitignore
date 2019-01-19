@@ -1,6 +1,30 @@
 /* Composer */
 vendor/
 
+/* Local packages */
+packages/
+
 /* Vim  */
 .php_cs.cache
 /**/tags
+/**/*.tags
+/**/*.swp
+/**/*.pyc
+
+/* Loy Framework */
+var/
+config/
+/**/*.log
+/**/__domain__/*.php
+/**/__domain__/*.yml
+/**/__domain__/*.yaml
+/**/__domain__/*.xml
+/**/__domain__/*.json
+/**/__domain__/*.ini
+!/**/.gitkeep
+!/**/*.sample.php
+!/**/*.sample.yml
+!/**/*.sample.yaml
+!/**/*.sample.xml
+!/**/*.sample.json
+!/**/*.sample.ini

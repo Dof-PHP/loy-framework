@@ -17,8 +17,11 @@ final class RouteManager
     private static $routes  = [];
     private static $dirs    = [];
 
-    public static function findRouteByUriAndMethod(string $uri, string $method, ?array $mimes = [])
+    public static function findRouteByUriAndMethod(string $uri = null, string $method = null, ?array $mimes = [])
     {
+        if ((! $uri) || (! $method)) {
+            return false;
+        }
         $route = self::$routes[$uri][$method] ?? false;
         if ($route) {
             return $route;
@@ -93,8 +96,11 @@ final class RouteManager
             return;
         }
 
-        self::$dirs = array_map(function ($item) {
-            return join(DIRECTORY_SEPARATOR, [$item, self::ROUTE_DIR]);
+        array_map(function ($item) {
+            $dir = join(DIRECTORY_SEPARATOR, [$item, self::ROUTE_DIR]);
+            if (is_dir($dir)) {
+                self::$dirs[] = $dir;
+            }
         }, $dirs);
 
         // Excetions may thrown but let invoker to catch for different scenarios
@@ -103,7 +109,7 @@ final class RouteManager
         // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
         Annotation::parseClassDirs(self::$dirs, self::REGEX, function ($annotations) {
             if ($annotations) {
-                list($ofClass, $ofMethods) = $annotations;
+                list($ofClass, $ofProperties, $ofMethods) = $annotations;
                 self::assembleRoutesFromAnnotations($ofClass, $ofMethods);
             }
         }, __CLASS__);
@@ -111,18 +117,19 @@ final class RouteManager
 
     public static function assembleRoutesFromAnnotations(array $ofClass, array $ofMethods)
     {
-        $classNamespace = $ofClass['namespace'] ?? '?';
-        $routePrefix    = $ofClass['ROUTE']     ?? null;
-        $middlewares    = $ofClass['PIPE']      ?? [];
-        $defaultVerbs   = $ofClass['VERB']      ?? [];
-        $defaultSuffix  = $ofClass['SUFFIX']    ?? [];
-        $defaultMimein  = $ofClass['MIMEIN']    ?? null;
-        $defaultMimeout = $ofClass['MIMEOUT']   ?? null;
-        $defaultWrapin  = $ofClass['WRAPIN']    ?? null;
-        $defaultWrapout = $ofClass['WRAPOUT']   ?? null;
-        $defaultWraperr = $ofClass['WRAPERR']   ?? null;
+        $classNamespace = $ofClass['namespace']      ?? '?';
+        $routePrefix    = $ofClass['doc']['ROUTE']   ?? null;
+        $middlewares    = $ofClass['doc']['PIPE']    ?? [];
+        $defaultVerbs   = $ofClass['doc']['VERB']    ?? [];
+        $defaultSuffix  = $ofClass['doc']['SUFFIX']  ?? [];
+        $defaultMimein  = $ofClass['doc']['MIMEIN']  ?? null;
+        $defaultMimeout = $ofClass['doc']['MIMEOUT'] ?? null;
+        $defaultWrapin  = $ofClass['doc']['WRAPIN']  ?? null;
+        $defaultWrapout = $ofClass['doc']['WRAPOUT'] ?? null;
+        $defaultWraperr = $ofClass['doc']['WRAPERR'] ?? null;
 
-        foreach ($ofMethods as $method => $attrs) {
+        foreach ($ofMethods as $method => $_attrs) {
+            $attrs = $_attrs['doc'] ?? [];
             $notroute = $attrs['NOTROUTE'] ?? false;
             if ($notroute) {
                 continue;
@@ -167,7 +174,7 @@ final class RouteManager
                     $_verb    = $_alias['verb']    ?? '?';
                     $_route   = self::$routes[$_urlpath][$_verb] ?? [];
                     $_classns = $_route['class']   ?? '?';
-                    $_method  = $_route['method']  ?? '?';
+                    $_method  = $_route['method']['name'] ?? '?';
                     throw new DuplicateRouteAliasDefinitionException(
                         "{$alias} => ({$verb} {$urlpath} | {$classNamespace}@{$method}) <=> ({$_verb} {$_urlpath} | {$_classns}@{$_method})"
                     );
@@ -179,7 +186,6 @@ final class RouteManager
                         'verb'    => $verb,
                     ];
                 }
-
                 self::$routes[$urlpath][$verb] = [
                     'urlpath' => $urlpath,
                     'suffix'  => [
@@ -191,7 +197,7 @@ final class RouteManager
                     'class'   => $classNamespace,
                     'method'  => [
                         'name'   => $method,
-                        'params' => $attrs['parameters'] ?? [],
+                        'params' => $_attrs['parameters'] ?? [],
                     ],
                     'pipes'   => $middles,
                     'params'  => [

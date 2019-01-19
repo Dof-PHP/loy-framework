@@ -21,8 +21,11 @@ final class PipeManager
             return;
         }
 
-        self::$dirs = array_map(function ($item) {
-            return join(DIRECTORY_SEPARATOR, [$item, self::PIPE_DIR]);
+        array_map(function ($item) {
+            $dir = join(DIRECTORY_SEPARATOR, [$item, self::PIPE_DIR]);
+            if (is_dir($dir)) {
+                self::$dirs[] = $dir;
+            }
         }, $dirs);
 
         // Excetions may thrown but let invoker to catch for different scenarios
@@ -31,7 +34,7 @@ final class PipeManager
         // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
         Annotation::parseClassDirs(self::$dirs, self::REGEX, function ($annotations) {
             if ($annotations) {
-                list($ofClass, $ofMethods) = $annotations;
+                list($ofClass, $ofProperties, $ofMethods) = $annotations;
                 self::assemblePipesFromAnnotations($ofClass, $ofMethods);
             }
         }, __CLASS__);
@@ -39,7 +42,7 @@ final class PipeManager
 
     public static function assemblePipesFromAnnotations(array $ofClass, array $ofMethods)
     {
-        $name = $ofClass['NAME'] ?? null;
+        $name = $ofClass['doc']['NAME'] ?? null;
         if (! $name) {
             return;
         }
