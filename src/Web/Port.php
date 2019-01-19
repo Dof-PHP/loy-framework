@@ -15,7 +15,15 @@ class Port
      * The route collection instance related to current request
      */
     protected $route;
+
+    /**
+     * The request instance related to current http session
+     */
     protected $request;
+
+    /**
+     * The response instance related to current http session
+     */
     protected $response;
 
     public function __construct()

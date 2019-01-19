@@ -115,13 +115,19 @@ class Annotation
 
         $res = [];
         foreach ($properties as $property) {
+            if ($namespace !== $property->getDeclaringClass()->name) {
+                continue;
+            }
             $res[$property->name]['meta']['modifiers'] = Reflection::getModifierNames(
                 $property->getModifiers()
             );
             $comment = $property->getDocComment();
-            if ($comment) {
-                $res[$property->name]['doc'] = self::parseComment($comment, $regex, $origin);
+            if (! $comment) {
+                $res[$property->name]['doc'] = [];
+                continue;
             }
+
+            $res[$property->name]['doc'] = self::parseComment($comment, $regex, $origin);
         }
 
         return $res;
@@ -139,12 +145,7 @@ class Annotation
 
         $res = [];
         foreach ($methods as $method) {
-            $mfile = $method->getFileName();
-            if (! $mfile) {
-                continue;
-            }
-            $nsMethod = get_namespace_of_file($mfile, true);
-            if ($namespace !== $nsMethod) {
+            if ($namespace !== $method->getDeclaringClass()->name) {
                 continue;
             }
             $comment = $method->getDocComment();
