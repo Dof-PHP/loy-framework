@@ -32,14 +32,14 @@ if (! function_exists('et')) {
     function et(...$vars)
     {
         foreach ($vars as $var) {
+            $next = next($vars);
             if (is_scalar($var)) {
                 echo $var;
+                if ($next) {
+                    echo is_scalar($next) ? ' => ' : PHP_EOL;
+                }
             } else {
                 print_r($var);
-            }
-
-            if (false !== next($vars)) {
-                echo ' => ';
             }
         }
 
