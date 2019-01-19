@@ -8,7 +8,8 @@ use Exception;
 
 final class DomainManager
 {
-    const DOMAIN_KEY = '__domain__';
+    const DOMAIN_DIR  = '__domain__';
+    const DOMAIN_FILE = 'domain.php';
 
     private static $domainRoot = '';
     private static $domains    = [];
@@ -26,9 +27,9 @@ final class DomainManager
     private static function findDomains(string $dir)
     {
         list_dir($dir, function (array $list, string $dir) {
-            if (in_array(self::DOMAIN_KEY, $list)) {
-                $domain = join(DIRECTORY_SEPARATOR, [$dir, self::DOMAIN_KEY]);
-                if (is_dir($domain)) {
+            if (in_array(self::DOMAIN_DIR, $list)) {
+                $domain = join(DIRECTORY_SEPARATOR, [$dir, self::DOMAIN_DIR, self::DOMAIN_FILE]);
+                if (is_file($domain)) {
                     self::$domains[] = $dir;
                 }
             }
