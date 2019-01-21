@@ -68,7 +68,6 @@ final class WrapperManager
                 continue;
             }
             $name = $namePrefix ? join('.', [$namePrefix, $name]) : $name;
-
             if ($exists = (self::$wrappers[$type][$name] ?? false)) {
                 $_class  = $exists['class']  ?? '?';
                 $_method = $exists['method'] ?? '?';
@@ -90,9 +89,6 @@ final class WrapperManager
 
     public static function getWrapperErr(string $err = null) : ?array
     {
-        if (! $err) {
-            return null;
-        }
         $arr = self::$wrappers['err'];
         return $err ? ($arr[$err] ?? null) : $arr;
     }
@@ -104,9 +100,6 @@ final class WrapperManager
 
     public static function getWrapperOut(string $out = null) : ?array
     {
-        if (! $out) {
-            return null;
-        }
         $arr = self::$wrappers['out'];
         return $out ? ($arr[$out] ?? null) : $arr;
     }
@@ -118,9 +111,6 @@ final class WrapperManager
 
     public static function getWrapperIn(string $in = null) : ?array
     {
-        if (! $in) {
-            return null;
-        }
         $arr = self::$wrappers['in'];
         return $in ? ($arr[$in] ?? null) : $arr;
     }

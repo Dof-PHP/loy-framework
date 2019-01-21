@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Loy\Framework\Base;
 
 use Loy\Framework\Base\DomainManager;
+use Loy\Framework\Base\ORMManager;
 use Loy\Framework\Base\Exception\InvalidProjectRootException;
 
 class Kernel
@@ -21,6 +22,12 @@ class Kernel
         self::$projectRoot = $projectRoot;
 
         self::compileDomains();
+        self::compileOrms();
+    }
+
+    public static function compileOrms()
+    {
+        ORMManager::compile(DomainManager::getDirs());
     }
 
     public static function compileDomains()

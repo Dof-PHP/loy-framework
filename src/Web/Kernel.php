@@ -9,6 +9,7 @@ use Error;
 use Loy\Framework\Base\Kernel as CoreKernel;
 use Loy\Framework\Base\DomainManager;
 use Loy\Framework\Base\TypeHint;
+use Loy\Framework\Base\Validator;
 use Loy\Framework\Base\Exception\InvalidProjectRootException;
 use Loy\Framework\Base\Exception\TypeHintConverterNotExistsException;
 use Loy\Framework\Base\Exception\TypeHintConvertException;
@@ -48,6 +49,7 @@ use Loy\Framework\Web\Exception\InvalidHttpWrapperDirException;
 use Loy\Framework\Web\Exception\InvalidHttpPipeNamespaceException;
 use Loy\Framework\Web\Exception\DuplicatePipeDefinitionException as DuplicatePipeDefinitionExceptionWeb;
 use Loy\Framework\Web\Exception\DuplicateWrapperDefinitionException as DuplicateWrapperDefinitionExceptionWeb;
+use Loy\Framework\Web\Exception\InvalidWrapperinReturnValueException;
 
 final class Kernel extends CoreKernel
 {
@@ -64,6 +66,8 @@ final class Kernel extends CoreKernel
             parent::handle($projectRoot);
         } catch (InvalidProjectRootException $e) {
             throw new FrameworkCoreException("InvalidProjectRootException => {$e->getMessage()}");
+        } catch (Exception | Error $e) {
+            throw new FrameworkCoreException($e->getMessage(), 500, $e->getTraceAsString());
         }
 
         self::compileRoutes();
@@ -75,7 +79,7 @@ final class Kernel extends CoreKernel
     public static function compileWrappers()
     {
         try {
-            WrapperManager::compile(DomainManager::getDomains());
+            WrapperManager::compile(DomainManager::getDirs());
         } catch (DuplicateWrapperDefinitionException $e) {
             throw new DuplicateWrapperDefinitionExceptionWeb($e->getMessage());
         } catch (InvalidAnnotationDirException $e) {
@@ -88,7 +92,7 @@ final class Kernel extends CoreKernel
     public static function compilePipes()
     {
         try {
-            PipeManager::compile(DomainManager::getDomains());
+            PipeManager::compile(DomainManager::getDirs());
         } catch (DuplicatePipeDefinitionException $e) {
             throw new DuplicatePipeDefinitionExceptionWeb($e->getMessage());
         } catch (InvalidAnnotationDirException $e) {
@@ -101,7 +105,7 @@ final class Kernel extends CoreKernel
     public static function compileRoutes()
     {
         try {
-            RouteManager::compile(DomainManager::getDomains());
+            RouteManager::compile(DomainManager::getDirs());
         } catch (DuplicateRouteDefinitionException $e) {
             throw new DuplicateRouteDefinitionExceptionWeb($e->getMessage());
         } catch (DuplicateRouteAliasDefinitionException $e) {
@@ -134,7 +138,7 @@ final class Kernel extends CoreKernel
         try {
             $result = call_user_func_array([(new $class), $method], $params);
         } catch (Exception | Error $e) {
-            throw new BadHttpPortCallException("{$class}@{$method}: {$e->getMessage()}");
+            throw new BadHttpPortCallException("{$class}@{$method}: {$e->getMessage()}", 500, $e->getTraceAsString());
         }
 
         try {
@@ -165,12 +169,15 @@ final class Kernel extends CoreKernel
         }
 
         try {
-            $res = call_user_func_array([(new $class), $method], [
-                Request::getInstance(),
-                Response::getInstance()
-            ]);
+            $rules  = call_user_func_array([(new $class), $method], []);
+            if (! is_array($rules)) {
+                throw new InvalidWrapperinReturnValueException("{$class}@{$method} (Array Required)");
+            }
+            $params = array_keys($rules);
+            $result = [];
+            Validator::execute(Request::only($params), $rules, $result);
 
-            Route::getInstance()->params->api = $res;
+            Route::getInstance()->params->api = $result;
         } catch (ValidationFailureException $e) {
             throw new BadRequestParameterException($e->getMessage(), 400);
         } catch (Exception | Error $e) {

@@ -19,6 +19,15 @@ final class TypeHint
         return self::$converter($val);
     }
 
+    public static function convertToString($val)
+    {
+        if (self::isString($val)) {
+            return (string) $val;
+        }
+
+        throw new TypeHintConvertException('Unable to convert to string => '.string_literal($val));
+    }
+
     public static function convertToInt($val)
     {
         if (self::isInt($val)) {
@@ -26,6 +35,11 @@ final class TypeHint
         }
 
         throw new TypeHintConvertException('Unable to convert to int => '.string_literal($val));
+    }
+
+    public static function isString($val) : bool
+    {
+        return is_scalar($val);
     }
 
     public static function isInt($val) : bool

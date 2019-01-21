@@ -133,31 +133,41 @@ if (! function_exists('get_namespace_of_file')) {
                 continue;
             }
         }
-        for ($j = $nsIdx; $j < $cnt; ++$j) {
-            $token = $tokens[$j + 1] ?? false;
-            if ($token === ';') {
-                break;
+        if ($findingNS === false) {
+            for ($j = $nsIdx; $j < $cnt; ++$j) {
+                $token = $tokens[$j + 1] ?? false;
+                if ($token === ';') {
+                    break;
+                }
+                $ns .= ($token[1] ?? '');
             }
-            $ns .= ($token[1] ?? '');
+        }
+        $ns = trim($ns);
+        if (! $ns) {
+            return false;
         }
         if (! $withClass) {
-            return trim($ns);
+            return $ns ?: '\\';
         }
-
         $cnLine = [];
-        for ($k = $cnIdx; $k < $cnt; ++$k) {
-            $token = $tokens[$k + 1] ?? false;
-            if ($token === '{') {
-                break;
+        if ($findingCN === false) {
+            for ($k = $cnIdx; $k < $cnt; ++$k) {
+                $token = $tokens[$k + 1] ?? false;
+                if ($token === '{') {
+                    break;
+                }
+                $cnLine[] = ($token[1] ?? '');
             }
-            $cnLine[] = ($token[1] ?? '');
         }
         $cnLine = array_values(array_filter($cnLine, function ($item) {
             return ! empty(trim($item));
         }));
         $cn = $cnLine[0] ?? '';
-
-        return join('\\', [trim($ns), $cn]);
+        if (! $cn) {
+            return false;
+        }
+        $cn = join('\\', [$ns, $cn]);
+        return class_exists($cn) ? $cn : false;
     }
 }
 if (! function_exists('enxml')) {

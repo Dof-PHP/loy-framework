@@ -8,8 +8,8 @@ use Loy\Framework\Web\Exception\BaseWebException;
 
 class BadHttpPortCallException extends BaseWebException
 {
-    public function __construct(string $call, int $code = 500)
+    public function __construct(string $call, int $code = 500, string $lastTrace = null)
     {
-        parent::__construct($call, $code);
+        parent::__construct($call, $code, $lastTrace);
     }
 }

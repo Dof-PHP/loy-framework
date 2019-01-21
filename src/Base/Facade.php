@@ -4,41 +4,73 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Base;
 
+use Exception;
+use Error;
+
 abstract class Facade
 {
-    private static $pool = [];
+    private static $__pool = [];
 
     public static function __callStatic(string $method, array $argvs = [])
     {
-        return call_user_func_array([self::getInstance(), $method], $argvs);
+        $instance = self::getInstance();
+
+        if (method_exists(static::class, '__getDynamicProxyNamespace') && method_exists($instance, '__setDynamicProxyNamespace')) {
+            $instance->__setDynamicProxyNamespace(static::__getDynamicProxyNamespace());
+        }
+
+        return call_user_func_array([$instance, $method], $argvs);
     }
 
     public static function getInstance()
     {
-        $ns = self::proxy('namespace');
-        $singleton = self::proxy('singleton');
+        $namespace = static::__getProxyNamespace();
+        $singleton = static::__isProxySingleton();
         if (! $singleton) {
-            $ns = self::proxy('namespace');
-            return new $ns;
+            return new $namespace;
         }
 
-        if (! (self::$pool[static::class] ?? false) instanceof $ns) {
-            self::$pool[static::class] = new $ns;
+        if (! (self::$__pool[static::class] ?? false) instanceof $namespace) {
+            self::$__pool[static::class] = new $namespace;
         }
 
-        return self::$pool[static::class];
+        return self::$__pool[static::class];
     }
 
-    public static function proxy(string $attr)
+    /**
+     * Get proxy singleton from private static property $singleton by default
+     * Or get from overrided method __isProxySingleton() of subclass
+     */
+    protected static function __isProxySingleton()
     {
         $child = static::class;
 
-        return $child::${$attr};
+        try {
+            return $child::$singleton;
+        } catch (Exception | Error $e) {
+            return true;
+        }
+    }
+
+
+    /**
+     * Get proxy namesapce from private static property $namespace by default
+     * Or get from overrided method __getProxyNamespace() of subclass
+     */
+    protected static function __getProxyNamespace()
+    {
+        $child = static::class;
+
+        try {
+            return $child::$namespace;
+        } catch (Exception | Error $e) {
+            return get_called_class();
+        }
     }
 
     public static function new()
     {
-        $proxy = self::proxy('namespace');
+        $proxy = self::__getProxyNamespace();
 
         return new $proxy;
     }

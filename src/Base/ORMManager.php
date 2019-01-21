@@ -14,15 +14,15 @@ class ORMManager
     private static $dirs = [];
     private static $orms = [];
 
-    public static function compile()
+    public static function compile(array $dirs)
     {
-        $dirs = [
-            '/data/wwwroot/pw.centos/domain/User',
-        ];
-
         if (count($dirs) < 1) {
             return;
         }
+
+        // Reset
+        self::$dirs = [];
+        self::$orms = [];
 
         array_map(function ($item) {
             $dir = join(DIRECTORY_SEPARATOR, [$item, self::ORM_DIR]);
@@ -30,6 +30,7 @@ class ORMManager
                 self::$dirs[] = $dir;
             }
         }, $dirs);
+
 
         // Excetions may thrown but let invoker to catch for different scenarios
         //
@@ -45,6 +46,39 @@ class ORMManager
 
     public static function assembleOrmsFromAnnotations(array $ofClass, array $ofProperties)
     {
-        ee($ofClass, $ofProperties);
+        $namespace = $ofClass['namespace'] ?? false;
+        if (! $namespace) {
+            return;
+        }
+        if ($exists = (self::$orms[$namespace] ?? false)) {
+            $ns = $exists['namespace'] ?? '?';
+            throw new \Exception('DuplicateOrmNamespaceException: '.$ns);
+        }
+        self::$orms[$namespace]['meta'] = $ofClass['doc'] ?? [];
+
+        foreach ($ofProperties as $name => $attrs) {
+            $column = $attrs['doc']['COLUMN'] ?? false;
+            if (! $column) {
+                continue;
+            }
+            $_exists = self::$orms[$namespace]['columns'][$column] ?? false;
+            if ($_exists) {
+                throw new \Exception(
+                    'DuplicateOrmColumnException: '."{$namespace} ({$column} <=> {$_exists} & {$name})"
+                );
+            }
+            self::$orms[$namespace]['properties'][$name] = $attrs['doc'] ?? [];
+            self::$orms[$namespace]['columns'][$column]  = $name;
+        }
+    }
+
+    public static function getOrm(string $namespace)
+    {
+        return self::$orms[$namespace] ?? null;
+    }
+
+    public static function getOrms()
+    {
+        return self::$orms;
     }
 }

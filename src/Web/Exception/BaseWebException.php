@@ -14,9 +14,9 @@ class BaseWebException extends Exception
         $this->message = $message;
         $this->code    = $code;
 
-        $lastTrace= $lastTrace ? explode(PHP_EOL, $this->lastTrace) : [];
+        $lastTrace= $lastTrace ? explode(PHP_EOL, $lastTrace) : [];
 
         Response::setStatus($this->code);
-        Response::send([$this->code, join(' => ', [objectname($this), $this->message]), $lastTrace], true);
+        Response::send([$this->code, objectname($this), $this->message, $lastTrace], true);
     }
 }
