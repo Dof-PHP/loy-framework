@@ -9,7 +9,7 @@ use Loy\Framework\Base\Exception\DuplicatePipeDefinitionException;
 
 final class PipeManager
 {
-    const PIPE_DIR = 'Http/Pipe';
+    const PIPE_DIR = ['Http', 'Pipe'];
     const REGEX = '#@([a-zA-z]+)\((.*)\)#';
 
     private static $dirs  = [];
@@ -22,7 +22,7 @@ final class PipeManager
         }
 
         array_map(function ($item) {
-            $dir = join(DIRECTORY_SEPARATOR, [$item, self::PIPE_DIR]);
+            $dir = ospath($item, self::PIPE_DIR);
             if (is_dir($dir)) {
                 self::$dirs[] = $dir;
             }

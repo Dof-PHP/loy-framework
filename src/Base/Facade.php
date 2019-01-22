@@ -9,13 +9,17 @@ use Error;
 
 abstract class Facade
 {
+    public static $singleton = true;
     private static $__pool = [];
 
     public static function __callStatic(string $method, array $argvs = [])
     {
         $instance = self::getInstance();
 
-        if (method_exists(static::class, '__getDynamicProxyNamespace') && method_exists($instance, '__setDynamicProxyNamespace')) {
+        if (true
+            && method_exists(static::class, '__getDynamicProxyNamespace')
+            && method_exists($instance, '__setDynamicProxyNamespace')
+        ) {
             $instance->__setDynamicProxyNamespace(static::__getDynamicProxyNamespace());
         }
 
@@ -70,7 +74,7 @@ abstract class Facade
 
     public static function new()
     {
-        $proxy = self::__getProxyNamespace();
+        $proxy = static::__getProxyNamespace();
 
         return new $proxy;
     }

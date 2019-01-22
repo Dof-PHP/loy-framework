@@ -185,18 +185,18 @@ final class Curl
         $this->close();
 
         if ('head' === $this->method) {
-            $result = '';
+            $result = null;
         }
 
         return $this->response($status, $result);
     }
 
-    private function response(int $status, string $body)
+    private function response(int $status, string $body = null)
     {
         return new class($status, $body, $this->return['headers'] ?? [], $this->return['message'] ?? '?') {
             public function __construct(
                 int $status = 200,
-                string $body = '',
+                string $body = null,
                 array $headers = [],
                 string $message = ''
             ) {

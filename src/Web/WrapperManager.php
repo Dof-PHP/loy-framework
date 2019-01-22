@@ -9,7 +9,7 @@ use Loy\Framework\Base\Exception\DuplicateWrapperDefinitionException;
 
 final class WrapperManager
 {
-    const WRAPPER_DIR = 'Http/Wrapper';
+    const WRAPPER_DIR = ['Http', 'Wrapper'];
     const REGEX = '#@([a-zA-z]+)\((.*)\)#';
 
     private static $dirs = [];
@@ -26,7 +26,7 @@ final class WrapperManager
         }
 
         array_map(function ($item) {
-            $dir = join(DIRECTORY_SEPARATOR, [$item, self::WRAPPER_DIR]);
+            $dir = ospath($item, self::WRAPPER_DIR);
             if (is_dir($dir)) {
                 self::$dirs[] = $dir;
             }

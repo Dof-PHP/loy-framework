@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base\Facade;
+namespace Loy\Framework\Facade;
 
 use Loy\Framework\Base\Facade;
-use Loy\Framework\Base\ORM as Instance;
+use Loy\Framework\Storage\ORM as Instance;
 
 class ORM extends Facade
 {

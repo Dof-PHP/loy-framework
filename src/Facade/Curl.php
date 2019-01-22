@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base\Facade;
+namespace Loy\Framework\Facade;
 
 use Loy\Framework\Base\Facade;
 use Loy\Framework\Base\Curl as Instance;

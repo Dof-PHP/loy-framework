@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base\DSL;
+namespace Loy\Framework\DSL;
 
-use Loy\Framework\Base\Exception\InvalidInputFieldsSentenceTypeException;
-use Loy\Framework\Base\Exception\InputFieldsSentenceGrammerError;
-use Loy\Framework\Base\Exception\InputFieldsParameterGrammerError;
+use Loy\Framework\DSL\Exception\InvalidInputFieldsSentenceTypeException;
+use Loy\Framework\DSL\Exception\InputFieldsSentenceGrammerError;
+use Loy\Framework\DSL\Exception\InputFieldsParameterGrammerError;
 
 final class InputFieldsParser
 {

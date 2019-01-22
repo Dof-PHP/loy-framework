@@ -10,7 +10,7 @@ use Loy\Framework\Base\Exception\DuplicateRouteAliasDefinitionException;
 
 final class RouteManager
 {
-    const ROUTE_DIR = 'Http/Port';
+    const ROUTE_DIR = ['Http', 'Port'];
     const REGEX = '#@([a-zA-z]+)\((.*)\)#';
 
     private static $aliases = [];
@@ -97,7 +97,7 @@ final class RouteManager
         }
 
         array_map(function ($item) {
-            $dir = join(DIRECTORY_SEPARATOR, [$item, self::ROUTE_DIR]);
+            $dir = ospath($item, self::ROUTE_DIR);
             if (is_dir($dir)) {
                 self::$dirs[] = $dir;
             }

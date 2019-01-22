@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base;
+namespace Loy\Framework\Storage;
 
 use Loy\Framework\Base\ORMManager;
 use Loy\Framework\Base\DomainManager;

@@ -388,3 +388,23 @@ if (! function_exists('objectname')) {
         }
     }
 }
+if (! function_exists('ospath')) {
+    function ospath(...$items) : string
+    {
+        $path = '';
+        $ds   = DIRECTORY_SEPARATOR;
+        foreach ($items as $item) {
+            if (is_scalar($item)) {
+                $item = (string) $item;
+                $path = (0 === mb_strpos($item, $ds)) ? $path.$item : join($ds, [$path, $item]);
+                continue;
+            }
+            if (is_array($item)) {
+                $path .= ospath(...$item);
+                continue;
+            }
+        }
+
+        return $path;
+    }
+}

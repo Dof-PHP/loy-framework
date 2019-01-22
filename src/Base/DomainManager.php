@@ -31,8 +31,8 @@ final class DomainManager
     {
         list_dir($dir, function (array $list, string $dir) use ($lastDomain) {
             if (in_array(self::DOMAIN_DIR, $list)) {
-                $domain  = join(DIRECTORY_SEPARATOR, [$dir, self::DOMAIN_DIR]);
-                $_domain = join(DIRECTORY_SEPARATOR, [$domain, self::DOMAIN_FILE]);
+                $domain  = ospath($dir, self::DOMAIN_DIR);
+                $_domain = ospath($domain, self::DOMAIN_FILE);
                 if (is_dir($domain) && is_file($_domain)) {
                     $lastDomain = $domain;
                     self::$dirs[] = $dir;
@@ -40,7 +40,7 @@ final class DomainManager
             }
 
             foreach ($list as $pathname) {
-                $path = join(DIRECTORY_SEPARATOR, [$dir, $pathname]);
+                $path = ospath($dir, $pathname);
                 if (in_array($pathname, ['.', '..', self::DOMAIN_DIR])) {
                     continue;
                 }
