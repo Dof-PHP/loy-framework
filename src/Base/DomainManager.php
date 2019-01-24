@@ -6,6 +6,7 @@ namespace Loy\Framework\Base;
 
 use Exception;
 use Loy\Framework\Base\ConfigManager;
+use Loy\Framework\Facade\Domain;
 
 final class DomainManager
 {
@@ -13,14 +14,38 @@ final class DomainManager
     const DOMAIN_FLAG = '__domain__';
     const DOMAIN_FILE = 'domain.php';
 
-    private static $root = '';
-    private static $dirs = [
+    private static $root  = '';
+    private static $files = [];
+    private static $pool  = [];
+    private static $chain = [
+        'root' => [],    // domain ancestor (outside domain directory)
+        'up'   => [],    // child  => parent
+        'down' => [],    // parent => child
+    ];
+    private static $dirs  = [
         'D' => [],    // domain root only
-        'M' => [],    // meta dir only
-        'M2D' => [],    // meta dir    => domain root
-        'D2M' => [],    // domain root => meta dir
+        'M' => [],    // domain meta dir only
+        'M2D' => [],    // domain meta dir => domain root
+        'D2M' => [],    // domain root => domain meta dir
     ];
     private static $namespaces = [];
+
+    public static function initFromFilepath(string $path)
+    {
+        $domainMeta = self::$files[$path] ?? null;
+        if (! $domainMeta) {
+            return zombie_object();
+        }
+        $domainRoot = self::$dirs['M2D'][$domainMeta] ?? null;
+        if (! $domainRoot) {
+            return zombie_object();
+        }
+        if ($object = (self::$pool[$domainRoot] ?? false)) {
+            return $object;
+        }
+
+        return self::$pool[$domainRoot] = Domain::new($domainMeta, $domainRoot, self::$chain);
+    }
 
     public static function compile(string $root)
     {
@@ -31,8 +56,9 @@ final class DomainManager
         self::$root = $domainRoot;
         self::$dirs = [];
         self::$namespaces = [];
+        self::$chain['root'] = ConfigManager::getDefaultPath();
 
-        self::find(self::$root, ConfigManager::getDefaultPath());
+        self::find(self::$root, self::$chain['root']);
     }
 
     /**
@@ -48,7 +74,10 @@ final class DomainManager
                 $domain  = ospath($dir, self::DOMAIN_FLAG);
                 $_domain = ospath($domain, self::DOMAIN_FILE);
                 if (is_dir($domain) && is_file($_domain)) {
+                    self::$chain['up'][$domain] = $last;
+                    self::$chain['down'][$last][$domain] = $dir;
                     $last = $domain;
+                    self::$files[$_domain] = $domain;
                     self::$dirs['D'][] = $dir;
                     self::$dirs['M'][] = $domain;
                     self::$dirs['D2M'][$dir]    = $domain;
@@ -66,6 +95,11 @@ final class DomainManager
                     continue;
                 }
 
+                if ('php' !== pathinfo($path, PATHINFO_EXTENSION)) {
+                    continue;
+                }
+
+                self::$files[$path] = $last;
                 $ns = get_namespace_of_file($path, true);
                 if ($ns) {
                     self::$namespaces[$ns] = $last;
@@ -77,6 +111,18 @@ final class DomainManager
     public static function getRoot() : string
     {
         return self::$root;
+    }
+
+    public static function getDomainRootByFilepath(string $path = null) : ?string
+    {
+        $meta = self::getDomainMetaByFilepath($path);
+
+        return $meta ? (self::$dirs['M2D'][$meta] ?? null) : null;
+    }
+
+    public static function getDomainMetaByFilepath(string $path = null) : ?string
+    {
+        return self::$files[$path] ?? null;
     }
 
     public static function getDomainByNamespace(string $ns = null) : ?string

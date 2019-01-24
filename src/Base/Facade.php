@@ -83,10 +83,10 @@ abstract class Facade
         }
     }
 
-    public static function new()
+    public static function new(...$params)
     {
         $proxy = static::__getProxyNamespace();
 
-        return new $proxy;
+        return new $proxy(...$params);
     }
 }

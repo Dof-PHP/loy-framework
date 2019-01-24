@@ -11,7 +11,18 @@ if (! function_exists('collect')) {
             }
         }
 
-        return new \Loy\Framework\Base\Collection($data, $origin);
+        return \Loy\Framework\Facade\Collection::new($data, $origin);
+    }
+}
+if (! function_exists('domain')) {
+    function domain()
+    {
+        try {
+            throw new \Exception;
+        } catch (\Exception $e) {
+            $filepath = $e->getTrace()[0]['file'] ?? null;
+            return \Loy\Framework\Base\DomainManager::initFromFilepath($filepath);
+        }
     }
 }
 if (! function_exists('validate')) {

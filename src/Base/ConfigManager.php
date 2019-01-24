@@ -23,7 +23,7 @@ final class ConfigManager
     /**
      * Load configs from domains
      *
-     * @param $dirs Array (Domain Key => Dir Path)
+     * @param $dirs Array (Domain Root => Domain Meta Path)
      */
     public static function load(array $dirs)
     {

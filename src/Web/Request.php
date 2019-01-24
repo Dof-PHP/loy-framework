@@ -13,16 +13,7 @@ class Request extends Facade
     protected static $namespace = Instance::class;
 
     /**
-     * Create a new fresh request instance
-     */
-    public static function new() : Instance
-    {
-        return new self::$namespace;
-    }
-
-    /**
      * Make a request to inner HTTP ports
-     *
      */
     public static function make(
         string $type,

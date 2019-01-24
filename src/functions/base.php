@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 if (! function_exists('bomb_class')) {
-    function bomb_class()
+    function bomb_object()
     {
         return new class {
             public function __get($key)
@@ -17,6 +17,21 @@ if (! function_exists('bomb_class')) {
         };
     }
 }
+if (! function_exists('zombie_object')) {
+    function zombie_object()
+    {
+        return new class {
+            public function __get(string $key)
+            {
+                return $this;
+            }
+            public function __call(string $method, array $argvs = [])
+            {
+                return $this;
+            }
+        };
+    }
+}
 if (! function_exists('pt')) {
     function pt(...$vars)
     {
@@ -25,7 +40,7 @@ if (! function_exists('pt')) {
             echo PHP_EOL;
         }
 
-        return bomb_class();
+        return bomb_object();
     }
 }
 if (! function_exists('et')) {
@@ -45,7 +60,7 @@ if (! function_exists('et')) {
 
         echo PHP_EOL;
 
-        return bomb_class();
+        return bomb_object();
     }
 }
 if (! function_exists('ee')) {
@@ -59,7 +74,7 @@ if (! function_exists('pp')) {
     {
         var_dump(...$vars);
 
-        return bomb_class();
+        return bomb_object();
     }
 }
 if (! function_exists('dd')) {
