@@ -25,6 +25,12 @@ if (! function_exists('domain')) {
         }
     }
 }
+if (! function_exists('config')) {
+    function config(string $key = 'domain')
+    {
+        return \Loy\Framework\Base\ConfigManager::get($key);
+    }
+}
 if (! function_exists('validate')) {
     function validate(array $data, array $rule = [], array $message = [], bool $exception = false)
     {

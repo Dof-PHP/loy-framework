@@ -43,12 +43,12 @@ final class ConfigManager
             throw new InvalidProjectRootException($root);
         }
 
-        self::$default = self::loadDir(
+        self::$default = collect(self::loadDir(
             self::$path['default'] = ospath($root, self::DEFAULT_DIR)
-        );
-        self::$framework = self::loadDir(
+        ));
+        self::$framework = collect(self::loadDir(
             self::$path['framework'] = ospath($root, self::FRAMEWORK_DIR)
-        );
+        ));
     }
 
     public static function loadDir(string $path)
@@ -76,6 +76,16 @@ final class ConfigManager
         }
 
         return $result;
+    }
+
+    public static function get(string $key = 'domain')
+    {
+        if ($key === 'domain') {
+            return self::getDefault();
+        }
+        if ($key === 'framework') {
+            return self::getFramework();
+        }
     }
 
     public static function getDomain(string $domain)

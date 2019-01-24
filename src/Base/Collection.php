@@ -18,7 +18,7 @@ class Collection implements
     private $origin = null;
     private $data    = [];
     private $keys    = [];
-    private $count   = -1;
+    private $count   = 0;
     private $pointer = 0;
 
     public function __construct(array $data = [], $origin = null)
@@ -36,6 +36,11 @@ class Collection implements
     public function getData() : array
     {
         return $this->data;
+    }
+
+    public function has(string $key) : bool
+    {
+        return in_array($key, $this->keys);
     }
 
     public function get($key)
@@ -140,7 +145,7 @@ class Collection implements
     
     public function count()
     {
-        return (-1 !== $this->count) ? $this->count : count($this->data);
+        return count($this->data);
     }
     
     public function __toArray()
