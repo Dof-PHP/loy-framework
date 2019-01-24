@@ -8,7 +8,10 @@ use Loy\Framework\DSL\Exception\InvalidInputFieldsSentenceTypeException;
 use Loy\Framework\DSL\Exception\InputFieldsSentenceGrammerError;
 use Loy\Framework\DSL\Exception\InputFieldsParameterGrammerError;
 
-final class InputFieldsParser
+/**
+ * IFRSN: Input Fields Relation Structured Notation
+ */
+final class IFRSN
 {
     public static function parse(string $str) : array
     {
