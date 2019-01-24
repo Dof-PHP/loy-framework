@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Base;
 
-use Loy\Framework\Base\Annotation;
+use Loy\Framework\Facade\Annotation;
 
-class ORMManager
+class OrmManager
 {
     const ORM_DIR = 'ORM';
-    const REGEX = '#@([a-zA-z]+)\((.*)\)#';
 
     private static $dirs = [];
     private static $orms = [];
@@ -36,7 +35,7 @@ class ORMManager
         //
         // use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
         // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
-        Annotation::parseClassDirs(self::$dirs, self::REGEX, function ($annotations) {
+        Annotation::parseClassDirs(self::$dirs, function ($annotations) {
             if ($annotations) {
                 list($ofClass, $ofProperties, $ofMethods) = $annotations;
                 self::assembleOrmsFromAnnotations($ofClass, $ofProperties);
@@ -56,6 +55,7 @@ class ORMManager
         }
         self::$orms[$namespace]['meta'] = $ofClass['doc'] ?? [];
 
+        $ofProperties = $ofProperties['self'] ?? [];
         foreach ($ofProperties as $name => $attrs) {
             $column = $attrs['doc']['COLUMN'] ?? false;
             if (! $column) {

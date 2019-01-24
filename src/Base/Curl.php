@@ -8,10 +8,13 @@ final class Curl
 {
     private $url = null;
     private $ch  = null;
+    private $notInCB   = false;
+    private $urlencode = true;
+    private $sendAsJson = false;
+    private $sendAsXml  = false;
     private $method  = null;
-    private $params  = [];
+    private $params  = null;
     private $headers = [];
-    private $notInCB = false;
     private $options = [
         'default' => [],
         'custom'  => [],
@@ -23,12 +26,12 @@ final class Curl
         'body'    => '',
     ];
 
-    public function __construct(string $url = '', array $params = [], array $headers = [], array $options = [])
+    public function __construct(string $url = '', $params = [], array $headers = [], array $options = [])
     {
         $this->init($url, $params, $headers);
     }
 
-    public function init(string $url = null, array $params = null, array $headers = null, array $options = null)
+    public function init(string $url = null, $params = null, array $headers = null, array $options = null)
     {
         if (! is_null($url)) {
             $this->setUrl($url);
@@ -42,6 +45,8 @@ final class Curl
         if (! is_null($options)) {
             $this->setOptions($options);
         }
+
+        return $this;
     }
 
     public function setOptions(array $options)
@@ -58,9 +63,36 @@ final class Curl
         return $this;
     }
 
-    public function setParams(array $params)
+    public function setParams($params)
     {
         $this->params = $params;
+
+        return $this;
+    }
+
+    public function sendAsXml(bool $asXml)
+    {
+        $this->sendAsXml  = $asXml;
+        if ($asXml) {
+            $this->sendAsJson = false;
+        }
+
+        return $this;
+    }
+
+    public function sendAsJson(bool $asJson)
+    {
+        $this->sendAsJson = $asJson;
+        if ($asJson) {
+            $this->sendAsXml = false;
+        }
+
+        return $this;
+    }
+
+    public function setUrlencode(bool $encode)
+    {
+        $this->urlencode = $encode;
 
         return $this;
     }
@@ -79,7 +111,7 @@ final class Curl
         return $this;
     }
 
-    public function post(string $url = null, array $params = null, array $headers = null, array $options = null)
+    public function post(string $url = null, $params = null, array $headers = null, array $options = null)
     {
         return $this->setMethod('post')->request([
             CURLOPT_POST   => true,
@@ -87,21 +119,14 @@ final class Curl
         ], $url, $params, $headers, $options);
     }
 
-    public function get(string $url = null, array $params = null, array $headers = null, array $options = null)
+    public function get(string $url = null, $params = null, array $headers = null, array $options = null)
     {
-        if ($params) {
-            $query  = parse_url($url, PHP_URL_QUERY);
-            $params = http_build_query($params);
-            $url   .= $query ? urlencode('&'.$params) : urlencode('?'.$params);
-
-            $params = [];
-        }
         return $this->setMethod('get')->request([
             CURLOPT_HEADER => false,
         ], $url, $params, $headers, $options);
     }
 
-    public function delete(string $url = null, array $params = null, array $headers = null, array $options = null)
+    public function delete(string $url = null, $params = null, array $headers = null, array $options = null)
     {
         return $this->setMethod('delete')->request([
             CURLOPT_CUSTOMREQUEST  => 'DELETE',
@@ -117,7 +142,7 @@ final class Curl
         ], $url, $params, $headers, $options);
     }
 
-    public function put(string $url = null, array $params = null, array $headers = null, array $options = null)
+    public function put(string $url = null, $params = null, array $headers = null, array $options = null)
     {
         return $this->setMethod('put')->request([
             CURLOPT_CUSTOMREQUEST  => 'PUT',
@@ -125,7 +150,7 @@ final class Curl
         ], $url, $params, $headers, $options);
     }
 
-    public function head(string $url = null, array $params = null, array $headers = null, array $options = null)
+    public function head(string $url = null, $params = null, array $headers = null, array $options = null)
     {
         return $this->setMethod('head')->request([
             CURLOPT_CUSTOMREQUEST  => 'HEAD',
@@ -134,7 +159,7 @@ final class Curl
         ], $url, $params, $headers, $options);
     }
 
-    public function request(array $default = [], string $url = null, array $params = null, array $headers = null, array $options = null)
+    public function request(array $default = [], string $url = null, $params = null, array $headers = null, array $options = null)
     {
         $this->init($url, $params, $headers, $options);
 
@@ -145,12 +170,47 @@ final class Curl
         return $this->execute();
     }
 
+    private function prepare()
+    {
+        if ($this->params) {
+            if ($this->method === 'get') {
+                $query  = parse_url($this->url, PHP_URL_QUERY);
+                $params = is_array($this->params) ? http_build_query($this->params) : $this->params;
+                $params = $query ? '&'.$params : '?'.$params;
+                $params = $this->urlencode ? urlencode($params) : $params;
+                $this->url .= $params;
+            } else {
+                if (is_array($this->params)) {
+                    $this->params = $this->sendAsJson ? enjson($this->params) : (
+                        $this->sendAsXml ? enxml($this->params) : (
+                            $this->urlencode
+                            ? urlencode(http_build_query($this->params))
+                            : http_build_query($this->params)
+                        )
+                    );
+                } elseif (is_scalar($this->params)) {
+                    $this->params = (string) $this->params;
+                }
+            }
+        }
+
+        if ($this->sendAsJson) {
+            $this->headers['Content-Type'] = 'application/json';
+        }
+        if ($this->sendAsXml) {
+            $this->headers['Content-Type'] = 'application/xml';
+        }
+    }
+
     private function execute()
     {
+        $this->prepare();
+
         $this->ch = curl_init($this->url);
         if (! $this->ch) {
             return $this->response(500, 'Request Init Failed');
         }
+
         if ($this->headers) {
             curl_setopt($ch, CURLOPT_HTTPHEADER, $this->encodeHeadersKV($this->headers));
         }
@@ -171,8 +231,9 @@ final class Curl
                 return $this->response(500, 'Request Options Setting Failed (custom)');
             }
         }
-        if ($this->params && in_array($this->method, ['post', 'patch', 'put', 'delete'])) {
-            curl_setopt($this->ch, CURLOPT_POSTFIELDS, urlencode(http_build_query($this->params)));
+
+        if ($this->params && (in_array($this->method, ['post', 'put', 'patch', 'delete']))) {
+            curl_setopt($this->ch, CURLOPT_POSTFIELDS, $this->params);
         }
 
         $result = curl_exec($this->ch);

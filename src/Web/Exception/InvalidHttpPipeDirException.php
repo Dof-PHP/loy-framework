@@ -8,8 +8,4 @@ use Loy\Framework\Web\Exception\BaseWebException;
 
 class InvalidHttpPipeDirException extends BaseWebException
 {
-    public function __construct(string $dir, int $code = 500)
-    {
-        parent::__construct($dir, $code);
-    }
 }

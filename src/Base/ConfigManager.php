@@ -8,30 +8,52 @@ use Loy\Framework\Base\Exception\InvalidProjectRootException;
 
 final class ConfigManager
 {
-    const DEFAULT_DOMAIN_DIR = ['config', 'domain'];
-    const DEFAULT_FRAMEWORK_DIR = ['config', 'framework'];
+    const DEFAULT_DIR    = ['config', 'domain'];
+    const FRAMEWORK_DIR  = ['config', 'framework'];
     const FILENAME_REGEX = '#^([a-z]+)\.php$#';
 
-    private static $domainDefault    = [];
-    private static $frameworkDefault = [];
+    private static $default   = [];
+    private static $framework = [];
+    private static $domains   = [];
+    private static $path = [
+        'default'   => null,
+        'framework' => null,
+    ];
 
+    /**
+     * Load configs from domains
+     *
+     * @param $dirs Array (Domain Key => Dir Path)
+     */
     public static function load(array $dirs)
     {
-        dd($dirs);
+        foreach ($dirs as $domain => $dir) {
+            self::$domains[$domain] = self::loadDir($dir);
+        }
     }
 
-    public static function init(string $projectRoot)
+    /**
+     * Init default/basic configs for domain and framework
+     *
+     * @param $root String (Absolute dir path)
+     */
+    public static function init(string $root)
     {
-        if (! is_dir($projectRoot)) {
-            throw new InvalidProjectRootException($projectRoot);
+        if (! is_dir($root)) {
+            throw new InvalidProjectRootException($root);
         }
 
-        self::initDir(ospath($projectRoot, self::DEFAULT_DOMAIN_DIR), self::$domainDefault);
-        self::initDir(ospath($projectRoot, self::DEFAULT_FRAMEWORK_DIR), self::$frameworkDefault);
+        self::$default = self::loadDir(
+            self::$path['default'] = ospath($root, self::DEFAULT_DIR)
+        );
+        self::$framework = self::loadDir(
+            self::$path['framework'] = ospath($root, self::FRAMEWORK_DIR)
+        );
     }
 
-    public static function initDir(string $path, array &$result)
+    public static function loadDir(string $path)
     {
+        $result = [];
         if (is_dir($path)) {
             list_dir($path, function ($list, $dir) use (&$result) {
                 foreach ($list as $filename) {
@@ -52,5 +74,37 @@ final class ConfigManager
                 }
             });
         }
+
+        return $result;
+    }
+
+    public static function getDomain(string $domain)
+    {
+        return self::$domains[$domain] ?? [];
+    }
+
+    public static function getDomains()
+    {
+        return self::$domains;
+    }
+
+    public static function getFramework()
+    {
+        return self::$framework;
+    }
+
+    public static function getFrameworkPath()
+    {
+        return self::$path['framework'];
+    }
+
+    public static function getDefault()
+    {
+        return self::$default;
+    }
+
+    public static function getDefaultPath()
+    {
+        return self::$path['default'];
     }
 }

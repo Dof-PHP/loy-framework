@@ -6,6 +6,6 @@ namespace Loy\Framework\Web\Exception;
 
 use Loy\Framework\Web\Exception\BaseWebException;
 
-class InvalidHttpWrapperDirException extends BaseWebException
+class MethodNotExistsException extends BaseWebException
 {
 }

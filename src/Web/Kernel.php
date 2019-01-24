@@ -7,10 +7,12 @@ namespace Loy\Framework\Web;
 use Exception;
 use Error;
 use Loy\Framework\Base\Kernel as CoreKernel;
+use Loy\Framework\Base\Container;
 use Loy\Framework\Base\DomainManager;
 use Loy\Framework\Base\TypeHint;
 use Loy\Framework\Base\Validator;
 use Loy\Framework\Base\Exception\InvalidProjectRootException;
+use Loy\Framework\Base\Exception\MethodNotExistsException;
 use Loy\Framework\Base\Exception\TypeHintConverterNotExistsException;
 use Loy\Framework\Base\Exception\TypeHintConvertException;
 use Loy\Framework\Base\Exception\ValidationFailureException;
@@ -36,6 +38,7 @@ use Loy\Framework\Web\Exception\PipeThroughFailedException;
 use Loy\Framework\Web\Exception\RouteNotExistsException;
 use Loy\Framework\Web\Exception\InvalidRequestMimeException;
 use Loy\Framework\Web\Exception\InvalidUrlParameterException;
+use Loy\Framework\Web\Exception\MethodNotExistsException as MethodNotExistsExceptionWeb;
 use Loy\Framework\Web\Exception\BadHttpPortCallException;
 use Loy\Framework\Web\Exception\BadRequestParameterException;
 use Loy\Framework\Web\Exception\PortNotExistException;
@@ -137,8 +140,10 @@ final class Kernel extends CoreKernel
 
         try {
             $result = call_user_func_array([(new $class), $method], $params);
+        } catch (MethodNotExistsException $e) {
+            throw new MethodNotExistsExceptionWeb($e->getMessage());
         } catch (Exception | Error $e) {
-            throw new BadHttpPortCallException("{$class}@{$method}: {$e->getMessage()}", 500, $e->getTraceAsString());
+            throw new BadHttpPortCallException("PORT: {$class}@{$method}", 500, $e);
         }
 
         try {
@@ -302,11 +307,11 @@ final class Kernel extends CoreKernel
                 break;
             }
             try {
-                $params[] = new $type;
+                $params[] = Container::di($type);
             } catch (Exception | Error $e) {
                 throw ($builtin || (! $optional) || (! $hasDefault))
                 ? new PortMethodParameterMissingException($error)
-                : new BrokenHttpPortMethodDefinitionException("{$e->getMessage()} ({$error})");
+                : new BrokenHttpPortMethodDefinitionException("{$error} ({$e->getMessage()})");
             }
         }
 

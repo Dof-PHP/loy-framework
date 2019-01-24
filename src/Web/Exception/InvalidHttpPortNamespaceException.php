@@ -8,8 +8,4 @@ use Loy\Framework\Web\Exception\BaseWebException;
 
 class InvalidHttpPortNamespaceException extends BaseWebException
 {
-    public function __construct(string $ns, int $code = 500)
-    {
-        parent::__construct($ns, $code);
-    }
 }

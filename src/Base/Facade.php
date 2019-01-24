@@ -12,6 +12,17 @@ abstract class Facade
     public static $singleton = true;
     private static $__pool = [];
 
+    public function __call(string $method, array $argvs = [])
+    {
+        $instance = self::getInstance();
+
+        if (method_exists($instance, '__setDynamicProxyNamespace')) {
+            $instance->__setDynamicProxyNamespace(static::class);
+        }
+
+        return call_user_func_array([$instance, $method], $argvs);
+    }
+
     public static function __callStatic(string $method, array $argvs = [])
     {
         $instance = self::getInstance();

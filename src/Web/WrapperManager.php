@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web;
 
-use Loy\Framework\Base\Annotation;
+use Loy\Framework\Facade\Annotation;
 use Loy\Framework\Base\Exception\DuplicateWrapperDefinitionException;
 
 final class WrapperManager
 {
     const WRAPPER_DIR = ['Http', 'Wrapper'];
-    const REGEX = '#@([a-zA-z]+)\((.*)\)#';
 
     private static $dirs = [];
     private static $wrappers = [
@@ -36,7 +35,7 @@ final class WrapperManager
         //
         // use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
         // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
-        Annotation::parseClassDirs(self::$dirs, self::REGEX, function ($annotations) {
+        Annotation::parseClassDirs(self::$dirs, function ($annotations) {
             if ($annotations) {
                 list($ofClass, $ofProperties, $ofMethods) = $annotations;
                 self::assembleWrappersFromAnnotations($ofClass, $ofMethods);
@@ -53,6 +52,8 @@ final class WrapperManager
 
         $namePrefix  = $ofClass['doc']['PREFIX'] ?? null;
         $typeDefault = $ofClass['doc']['TYPE']   ?? null;
+
+        $ofMethods = $ofMethods['self'] ?? [];
         foreach ($ofMethods as $method => $_attrs) {
             $attrs = $_attrs['doc'] ?? [];
             $notwrapper = $attrs['NOTWRAPPER'] ?? false;

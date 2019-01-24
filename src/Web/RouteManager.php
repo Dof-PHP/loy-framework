@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web;
 
-use Loy\Framework\Base\Annotation;
+use Loy\Framework\Facade\Annotation;
 use Loy\Framework\Base\Exception\DuplicateRouteDefinitionException;
 use Loy\Framework\Base\Exception\DuplicateRouteAliasDefinitionException;
 
 final class RouteManager
 {
     const ROUTE_DIR = ['Http', 'Port'];
-    const REGEX = '#@([a-zA-z]+)\((.*)\)#';
 
     private static $aliases = [];
     private static $routes  = [];
@@ -107,7 +106,7 @@ final class RouteManager
         //
         // use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
         // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
-        Annotation::parseClassDirs(self::$dirs, self::REGEX, function ($annotations) {
+        Annotation::parseClassDirs(self::$dirs, function ($annotations) {
             if ($annotations) {
                 list($ofClass, $ofProperties, $ofMethods) = $annotations;
                 self::assembleRoutesFromAnnotations($ofClass, $ofMethods);
@@ -128,6 +127,7 @@ final class RouteManager
         $defaultWrapout = $ofClass['doc']['WRAPOUT'] ?? null;
         $defaultWraperr = $ofClass['doc']['WRAPERR'] ?? null;
 
+        $ofMethods = $ofMethods['self'] ?? [];
         foreach ($ofMethods as $method => $_attrs) {
             $attrs = $_attrs['doc'] ?? [];
             $notroute = $attrs['NOTROUTE'] ?? false;

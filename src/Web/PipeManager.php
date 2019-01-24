@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web;
 
-use Loy\Framework\Base\Annotation;
+use Loy\Framework\Facade\Annotation;
 use Loy\Framework\Base\Exception\DuplicatePipeDefinitionException;
 
 final class PipeManager
 {
     const PIPE_DIR = ['Http', 'Pipe'];
-    const REGEX = '#@([a-zA-z]+)\((.*)\)#';
 
     private static $dirs  = [];
     private static $pipes = [];
@@ -32,7 +31,7 @@ final class PipeManager
         //
         // use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
         // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
-        Annotation::parseClassDirs(self::$dirs, self::REGEX, function ($annotations) {
+        Annotation::parseClassDirs(self::$dirs, function ($annotations) {
             if ($annotations) {
                 list($ofClass, $ofProperties, $ofMethods) = $annotations;
                 self::assemblePipesFromAnnotations($ofClass, $ofMethods);

@@ -5,50 +5,39 @@ declare(strict_types=1);
 namespace Loy\Framework\Base;
 
 use Closure;
-use Reflection;
 use ReflectionClass;
 use ReflectionException;
-// use ReflectionMethod;
-// use ReflectionProperty;
+use Loy\Framework\Base\Reflector;
 use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
 use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
 
 class Annotation
 {
-    const DEFAULT_REGEX = '#@([a-zA-z]+)\((.*)\)#';
+    private $regex = '#@([a-zA-z]+)\((.*)\)#';
 
-    public static function parseClassDirs(
-        array $dirs,
-        string $regex = null,
-        Closure $callback = null,
-        string $origin = null
-    ) {
+    public function parseClassDirs(array $dirs, Closure $callback = null, string $origin = null)
+    {
         foreach ($dirs as $dir) {
             if ((! is_string($dir)) || (! is_dir($dir))) {
                 throw new InvalidAnnotationDirException(stringify($dir));
             }
 
-            self::parseClassDir($dir, $regex, $callback, $origin);
+            $this->parseClassDir($dir, $callback, $origin);
         }
     }
 
-    public static function parseClassDir(
-        string $dir,
-        string $regex = null,
-        Closure $callback = null,
-        string $origin = null
-    ) {
-        $regex  = $regex ?: self::DEFAULT_REGEX;
+    public function parseClassDir(string $dir, Closure $callback = null, string $origin = null)
+    {
         $result = [];
 
-        walk_dir($dir, function ($path) use ($callback, $regex, $origin, &$result) {
+        walk_dir($dir, function ($path) use ($callback, $origin, &$result) {
             $realpath = $path->getRealpath();
             if ($path->isFile() && ('php' === $path->getExtension())) {
-                $result[$realpath] = self::parseClassFile($realpath, $regex, $callback, $origin);
+                $result[$realpath] = $this->parseClassFile($realpath, $callback, $origin);
                 return;
             }
             if ($path->isDir()) {
-                self::parseClassDir($realpath, $regex, $callback, $origin);
+                $this->parseClassDir($realpath, $callback, $origin);
                 return;
             }
         });
@@ -56,18 +45,14 @@ class Annotation
         return $result;
     }
 
-    public static function parseClassFile(
-        string $path,
-        string $regex = null,
-        Closure $callback = null,
-        string $origin = null
-    ) {
+    public function parseClassFile(string $path, Closure $callback = null, string $origin = null)
+    {
         $ns = get_namespace_of_file($path, true);
         if (! class_exists($ns)) {
             throw new InvalidAnnotationNamespaceException($ns);
         }
 
-        $annotations = self::parseNamespace($ns, $regex, $origin);
+        $annotations = $this->parseNamespace($ns, $origin);
 
         if ($callback) {
             $callback($annotations);
@@ -76,11 +61,8 @@ class Annotation
         return $annotations;
     }
 
-    public static function parseNamespace(
-        string $namespace,
-        string $regex = null,
-        string $origin = null
-    ) : array {
+    public function parseNamespace(string $namespace, string $origin = null) : array
+    {
         try {
             $reflector = new ReflectionClass($namespace);
         } catch (ReflectionException $e) {
@@ -90,11 +72,11 @@ class Annotation
         $classDocComment = $reflector->getDocComment();
         $ofClass = [];
         if (false !== $classDocComment) {
-            $ofClass['doc'] = self::parseComment($classDocComment, $regex, $origin);
+            $ofClass['doc'] = $this->parseComment($classDocComment, $origin);
         }
         $ofClass['namespace'] = $namespace;
-        $ofProperties = self::parseProperties($namespace, $regex, $origin, $reflector->getProperties());
-        $ofMethods = self::parseMethods($namespace, $regex, $origin, $reflector->getMethods());
+        $ofProperties = $this->parseProperties($reflector->getProperties(), $namespace, $origin);
+        $ofMethods    = $this->parseMethods($reflector->getMethods(), $namespace, $origin);
 
         return [
             $ofClass,
@@ -103,123 +85,94 @@ class Annotation
         ];
     }
 
-    public static function parseProperties(
-        string $namespace,
-        string $regex,
-        string $origin,
-        array $properties = null
-    ) : array {
+    public function parseProperties(array $properties, string $namespace, string $origin = null) : array
+    {
         if (! $properties) {
             return [];
         }
 
         $res = [];
         foreach ($properties as $property) {
-            if ($namespace !== $property->getDeclaringClass()->name) {
+            list($type, $_res) = Reflector::formatClassProperty($property, $namespace);
+            if ($_res === false) {
                 continue;
             }
-            $res[$property->name]['meta']['modifiers'] = Reflection::getModifierNames(
-                $property->getModifiers()
-            );
-            $comment = $property->getDocComment();
-            if (! $comment) {
-                $res[$property->name]['doc'] = [];
-                continue;
-            }
+            $comment = (string) ($_res['doc'] ?? '');
+            $_res['doc'] = $this->parseComment($comment, $origin);
 
-            $res[$property->name]['doc'] = self::parseComment($comment, $regex, $origin);
+            $res[$type][$property->name] = $_res;
         }
 
         return $res;
     }
 
-    public static function parseMethods(
-        string $namespace,
-        string $regex,
-        string $origin,
-        array $methods = null
-    ) : array {
+    public function parseMethods(array $methods, string $namespace, string $origin = null) : array
+    {
         if (! $methods) {
             return [];
         }
 
         $res = [];
         foreach ($methods as $method) {
-            if ($namespace !== $method->getDeclaringClass()->name) {
+            list($type, $_res) = Reflector::formatClassMethod($method, $namespace);
+            if ($_res === false) {
                 continue;
             }
-            $comment = $method->getDocComment();
-            if (false !== $comment) {
-                $res[$method->name]['doc'] = self::parseComment($comment, $regex, $origin);
-            }
-            $res[$method->name]['meta']['modifiers'] = Reflection::getModifierNames(
-                $method->getModifiers()
-            );
-            $parameters = $method->getParameters();
-            if (! $parameters) {
-                $res[$method->name]['parameters'] = [];
-                continue;
-            }
-            foreach ($parameters as $parameter) {
-                $type    = $parameter->hasType() ? $parameter->getType()->getName() : null;
-                $builtin = $type ? $parameter->getType()->isBuiltin() : null;
-                $hasDefault = $parameter->isDefaultValueAvailable();
-                $defaultVal = $hasDefault ? $parameter->getDefaultValue() : null;
-                $res[$method->name]['parameters'][] = [
-                    'name' => $parameter->getName(),
-                    'type' => [
-                        'type'    => $type,
-                        'builtin' => $builtin,
-                    ],
-                    'nullable' => $parameter->allowsNull(),
-                    'optional' => $parameter->isOptional(),
-                    'default'  => [
-                        'status' => $hasDefault,
-                        'value'  => $defaultVal,
-                    ]
-                ];
-            }
+            $comment = (string) ($_res['doc'] ?? '');
+            $_res['doc'] = $this->parseComment($comment, $origin);
+            $res[$type][$method->name] = $_res;
         }
 
         return $res;
     }
 
-    public static function parseComment(string $comment, string $regex = null, string $origin = null) : array
+    public function parseComment(string $comment, string $origin = null) : array
     {
         if (! $comment) {
             return [];
         }
 
-        $regex = $regex ?: self::DEFAULT_REGEX;
         $res = [];
         $arr = explode(PHP_EOL, $comment);
         foreach ($arr as $line) {
             $matches = [];
-            if (1 === preg_match($regex, $line, $matches)) {
-                $key = $matches[1] ?? false;
-                $val = $matches[2] ?? false;
-                if ((! $key) || (! $val)) {
-                    continue;
-                }
-                if (is_null($origin)) {
-                    $val = trim($val);
-                    if ($val && (mb_strpos($val, ',') !== false)) {
-                        $val = array_trim(explode(',', $val));
-                    }
-                } else {
-                    $callback = 'filterAnnotation'.ucfirst(strtolower($key));
-                    if (method_exists($origin, $callback)) {
-                        $val = call_user_func_array([$origin, $callback], [$val]);
-                        // $val = is_object($origin)
-                        // ? $origin->{$callback}($val)
-                        // : $origin::$callback($val);
-                    }
-                }
-
-                $res[strtoupper($key)] = $val;
+            if (1 !== preg_match($this->regex, $line, $matches)) {
+                continue;
             }
+            $key = $matches[1] ?? false;
+            $val = $matches[2] ?? false;
+            if ((! $key) || (! $val)) {
+                continue;
+            }
+            if (is_null($origin)) {
+                $val = trim($val);
+                if ($val && (mb_strpos($val, ',') !== false)) {
+                    $val = array_trim(explode(',', $val));
+                }
+            } else {
+                $callback = 'filterAnnotation'.ucfirst(strtolower($key));
+                if (method_exists($origin, $callback)) {
+                    $val = call_user_func_array([$origin, $callback], [$val]);
+                    // $val = is_object($origin) ? $origin->{$callback}($val) : $origin::$callback($val);
+                }
+            }
+
+            $res[strtoupper($key)] = $val;
         }
 
         return $res;
+    }
+
+    /**
+     * Setter for regex
+     *
+     * @param string $regex
+     * @return Annotation
+     */
+    public function setRegex(string $regex)
+    {
+        $this->regex = $regex;
+    
+        return $this;
     }
 }

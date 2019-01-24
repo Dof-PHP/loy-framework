@@ -4,19 +4,24 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web\Exception;
 
+use Throwable;
 use Exception;
 use Loy\Framework\Web\Response;
 
 class BaseWebException extends Exception
 {
-    public function __construct(string $message, int $code, string $lastTrace = null)
+    public function __construct(string $message, int $code, Throwable $previous = null)
     {
         $this->message = $message;
         $this->code    = $code;
 
-        $lastTrace= $lastTrace ? explode(PHP_EOL, $lastTrace) : [];
+        $_previous = $previous ? $previous->__toString() : '';
 
         Response::setStatus($this->code);
-        Response::send([$this->code, objectname($this), $this->message, $lastTrace], true);
+        Response::send([
+            $this->code,
+            join(' => ', [objectname($this), $this->message]),
+            $_previous
+        ], true);
     }
 }

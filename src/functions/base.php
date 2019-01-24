@@ -81,7 +81,7 @@ if (! function_exists('load_php')) {
     }
 }
 if (! function_exists('list_dir')) {
-    function list_dir(string $dir, $callback)
+    function list_dir(string $dir, \Closure $callback)
     {
         if (! is_dir($dir)) {
             throw new \Exception('LIST_DIR_NOT_EXISTS => '.$dir);
@@ -92,8 +92,24 @@ if (! function_exists('list_dir')) {
         $callback($list, $dir);
     }
 }
+if (! function_exists('walk_dir_recursive')) {
+    function walk_dir_recursive(string $dir, \Closure $callback)
+    {
+        walk_dir($dir, function ($path) use ($callback) {
+            if (in_array($path->getFileName(), ['.', '..'])) {
+                return;
+            }
+            if ($path->isDir()) {
+                walk_dir_recursive($path->getRealpath(), $callback);
+                return;
+            }
+
+            $callback($path);
+        });
+    }
+}
 if (! function_exists('walk_dir')) {
-    function walk_dir(string $dir, $callback)
+    function walk_dir(string $dir, \Closure $callback)
     {
         if (! is_dir($dir)) {
             throw new \Exception('WALK_DIR_NOT_EXISTS => '.$dir);

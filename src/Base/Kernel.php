@@ -6,42 +6,54 @@ namespace Loy\Framework\Base;
 
 use Loy\Framework\Base\ConfigManager;
 use Loy\Framework\Base\DomainManager;
-use Loy\Framework\Base\ORMManager;
+use Loy\Framework\Base\OrmManager;
 use Loy\Framework\Base\Exception\InvalidProjectRootException;
 
 class Kernel
 {
-    const DOMAIN_DIR = 'domain';
+    protected static $root = null;
 
-    protected static $projectRoot = null;
-
-    public static function handle(string $projectRoot)
+    public static function handle(string $root)
     {
-        if (! is_dir($projectRoot)) {
-            throw new InvalidProjectRootException($projectRoot);
+        if (! is_dir($root)) {
+            throw new InvalidProjectRootException($root);
         }
-        self::$projectRoot = $projectRoot;
+        self::$root = $root;
 
-        ConfigManager::init($projectRoot);
-        self::compileDomains();
-        ConfigManager::load(DomainManager::getDirs());
-
-        self::compileOrms();
+        self::initBaseConfig();
+        self::compileDomain();
+        self::loadDomainConfig();
+        self::buildContainer();
+        self::compileOrm();
     }
 
-    public static function compileOrms()
+    public static function loadDomainConfig()
     {
-        ORMManager::compile(DomainManager::getDirs());
+        ConfigManager::load(DomainManager::getDirsD2M());
     }
 
-    public static function compileDomains()
+    public static function initBaseConfig()
     {
-        $domainRoot = join(DIRECTORY_SEPARATOR, [self::$projectRoot, self::DOMAIN_DIR]);
-        DomainManager::compile($domainRoot);
+        ConfigManager::init(self::$root);
     }
 
-    public static function getProjectRoot()
+    public static function buildContainer()
     {
-        return self::$projectRoot;
+        Container::build(DomainManager::getDirsD2M());
+    }
+
+    public static function compileOrm()
+    {
+        OrmManager::compile(DomainManager::getDirsD2M());
+    }
+
+    public static function compileDomain()
+    {
+        DomainManager::compile(self::$root);
+    }
+
+    public static function getRoot()
+    {
+        return self::$root;
     }
 }

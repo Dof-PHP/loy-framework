@@ -8,8 +8,4 @@ use Loy\Framework\Web\Exception\BaseWebException;
 
 class PortMethodParameterMissingException extends BaseWebException
 {
-    public function __construct(string $parameter, int $code = 500)
-    {
-        parent::__construct($parameter, $code);
-    }
 }

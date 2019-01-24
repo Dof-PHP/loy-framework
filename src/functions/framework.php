@@ -15,9 +15,16 @@ if (! function_exists('collect')) {
     }
 }
 if (! function_exists('validate')) {
-    function validate(array $data, array $rule = [], array $message = [])
+    function validate(array $data, array $rule = [], array $message = [], bool $exception = false)
     {
-        return \Loy\Framework\Base\Validator::check($data, $rule, $message);
+        try {
+            return \Loy\Framework\Base\Validator::execute($data, $rule, $message);
+        } catch (\Loy\Framework\Base\Exception\ValidationFailureException $e) {
+            if ($exception) {
+                throw $e;
+            }
+            return $e->getMessage();
+        }
     }
 }
 if (! function_exists('request')) {
@@ -38,38 +45,44 @@ if (! function_exists('port_get')) {
         return \Loy\Framework\Web\Request::make('get', $uri, $params, $headers);
     }
 }
+if (! function_exists('http')) {
+    function http(string $url, $params = [], array $headers = [], array $options = [])
+    {
+        return \Loy\Framework\Facade\Curl::init($url, $params, $headers, $options);
+    }
+}
 if (! function_exists('http_head')) {
-    function http_head(string $url, array $params = [], array $headers = [], array $options = [])
+    function http_head(string $url, $params = [], array $headers = [], array $options = [])
     {
         return \Loy\Framework\Facade\Curl::head($url, $params, $headers, $options);
     }
 }
 if (! function_exists('http_get')) {
-    function http_get(string $url, array $params = [], array $headers = [], array $options = [])
+    function http_get(string $url, $params = [], array $headers = [], array $options = [])
     {
         return \Loy\Framework\Facade\Curl::get($url, $params, $headers, $options);
     }
 }
 if (! function_exists('http_post')) {
-    function http_post(string $url, array $params = [], array $headers = [], array $options = [])
+    function http_post(string $url, $params = [], array $headers = [], array $options = [])
     {
         return \Loy\Framework\Facade\Curl::post($url, $params, $headers, $options);
     }
 }
 if (! function_exists('http_put')) {
-    function http_put(string $url, array $params = [], array $headers = [], array $options = [])
+    function http_put(string $url, $params = [], array $headers = [], array $options = [])
     {
         return \Loy\Framework\Facade\Curl::put($url, $params, $headers, $options);
     }
 }
 if (! function_exists('http_patch')) {
-    function http_patch(string $url, array $params = [], array $headers = [], array $options = [])
+    function http_patch(string $url, $params = [], array $headers = [], array $options = [])
     {
         return \Loy\Framework\Facade\Curl::patch($url, $params, $headers, $options);
     }
 }
 if (! function_exists('http_delete')) {
-    function http_delete(string $url, array $params = [], array $headers = [], array $options = [])
+    function http_delete(string $url, $params = [], array $headers = [], array $options = [])
     {
         return \Loy\Framework\Facade\Curl::delete($url, $params, $headers, $options);
     }

@@ -5,18 +5,26 @@ declare(strict_types=1);
 namespace Loy\Framework\Base;
 
 use Exception;
+use Loy\Framework\Base\ConfigManager;
 
 final class DomainManager
 {
-    const DOMAIN_DIR  = '__domain__';
+    const DOMAIN_DIR  = 'domain';
+    const DOMAIN_FLAG = '__domain__';
     const DOMAIN_FILE = 'domain.php';
 
     private static $root = '';
-    private static $dirs = [];
+    private static $dirs = [
+        'D' => [],    // domain root only
+        'M' => [],    // meta dir only
+        'M2D' => [],    // meta dir    => domain root
+        'D2M' => [],    // domain root => meta dir
+    ];
     private static $namespaces = [];
 
-    public static function compile(string $domainRoot)
+    public static function compile(string $root)
     {
+        $domainRoot = ospath($root, self::DOMAIN_DIR);
         if (! is_dir($domainRoot)) {
             throw new Exception('INVALID_DOMAIN_ROOT');
         }
@@ -24,34 +32,43 @@ final class DomainManager
         self::$dirs = [];
         self::$namespaces = [];
 
-        self::findDomains(self::$root);
+        self::find(self::$root, ConfigManager::getDefaultPath());
     }
 
-    private static function findDomains(string $dir, string $lastDomain = null)
+    /**
+     * Find domains in given directory
+     *
+     * @param $dir String Derectory absolute path
+     * @param $last String Last domain absolute path
+     */
+    private static function find(string $dir, string $last = null)
     {
-        list_dir($dir, function (array $list, string $dir) use ($lastDomain) {
-            if (in_array(self::DOMAIN_DIR, $list)) {
-                $domain  = ospath($dir, self::DOMAIN_DIR);
+        list_dir($dir, function (array $list, string $dir) use ($last) {
+            if (in_array(self::DOMAIN_FLAG, $list)) {
+                $domain  = ospath($dir, self::DOMAIN_FLAG);
                 $_domain = ospath($domain, self::DOMAIN_FILE);
                 if (is_dir($domain) && is_file($_domain)) {
-                    $lastDomain = $domain;
-                    self::$dirs[] = $dir;
+                    $last = $domain;
+                    self::$dirs['D'][] = $dir;
+                    self::$dirs['M'][] = $domain;
+                    self::$dirs['D2M'][$dir]    = $domain;
+                    self::$dirs['M2D'][$domain] = $dir;
                 }
             }
 
             foreach ($list as $pathname) {
                 $path = ospath($dir, $pathname);
-                if (in_array($pathname, ['.', '..', self::DOMAIN_DIR])) {
+                if (in_array($pathname, ['.', '..', self::DOMAIN_FLAG])) {
                     continue;
                 }
                 if (is_dir($path)) {
-                    self::findDomains($path, $lastDomain);
+                    self::find($path, $last);
                     continue;
                 }
 
                 $ns = get_namespace_of_file($path, true);
                 if ($ns) {
-                    self::$namespaces[$ns] = $lastDomain;
+                    self::$namespaces[$ns] = $last;
                 }
             }
         });
@@ -72,8 +89,23 @@ final class DomainManager
         return self::$namespaces ?? [];
     }
 
+    public static function getDirsD2M() : array
+    {
+        return self::$dirs['D2M'] ?? [];
+    }
+
+    public static function getDirsM2D() : array
+    {
+        return self::$dirs['M2D'] ?? [];
+    }
+
+    public static function getMetaDirs() : array
+    {
+        return self::$dirs['M'] ?? [];
+    }
+
     public static function getDirs() : array
     {
-        return self::$dirs ?? [];
+        return self::$dirs['D'] ?? [];
     }
 }

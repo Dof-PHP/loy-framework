@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Base;
 
+use Loy\Framework\Base\Container;
+
 abstract class ApplicationService
 {
     protected $__code  = 200;
@@ -80,14 +82,14 @@ abstract class ApplicationService
         return $this->__code === $code;
     }
 
-    public static function init($data = null)
+    public static function init()
     {
-        return new static($data);
+        return Container::di(static::class);
     }
 
     public static function __callStatic(string $method, array $argvs = [])
     {
-        $service = new static;
+        $service = Container::di(static::class);
 
         return call_user_func_array([$service, $method], $argvs);
     }

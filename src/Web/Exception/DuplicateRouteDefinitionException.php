@@ -8,8 +8,4 @@ use Loy\Framework\Web\Exception\BaseWebException;
 
 class DuplicateRouteDefinitionException extends BaseWebException
 {
-    public function __construct(string $route, int $code = 500)
-    {
-        parent::__construct($route, $code);
-    }
 }
