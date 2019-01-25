@@ -10,17 +10,19 @@ use Loy\Framework\Web\Response;
 
 class BaseWebException extends Exception
 {
-    public function __construct(string $message, int $code, Throwable $previous = null)
+    public function __construct(string $message = '', int $code = 500, Throwable $previous = null)
     {
         $this->message = $message;
         $this->code    = $code;
 
-        $_previous = $previous ? $previous->__toString() : '';
+        $objectname = objectname($this);
+        $_previous  = $previous ? $previous->__toString() : '';
+        $message    = $message ?join(' => ', [$objectname, $this->message]) : $objectname;
 
         Response::setStatus($this->code);
         Response::send([
             $this->code,
-            join(' => ', [objectname($this), $this->message]),
+            $message,
             $_previous
         ], true);
     }

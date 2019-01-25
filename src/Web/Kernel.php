@@ -8,7 +8,6 @@ use Exception;
 use Error;
 use Loy\Framework\Base\Kernel as CoreKernel;
 use Loy\Framework\Base\Container;
-use Loy\Framework\Base\DomainManager;
 use Loy\Framework\Base\TypeHint;
 use Loy\Framework\Base\Validator;
 use Loy\Framework\Base\Exception\InvalidProjectRootException;
@@ -23,6 +22,8 @@ use Loy\Framework\Base\Exception\DuplicateRouteAliasDefinitionException;
 use Loy\Framework\Base\Exception\DuplicatePipeDefinitionException;
 use Loy\Framework\Base\Exception\DuplicateWrapperDefinitionException;
 use Loy\Framework\Web\RouteManager;
+use Loy\Framework\Web\PipeManager;
+use Loy\Framework\Web\WrapperManager;
 use Loy\Framework\Web\Request;
 use Loy\Framework\Web\Response;
 use Loy\Framework\Web\Route;
@@ -58,7 +59,7 @@ final class Kernel extends CoreKernel
 {
     const PIPE_HANDLER = 'through';
 
-    public static function handle(string $projectRoot)
+    public static function handle(string $root)
     {
         if (! in_array(PHP_SAPI, ['fpm-fcgi', 'cgi-fcgi', 'cgi'])) {
             echo 'WEB_KERNEL_IN_NONCGI';
@@ -66,11 +67,11 @@ final class Kernel extends CoreKernel
         }
 
         try {
-            parent::handle($projectRoot);
+            parent::handle($root);
         } catch (InvalidProjectRootException $e) {
-            throw new FrameworkCoreException("InvalidProjectRootException => {$e->getMessage()}");
+            throw new FrameworkCoreException("InvalidProjectRootException => {$root}", 500);
         } catch (Exception | Error $e) {
-            throw new FrameworkCoreException($e->getMessage(), 500, $e->getTraceAsString());
+            throw new FrameworkCoreException(__CLASS__, 500, $e);
         }
 
         self::compileRoutes();
@@ -82,7 +83,7 @@ final class Kernel extends CoreKernel
     public static function compileWrappers()
     {
         try {
-            WrapperManager::compile(DomainManager::getDirs());
+            CoreKernel::compileWrapper();
         } catch (DuplicateWrapperDefinitionException $e) {
             throw new DuplicateWrapperDefinitionExceptionWeb($e->getMessage());
         } catch (InvalidAnnotationDirException $e) {
@@ -95,7 +96,7 @@ final class Kernel extends CoreKernel
     public static function compilePipes()
     {
         try {
-            PipeManager::compile(DomainManager::getDirs());
+            CoreKernel::compilePipe();
         } catch (DuplicatePipeDefinitionException $e) {
             throw new DuplicatePipeDefinitionExceptionWeb($e->getMessage());
         } catch (InvalidAnnotationDirException $e) {
@@ -108,7 +109,7 @@ final class Kernel extends CoreKernel
     public static function compileRoutes()
     {
         try {
-            RouteManager::compile(DomainManager::getDirs());
+            CoreKernel::compileRoute();
         } catch (DuplicateRouteDefinitionException $e) {
             throw new DuplicateRouteDefinitionExceptionWeb($e->getMessage());
         } catch (DuplicateRouteAliasDefinitionException $e) {
@@ -218,7 +219,7 @@ final class Kernel extends CoreKernel
                     throw new PipeThroughFailedException($pipe." ({$res})");
                 }
             } catch (Exception | Error $e) {
-                throw new PipeThroughFailedException($pipe." ({$e->getMessage()})");
+                throw new PipeThroughFailedException($pipe, 400, $e);
             }
         }
     }

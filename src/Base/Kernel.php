@@ -8,6 +8,9 @@ use Loy\Framework\Base\ConfigManager;
 use Loy\Framework\Base\DomainManager;
 use Loy\Framework\Base\OrmManager;
 use Loy\Framework\Base\Exception\InvalidProjectRootException;
+use Loy\Framework\Web\RouteManager;
+use Loy\Framework\Web\PipeManager;
+use Loy\Framework\Web\WrapperManager;
 
 class Kernel
 {
@@ -45,6 +48,21 @@ class Kernel
     public static function compileOrm()
     {
         OrmManager::compile(DomainManager::getDirsD2M());
+    }
+
+    public static function compileRoute()
+    {
+        RouteManager::compile(DomainManager::getDirs());
+    }
+
+    public static function compilePipe()
+    {
+        PipeManager::compile(DomainManager::getDirs());
+    }
+
+    public static function compileWrapper()
+    {
+        WrapperManager::compile(DomainManager::getDirs());
     }
 
     public static function compileDomain()
