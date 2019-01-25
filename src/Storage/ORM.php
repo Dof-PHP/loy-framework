@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Storage;
 
-use Loy\Framework\Base\ORMManager;
+use Loy\Framework\Base\OrmManager;
 use Loy\Framework\Base\DomainManager;
 use Loy\Framework\Base\DatabaseManager;
 
@@ -23,7 +23,7 @@ class ORM
         if ((! $ormns) || (! class_exists($ormns))) {
             throw new \Exception('ORM proxy class not found: '.$ormns);
         }
-        $ormcfg = ORMManager::getOrm($ormns);
+        $ormcfg = OrmManager::getOrm($ormns);
         if (! $ormcfg) {
             throw new \Exception('Illegal ORM proxy: '.$ormns);
         }

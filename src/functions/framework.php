@@ -21,7 +21,10 @@ if (! function_exists('domain')) {
             throw new \Exception;
         } catch (\Exception $e) {
             $filepath = $e->getTrace()[0]['file'] ?? null;
-            return \Loy\Framework\Base\DomainManager::initFromFilepath($filepath);
+            $domainRoot = \Loy\Framework\Base\DomainManager::getRoot();
+            if (0 === mb_strpos($filepath, $domainRoot)) {
+                return \Loy\Framework\Base\DomainManager::initFromFilepath($filepath);
+            }
         }
     }
 }
