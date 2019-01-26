@@ -30,13 +30,26 @@ final class DomainManager
     ];
     private static $namespaces = [];
 
-    public static function initFromFilepath(string $path)
+    public static function initFromNamespace(string $namespace)
     {
-        $domainMeta = self::$files[$path] ?? null;
+        $domainMeta = self::$namespaces[$namespace] ?? null;
+
+        return self::initFromDomainMeta($domainMeta);
+    }
+
+    public static function initFromDomainMeta(string $domainMeta = null)
+    {
         if (! $domainMeta) {
             return zombie_object();
         }
+
         $domainRoot = self::$dirs['M2D'][$domainMeta] ?? null;
+
+        return self::initFromDomainRoot($domainRoot);
+    }
+
+    public static function initFromDomainRoot(string $domainRoot = null)
+    {
         if (! $domainRoot) {
             return zombie_object();
         }
@@ -44,7 +57,19 @@ final class DomainManager
             return $object;
         }
 
+        $domainMeta = self::$dirs['D2M'][$domainRoot] ?? false;
+        if (! $domainMeta) {
+            return zombie_object();
+        }
+
         return self::$pool[$domainRoot] = Domain::new($domainMeta, $domainRoot, self::$chain);
+    }
+
+    public static function initFromFilepath(string $path)
+    {
+        $domainMeta = self::$files[$path] ?? null;
+
+        return self::initFromDomainMeta($domainMeta);
     }
 
     public static function compile(string $root)
@@ -74,8 +99,10 @@ final class DomainManager
                 $domain  = ospath($dir, self::DOMAIN_FLAG);
                 $_domain = ospath($domain, self::DOMAIN_FILE);
                 if (is_dir($domain) && is_file($_domain)) {
-                    self::$chain['up'][$domain] = $last;
-                    self::$chain['down'][$last][$domain] = $dir;
+                    if ($last && ($last !== (self::$chain['root'] ?? false))) {
+                        self::$chain['up'][$domain] = $last;
+                        self::$chain['down'][$last][$domain] = $dir;
+                    }
                     $last = $domain;
                     self::$files[$_domain] = $domain;
                     self::$dirs['D'][] = $dir;
@@ -128,6 +155,11 @@ final class DomainManager
     public static function getDomainByNamespace(string $ns = null) : ?string
     {
         return self::$namespaces[$ns] ?? null;
+    }
+
+    public static function getChain() : array
+    {
+        return self::$chain ?? [];
     }
 
     public static function getNamespaces() : array

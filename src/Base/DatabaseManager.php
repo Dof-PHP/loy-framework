@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Base;
 
-use Loy\Framework\Base\Database\MySQL;
+use Loy\Framework\Storage\Database\MySQL;
 
 final class DatabaseManager
 {

@@ -7,6 +7,7 @@ namespace Loy\Framework\Base;
 use Loy\Framework\Base\ConfigManager;
 use Loy\Framework\Base\DomainManager;
 use Loy\Framework\Base\OrmManager;
+use Loy\Framework\Base\RepositoryManager;
 use Loy\Framework\Base\Exception\InvalidProjectRootException;
 use Loy\Framework\Web\RouteManager;
 use Loy\Framework\Web\PipeManager;
@@ -28,6 +29,7 @@ class Kernel
         self::loadDomainConfig();
         self::buildContainer();
         self::compileOrm();
+        self::compileRepository();
     }
 
     public static function loadDomainConfig()
@@ -45,9 +47,14 @@ class Kernel
         Container::build(DomainManager::getDirsD2M());
     }
 
+    public static function compileRepository()
+    {
+        RepositoryManager::compile(DomainManager::getDirs());
+    }
+
     public static function compileOrm()
     {
-        OrmManager::compile(DomainManager::getDirsD2M());
+        OrmManager::compile(DomainManager::getDirs());
     }
 
     public static function compileRoute()

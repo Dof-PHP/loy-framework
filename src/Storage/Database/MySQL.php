@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base\Database;
+namespace Loy\Framework\Storage\Database;
 
 use PDO;
 use Exception;
@@ -58,6 +58,8 @@ class MySQL
                 PDO::ATTR_PERSISTENT => true,
             ]);
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            return $this->conn;
         } catch (Exception $e) {
             dd($e->getMessage());
         }

@@ -72,7 +72,7 @@ class OrmManager
         }
     }
 
-    public static function getOrm(string $namespace)
+    public static function get(string $namespace)
     {
         return self::$orms[$namespace] ?? null;
     }

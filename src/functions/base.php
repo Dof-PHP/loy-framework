@@ -439,3 +439,11 @@ if (! function_exists('ospath')) {
         return $path;
     }
 }
+if (! function_exists('is_date')) {
+    function is_date_format(string $date, string $format = 'Y-m-d H:i:s') : bool
+    {
+        $dt = DateTime::createFromFormat($format, $date);
+
+        return $dt && ($dt->format($format) == $date);
+    }
+}
