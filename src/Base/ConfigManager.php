@@ -80,16 +80,30 @@ final class ConfigManager
 
     public static function getLatestByDomainRoot(string $root, string $key, $default = null)
     {
-        // TODO
+        $val = array_get_by_chain_key(self::getDomain($root), $key);
+        if (! is_null($val)) {
+            return $val;
+        }
+        $parent = DomainManager::getDomainParentByRoot($root);
+        if (! $parent) {
+            return $default;
+        }
+
+        return self::getLatestByDomainRoot($parent, $key, $default);
     }
 
     public static function getLatestByFilePath(string $path, string $key, $default = null)
     {
-        // TODO
+        $domainRoot = DomainManager::getDomainRootByFilePath($path);
+
+        return $domainRoot ? self::getLatestByDomainRoot($domainRoot, $key, $default) : [];
     }
 
     public static function getLatestByNamespace(string $namespace, string $key, $default = null)
     {
+        $domainRoot = DomainManager::getDomainRootByNamespace($namespace);
+
+        return $domainRoot ? self::getLatestByDomainRoot($domainRoot, $key, $default) : [];
     }
 
     public static function get(string $key = 'domain')

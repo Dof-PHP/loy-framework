@@ -31,7 +31,7 @@ class Validator
                 throw new BadValidatorRuleException('Non-String Key: '.stringify($key));
             }
             if (is_closure($rules)) {
-                $val = $data[$key] ?? false;
+                $val = array_key_exists($key, $data) ? $data[$key] : [];
                 if (! is_array($val)) {
                     throw new BadValidatorRuleException('Non-Array Value: '.stringify($key));
                 }

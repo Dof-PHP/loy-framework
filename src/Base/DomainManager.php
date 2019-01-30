@@ -140,23 +140,56 @@ final class DomainManager
         return self::$root;
     }
 
-    public static function getDomainRootByFilepath(string $path = null) : ?string
+    public static function getDomainRootByFilePath(string $path = null) : ?string
     {
         $meta = self::getDomainMetaByFilepath($path);
 
         return $meta ? (self::$dirs['M2D'][$meta] ?? null) : null;
     }
 
-    public static function getDomainMetaByFilepath(string $path = null) : ?string
+    public static function getDomainMetaByRoot(string $root = null) : ?string
+    {
+        return self::$dirs['D2M'][$root] ?? null;
+    }
+
+    public static function getDomainMetaByFilePath(string $path = null) : ?string
     {
         return self::$files[$path] ?? null;
     }
 
-    public static function getDomainByNamespace(string $ns = null) : ?string
+    public static function getDomainRootByNamespace(string $ns = null) : ?string
+    {
+        $meta = self::$namespaces[$ns] ?? null;
+
+        return $meta ? (self::$dirs['M2D'][$meta] ?? null) : null;
+    }
+
+    public static function getDomainMetaByNamespace(string $ns = null) : ?string
     {
         return self::$namespaces[$ns] ?? null;
     }
 
+    public static function getDomainParentByRoot(string $root = null) : ?string
+    {
+        $meta = self::getDomainMetaByRoot($root);
+
+        return $meta ? (self::$chain['up'][$meta] ?? null) : null;
+    }
+
+    public static function getDomainParentByNamespace(string $ns = null) : ?string
+    {
+        $meta = self::getDomainMetaByNamespace($ns);
+
+        return $meta ? (self::$chain['up'][$meta] ?? null) : null;
+    }
+
+    public static function getDomainParentByFilePath(string $path = null) : ?string
+    {
+        $meta = self::getDomainMetaByFilePath($path);
+
+        return $meta ? (self::$chain['up'][$meta] ?? null) : null;
+    }
+ 
     public static function getChain() : array
     {
         return self::$chain ?? [];

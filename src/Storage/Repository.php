@@ -10,7 +10,7 @@ use Loy\Framework\Base\Validator;
 use Loy\Framework\Base\RepositoryManager;
 use Loy\Framework\Base\DomainManager;
 use Loy\Framework\Base\ConfigManager;
-use Loy\Framework\Base\DatabaseManager;
+use Loy\Framework\Base\DbManager;
 use Loy\Framework\Base\Exception\MethodNotExistsException;
 use Loy\Framework\Storage\Exception\OrmNotExistsException;
 use Loy\Framework\Base\Exception\ValidationFailureException;
@@ -25,6 +25,8 @@ use Loy\Framework\Base\Exception\ValidationFailureException;
  */
 class Repository
 {
+    private $storage = null;
+    private $__meta  = [];
     private $__dynamicProxy;
     private $__dynamicProxyNamespace;
 
@@ -41,13 +43,27 @@ class Repository
             dd('ApiNotSupportedByStorageException');
             // throw new ApiNotSupportedByStorageException($orm);
         }
+        if (method_exists($storage, 'setDbname') && ($dbname = ($this->__meta['DATABASE'] ?? false))) {
+            $storage->setDbname($dbname);
+        }
+        if (method_exists($storage, 'setTable')) {
+            $storage->setTable($this->__meta['TABLE'] ?? '');
+        }
+        if (method_exists($storage, 'setPrefix')) {
+            $storage->setPrefix($this->__meta['PREFIX'] ?? '');
+        }
 
-        return call_user_func_array($storage, $argvs);
+        return call_user_func_array([$storage, $api], $argvs);
     }
 
     public function prepare()
     {
-        $repository = RepositoryManager::get($this->__dynamicProxyNamespace);
+        if ($this->storage) {
+            return $this->storage;
+        }
+
+        $namespace  = $this->__dynamicProxyNamespace;
+        $repository = RepositoryManager::get($namespace);
         if (! is_array($repository)) {
             dd('Repository not found');
         }
@@ -56,21 +72,11 @@ class Repository
             Validator::execute($repository, [
                 'meta' => function () {
                     return [
-                        'CONNECTION' => [
-                            'string'
-                        ],
-                        'DATABASE' => [
-                            'string'
-                        ],
-                        'PREFIX' => [
-                            'string'
-                        ],
-                        'TABLE' => [
-                            'need', 'string'
-                        ],
-                        'ORM' => [
-                            'need', 'namespace'
-                        ],
+                        'CONNECTION' => ['string'],
+                        'DATABASE' => ['string'],
+                        'PREFIX' => ['string'],
+                        'TABLE' => ['need', 'string'],
+                        'ORM' => ['need', 'namespace'],
                     ];
                 },
             ]);
@@ -78,17 +84,12 @@ class Repository
             throw new \Exception('Bad Repository Annotation: '.$e->getMessage());
         }
 
-        $connection = $repository['meta']['CONNECTION'] ?? null;
-        $database   = $repository['meta']['DATABASE']   ?? null;
-        $prefix     = $repository['meta']['PREFIX']     ?? null;
-        $table      = $repository['meta']['TABLE']      ?? null;
+        $this->__meta = $repository['meta'] ?? [];
+        $domain = DomainManager::getDomainRootByNamespace($namespace);
+        $conn   = $repository['meta']['CONNECTION'] ?? null;
+        $this->database = $repository['meta']['DATABASE'] ?? null;
 
-        pp($connection, $database, $prefix, $table);
-
-        $connDefault = ConfigManager::getLatestByNamespace(
-            $this->__dynamicProxyNamespace,
-            'database.conn_default'
-        );
+        return $this->storage = DbManager::init($domain, $conn, $this->database);
     }
 
     public function __call(string $method, array $argvs = [])

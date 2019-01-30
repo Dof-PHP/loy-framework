@@ -338,9 +338,21 @@ if (! function_exists('array_trim')) {
         return $preserveKeys ? $arr : array_values($arr);
     }
 }
+if (! function_exists('array_trim_from_string')) {
+    function array_trim_from_string(string $str, string $explode)
+    {
+        $str = trim($str);
+        $arr = explode($explode, $str);
+
+        return array_trim($arr);
+    }
+}
 if (! function_exists('stringify')) {
     function stringify($value)
     {
+        if (is_null($value)) {
+            return 'NULL';
+        }
         if (is_scalar($value)) {
             return (string) $value;
         }
@@ -451,5 +463,24 @@ if (! function_exists('is_closure')) {
     function is_closure($val) : bool
     {
         return is_object($val) && ($val instanceof \Closure);
+    }
+}
+if (! function_exists('array_get_by_chain_key')) {
+    function array_get_by_chain_key(array $haystack, string $key, string $explode = '.')
+    {
+        if ((! $haystack) || (! $key)) {
+            return null;
+        }
+        if (array_key_exists($key, $haystack)) {
+            return $haystack[$key] ?? null;
+        }
+        $chain  = array_trim_from_string($key, $explode);
+        $query  = null;
+        $tmparr = $haystack;
+        foreach ($chain as $k) {
+            $query = ($tmparr = ($tmparr[$k] ?? null));
+        }
+
+        return $query;
     }
 }
