@@ -6,11 +6,14 @@ namespace Loy\Framework\Storage;
 
 use Closure;
 use Loy\Framework\Base\OrmManager;
+use Loy\Framework\Base\Validator;
 use Loy\Framework\Base\RepositoryManager;
 use Loy\Framework\Base\DomainManager;
+use Loy\Framework\Base\ConfigManager;
 use Loy\Framework\Base\DatabaseManager;
 use Loy\Framework\Base\Exception\MethodNotExistsException;
 use Loy\Framework\Storage\Exception\OrmNotExistsException;
+use Loy\Framework\Base\Exception\ValidationFailureException;
 
 /**
  * The repository abstract persistence access, whatever storage it is. That is its purpose.
@@ -27,7 +30,7 @@ class Repository
 
     public function find(int $id)
     {
-        $this->execute('find', [$id]);
+        return $this->execute('find', [$id]);
     }
 
     public function execute(string $api, array $argvs = [])
@@ -38,43 +41,54 @@ class Repository
             dd('ApiNotSupportedByStorageException');
             // throw new ApiNotSupportedByStorageException($orm);
         }
+
+        return call_user_func_array($storage, $argvs);
     }
 
     public function prepare()
     {
         $repository = RepositoryManager::get($this->__dynamicProxyNamespace);
-        $orm = $repository['meta']['ORM'] ?? false;
-        if ((! $orm) || (! class_exists($orm))) {
-            throw new OrmNotExistsException($orm);
+        if (! is_array($repository)) {
+            dd('Repository not found');
         }
 
-        $domain = DomainManager::initFromNamespace($orm);
-        dd($domain->parent());
-        if (! $domain) {
-            throw new \Exception('Missing Domain Configurations of ORM: '.$orm);
-        }
-        $_domain  = join(DIRECTORY_SEPARATOR, [$domain, DomainManager::DOMAIN_FILE]);
-        $database = join(DIRECTORY_SEPARATOR, [$domain, DatabaseManager::CONFIG_FILE]);
-        $dbcfg    = [];
-        if ($database && is_file($database)) {
-            $dbcfg = load_php($database);
-        } elseif ($_domain && is_file($_domain)) {
-            $dbcfg = load_php($_domain);
-            $dbcfg = $dbcfg['database'] ?? [];
-        }
-        if (! $dbcfg) {
-            throw new \Exception('Missing Database Configrutions');
+        try {
+            Validator::execute($repository, [
+                'meta' => function () {
+                    return [
+                        'CONNECTION' => [
+                            'string'
+                        ],
+                        'DATABASE' => [
+                            'string'
+                        ],
+                        'PREFIX' => [
+                            'string'
+                        ],
+                        'TABLE' => [
+                            'need', 'string'
+                        ],
+                        'ORM' => [
+                            'need', 'namespace'
+                        ],
+                    ];
+                },
+            ]);
+        } catch (ValidationFailureException $e) {
+            throw new \Exception('Bad Repository Annotation: '.$e->getMessage());
         }
 
-        $conname = $ormcfg['meta']['CONNECTION'] ?? ($dbcfg['conn_default'] ?? null);
-        if (! $conname) {
-            throw new \Exception('Missing database connection name');
-        }
-        $conncfg = $dbcfg['conn_pool'][$conname] ?? null;
-        if (! $conncfg) {
-            throw new \Exception('Database connection config not found: '.$conname);
-        }
-        dd(DatabaseManager::validateConn($conncfg));
+        $connection = $repository['meta']['CONNECTION'] ?? null;
+        $database   = $repository['meta']['DATABASE']   ?? null;
+        $prefix     = $repository['meta']['PREFIX']     ?? null;
+        $table      = $repository['meta']['TABLE']      ?? null;
+
+        pp($connection, $database, $prefix, $table);
+
+        $connDefault = ConfigManager::getLatestByNamespace(
+            $this->__dynamicProxyNamespace,
+            'database.conn_default'
+        );
     }
 
     public function __call(string $method, array $argvs = [])

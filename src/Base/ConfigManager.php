@@ -78,6 +78,20 @@ final class ConfigManager
         return $result;
     }
 
+    public static function getLatestByDomainRoot(string $root, string $key, $default = null)
+    {
+        // TODO
+    }
+
+    public static function getLatestByFilePath(string $path, string $key, $default = null)
+    {
+        // TODO
+    }
+
+    public static function getLatestByNamespace(string $namespace, string $key, $default = null)
+    {
+    }
+
     public static function get(string $key = 'domain')
     {
         if ($key === 'domain') {
@@ -86,6 +100,8 @@ final class ConfigManager
         if ($key === 'framework') {
             return self::getFramework();
         }
+
+        return self::getDomain($key);
     }
 
     public static function getDomain(string $domain)

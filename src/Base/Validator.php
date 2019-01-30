@@ -30,6 +30,20 @@ class Validator
             if (! is_string($key)) {
                 throw new BadValidatorRuleException('Non-String Key: '.stringify($key));
             }
+            if (is_closure($rules)) {
+                $val = $data[$key] ?? false;
+                if (! is_array($val)) {
+                    throw new BadValidatorRuleException('Non-Array Value: '.stringify($key));
+                }
+                $_rules = $rules();
+                if (! is_array($_rules)) {
+                    throw new BadValidatorRuleException('Non-Array Rules: '.stringify($key));
+                }
+                $res = [];
+                Validator::execute($val, $_rules, $res);
+                $result[$key] = $res;
+                continue;
+            }
             if (! is_array($rules)) {
                 if (! is_string($rules)) {
                     throw new BadValidatorRuleException('Non-Arrayable Value: '.stringify($key));
@@ -125,6 +139,11 @@ class Validator
         return false;
     }
 
+    public function validateArray(&$value, array $data, string $key, array $params = [])
+    {
+        return is_array($value);
+    }
+
     public function validateInt(&$value, array $data, string $key, array $params = [])
     {
         if (TypeHint::isInt($value)) {
@@ -133,6 +152,11 @@ class Validator
         }
 
         return false;
+    }
+
+    public function validateNamespace(&$value, array $data, string $key, array $params = [])
+    {
+        return is_string($value) && class_exists($value);
     }
 
     public function validateString(&$value, array $data, string $key, array $params = [])

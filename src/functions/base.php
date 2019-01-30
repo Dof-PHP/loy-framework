@@ -439,11 +439,17 @@ if (! function_exists('ospath')) {
         return $path;
     }
 }
-if (! function_exists('is_date')) {
+if (! function_exists('is_date_format')) {
     function is_date_format(string $date, string $format = 'Y-m-d H:i:s') : bool
     {
         $dt = DateTime::createFromFormat($format, $date);
 
         return $dt && ($dt->format($format) == $date);
+    }
+}
+if (! function_exists('is_closure')) {
+    function is_closure($val) : bool
+    {
+        return is_object($val) && ($val instanceof \Closure);
     }
 }

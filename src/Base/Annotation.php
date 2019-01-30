@@ -140,16 +140,11 @@ class Annotation
                 continue;
             }
             $key = $matches[1] ?? false;
-            $val = $matches[2] ?? false;
-            if ((! $key) || (! $val)) {
+            $val = $matches[2] ?? null;
+            if ((! $key) || (is_null($val))) {
                 continue;
             }
-            if (is_null($origin)) {
-                $val = trim($val);
-                if ($val && (mb_strpos($val, ',') !== false)) {
-                    $val = array_trim(explode(',', $val));
-                }
-            } else {
+            if (! is_null($origin)) {
                 $callback = 'filterAnnotation'.ucfirst(strtolower($key));
                 if (method_exists($origin, $callback)) {
                     $val = call_user_func_array([$origin, $callback], [$val]);

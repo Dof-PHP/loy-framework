@@ -29,6 +29,11 @@ class Domain
         return is_null($key) ? $this->config : $this->config->get($key);
     }
 
+    public function chain()
+    {
+        return $this->chain;
+    }
+
     public function children()
     {
         return $this->chain['down'][$this->meta] ?? [];

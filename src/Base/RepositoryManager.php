@@ -53,6 +53,7 @@ class RepositoryManager
             $ns = $exists['namespace'] ?? '?';
             throw new \Exception('DuplicateRepositoryNamespaceException: '.$ns);
         }
+
         self::$repos[$namespace]['meta'] = $ofClass['doc'] ?? [];
     }
 
