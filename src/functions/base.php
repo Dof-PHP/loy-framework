@@ -43,6 +43,12 @@ if (! function_exists('pt')) {
         return bomb_object();
     }
 }
+if (! function_exists('pd')) {
+    function pd(...$vars)
+    {
+        pt(...$vars)->die();
+    }
+}
 if (! function_exists('et')) {
     function et(...$vars)
     {

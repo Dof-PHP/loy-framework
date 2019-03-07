@@ -28,8 +28,8 @@ class Kernel
         self::compileDomain();
         self::loadDomainConfig();
         self::buildContainer();
-        self::compileOrm();
-        self::compileRepository();
+        // self::compileOrm();
+        // self::compileRepository();
     }
 
     public static function loadDomainConfig()

@@ -135,6 +135,10 @@ class Annotation
         $res = [];
         $arr = explode(PHP_EOL, $comment);
         foreach ($arr as $line) {
+            $line = trim($line);
+            if (! $line) {
+                continue;
+            }
             $matches = [];
             if (1 !== preg_match($this->regex, $line, $matches)) {
                 continue;

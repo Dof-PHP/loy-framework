@@ -131,10 +131,10 @@ final class RouteManager
         foreach ($ofMethods as $method => $_attrs) {
             $attrs = $_attrs['doc'] ?? [];
             $notroute = $attrs['NOTROUTE'] ?? false;
-            if ($notroute) {
+            $route = $attrs['ROUTE'] ?? '';
+            if ($notroute || (! $route)) {
                 continue;
             }
-            $route   = $attrs['ROUTE']   ?? '';
             $alias   = $attrs['ALIAS']   ?? null;
             $verbs   = $attrs['VERB']    ?? $defaultVerbs;
             $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
@@ -153,7 +153,7 @@ final class RouteManager
             $middles = $attrs['PIPE'] ?? [];
             $middles = array_unique(array_merge($middlewares, $middles));
             $urlpath = $routePrefix ? join('/', [$routePrefix, $route]) : $route;
-            $urlpath = array_filter(explode('/', $urlpath));
+            $urlpath = ($urlpath === '/') ? ['/'] : explode('/', $urlpath);
             array_walk($urlpath, function (&$val, $key) use (&$params) {
                 $matches = [];
                 if (1 === preg_match('#{([a-z]\w+)}#', $val, $matches)) {
@@ -231,9 +231,11 @@ final class RouteManager
         return array_trim(explode(',', strtoupper(trim($val))));
     }
 
-    public static function filterAnnotationRoute(string $val)
+    public static function filterAnnotationRoute(string $val) : string
     {
-        return join('/', array_trim(explode('/', trim($val))));
+        $arr = array_trim(explode('/', trim($val)));
+
+        return empty($arr) ? '/' : join('/', $arr);
     }
 
     public static function getAliases() : array
