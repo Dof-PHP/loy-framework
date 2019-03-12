@@ -192,19 +192,21 @@ final class RouteManager
     }
 
     public static function validateDuplication(
-        string $verb,
         string $urlpath,
+        string $verb,
         string $alias = null,
         string $classns = null,
         string $method = null,
         bool $exception = false
     ) {
-        if (self::$routes[$urlpath][$verb] ?? false) {
+        if ($route = (self::$routes[$urlpath][$verb] ?? false)) {
+            $_classns = $route['class'] ?? '?';
+            $_method  = $route['method']['name'] ?? '?';
             if (! $exception) {
                 return false;
             }
 
-            throw new DuplicateRouteDefinitionException("{$verb} {$urlpath} ({$classns}@{$method})");
+            throw new DuplicateRouteDefinitionException("{$verb} {$urlpath} ({$classns}@{$method}) <=> {$_classns}@{$_method}");
         }
 
         if ($alias && ($_alias = (self::$aliases[$alias] ?? false))) {
@@ -224,8 +226,8 @@ final class RouteManager
 
     public static function parseRoute(string $route) : array
     {
-        $route = self::filterAnnotationRoute($route, true);
-        $params  = [];
+        $route  = self::filterAnnotationRoute($route, true);
+        $params = [];
         array_walk($route, function (&$val, $key) use (&$params) {
             $matches = [];
             if (1 === preg_match('#{([a-z]\w+)}#', $val, $matches)) {
@@ -236,7 +238,9 @@ final class RouteManager
             }
         });
        
-        return [join('/', $route), $params];
+        $route = $route ? join('/', $route) : '/';
+
+        return [$route, $params];
     }
 
     public static function filterAnnotationPipe(string $val) : array

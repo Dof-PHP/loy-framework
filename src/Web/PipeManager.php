@@ -10,6 +10,7 @@ use Loy\Framework\Base\Exception\DuplicatePipeDefinitionException;
 final class PipeManager
 {
     const PIPE_DIR = ['Http', 'Pipe'];
+    const PIPE_HANDLER = 'through';
 
     private static $dirs  = [];
     private static $pipes = [];

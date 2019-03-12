@@ -167,6 +167,11 @@ class Request
         return $mime ? trim(strtolower($mime)) : null;
     }
 
+    public function getVerb() : ?string
+    {
+        return $this->getMethod();
+    }
+
     public function getMethod() : ?string
     {
         return $this->getOrSet('method', function () {

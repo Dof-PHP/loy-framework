@@ -13,11 +13,24 @@ use Loy\Framework\Web\RouteManager;
 use Loy\Framework\Web\PipeManager;
 use Loy\Framework\Web\WrapperManager;
 
-class Kernel
+/**
+ * Loy Framework Core Kernel
+ */
+final class Kernel
 {
-    protected static $root = null;
+    /** @var string Project Root Directory */
+    protected static $root;
 
-    public static function handle(string $root)
+    /**
+     * Core kernel handler - The genesis of application
+     *
+     * 1. Load framework and domain configurations
+     * 2. Compile components and build application container
+     *
+     * @param string $root
+     * @return null
+     */
+    public static function boot(string $root)
     {
         if (! is_dir($root)) {
             throw new InvalidProjectRootException($root);
@@ -28,8 +41,11 @@ class Kernel
         self::compileDomain();
         self::loadDomainConfig();
         self::buildContainer();
-        // self::compileOrm();
-        // self::compileRepository();
+        self::compileOrm();
+        self::compileRepository();
+        self::compileRoute();
+        self::compileWrapper();
+        self::compilePipe();
     }
 
     public static function loadDomainConfig()
