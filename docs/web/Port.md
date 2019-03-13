@@ -22,19 +22,33 @@ Allowed request methods on this port, support multiple http verbs.
 
 ### `alias`
 
-### `alias`
+The unique alias name of a route definition.
 
-### `mimein` 
+### `mimein`
 
-### `mimeout` 
+The request content type alias setting.
 
-### `wrapin` 
+### `mimeout`
 
-### `wrapout` 
+The response content type alias setting.
+
+### `wrapin`
+
+The request body parameters definition and validator.
+
+### `wrapout`
+
+The success response body wrapper format.
 
 ### `wraperr` 
 
+The failed response body wrapper format.
+
 ### `suffix` 
+
+The supported url suffix for that route(URL), it's useful for HTTP caching like cdn.
+
+The suffix annotation definition will not occupy the route path definition, one route path can have multiple suffix defnitions.
 
 ## Example
 
