@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Loy\Framework\Web;
 
 use Loy\Framework\Facade\Annotation;
-use Loy\Framework\Base\Exception\DuplicateWrapperDefinitionException;
 
 final class WrapperManager
 {
@@ -31,19 +30,19 @@ final class WrapperManager
             }
         }, $dirs);
 
-        // Excetions may thrown but let invoker to catch for different scenarios
-        //
-        // use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
-        // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
+        // Exceptions may thrown but let invoker to catch for different scenarios
         Annotation::parseClassDirs(self::$dirs, function ($annotations) {
             if ($annotations) {
-                list($ofClass, $ofProperties, $ofMethods) = $annotations;
-                self::assembleWrappersFromAnnotations($ofClass, $ofMethods);
+                list($ofClass, , $ofMethods) = $annotations;
+                self::assemble($ofClass, $ofMethods);
             }
         }, __CLASS__);
     }
 
-    public static function assembleWrappersFromAnnotations(array $ofClass, array $ofMethods)
+    /**
+     * Assemble Wrappers From Annotations
+     */
+    public static function assemble(array $ofClass, array $ofMethods)
     {
         $namespace = $ofClass['namespace'] ?? false;
         if ((! $namespace) || (! class_exists($namespace))) {
@@ -72,9 +71,17 @@ final class WrapperManager
             if ($exists = (self::$wrappers[$type][$name] ?? false)) {
                 $_class  = $exists['class']  ?? '?';
                 $_method = $exists['method'] ?? '?';
-                throw new DuplicateWrapperDefinitionException(
-                    "{$name} => {$namespace}@{$method} ($_class@$_method)"
-                );
+                exception('DuplicateWrapperDefinition', [
+                    'name'   => $name,
+                    'current' => [
+                        'class'  => $namespace,
+                        'method' => $method,
+                    ],
+                    'previous' => [
+                        'class'  => $_class,
+                        'method' => $_method,
+                    ],
+                ]);
             }
             self::$wrappers[$type][$name] = [
                 'class'  => $namespace,
@@ -90,8 +97,7 @@ final class WrapperManager
 
     public static function getWrapperErr(string $err = null) : ?array
     {
-        $arr = self::$wrappers['err'];
-        return $err ? ($arr[$err] ?? null) : $arr;
+        return $err ? (self::$wrappers['err'][$err] ?? null) : $arr;
     }
 
     public static function hasWrapperOut(string $out) : bool
@@ -101,8 +107,7 @@ final class WrapperManager
 
     public static function getWrapperOut(string $out = null) : ?array
     {
-        $arr = self::$wrappers['out'];
-        return $out ? ($arr[$out] ?? null) : $arr;
+        return $out ? (self::$wrappers['out'][$out] ?? null) : $arr;
     }
 
     public static function hasWrapperIn(string $in) : bool
@@ -112,10 +117,15 @@ final class WrapperManager
 
     public static function getWrapperIn(string $in = null) : ?array
     {
-        $arr = self::$wrappers['in'];
-        return $in ? ($arr[$in] ?? null) : $arr;
+        return $in ? (self::$wrappers['in'][$in] ?? null) : $arr;
     }
 
+    /**
+     * Get the final wrapper format array by wapper class and method
+     *
+     * @param array $wrapper: Wrapper location (format: ['class' => ?, 'method' => ?])
+     * @return array|null: The final wrapper array format
+     */
     public static function getWrapperFinal(array $wrapper = null) : ?array
     {
         if (! $wrapper) {
@@ -123,16 +133,27 @@ final class WrapperManager
         }
         $class  = $wrapper['class']  ?? false;
         $method = $wrapper['method'] ?? false;
-        if ((! $class) || (! $method) || (! class_exists($class) || (! method_exists($class, $method)))) {
+        if (false
+            || (! $class)
+            || (! $method)
+            || (! class_exists($class))
+            || (! method_exists($class, $method))
+        ) {
             return null;
         }
 
         $result = (new $class)->{$method}();
+
         return is_array($result) ? $result : null;
+    }
+
+    public static function getWrapper(string $type, string $name) : ?array
+    {
+        return self::$wrappers[$type][$name] ?? null;
     }
 
     public static function getWrappers()
     {
         return self::$wrappers;
     }
-}
+

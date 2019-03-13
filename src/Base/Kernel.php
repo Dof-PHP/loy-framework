@@ -8,7 +8,6 @@ use Loy\Framework\Base\ConfigManager;
 use Loy\Framework\Base\DomainManager;
 use Loy\Framework\Base\OrmManager;
 use Loy\Framework\Base\RepositoryManager;
-use Loy\Framework\Base\Exception\InvalidProjectRootException;
 use Loy\Framework\Web\RouteManager;
 use Loy\Framework\Web\PipeManager;
 use Loy\Framework\Web\WrapperManager;
@@ -32,65 +31,38 @@ final class Kernel
      */
     public static function boot(string $root)
     {
-        if (! is_dir($root)) {
-            throw new InvalidProjectRootException($root);
+        if (! is_dir(self::$root = $root)) {
+            exception('InvalidProjectRoot', ['root' => $root]);
         }
-        self::$root = $root;
 
-        self::initBaseConfig();
-        self::compileDomain();
-        self::loadDomainConfig();
-        self::buildContainer();
-        self::compileOrm();
-        self::compileRepository();
-        self::compileRoute();
-        self::compileWrapper();
-        self::compilePipe();
-    }
-
-    public static function loadDomainConfig()
-    {
-        ConfigManager::load(DomainManager::getDirsD2M());
-    }
-
-    public static function initBaseConfig()
-    {
         ConfigManager::init(self::$root);
-    }
 
-    public static function buildContainer()
-    {
-        Container::build(DomainManager::getDirsD2M());
-    }
+        // Record every uncatched excptions
+        set_exception_handler(function ($throwable) {
+            pd($throwable->getTraceAsString());
+            // TODO: Logging
+        });
+        // Record every uncatched error regardless to the setting of the error_reporting setting
+        set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+            // pd('error_handler', $errstr);
+            // TODO: Logging
+        });
 
-    public static function compileRepository()
-    {
-        RepositoryManager::compile(DomainManager::getDirs());
-    }
-
-    public static function compileOrm()
-    {
-        OrmManager::compile(DomainManager::getDirs());
-    }
-
-    public static function compileRoute()
-    {
-        RouteManager::compile(DomainManager::getDirs());
-    }
-
-    public static function compilePipe()
-    {
-        PipeManager::compile(DomainManager::getDirs());
-    }
-
-    public static function compileWrapper()
-    {
-        WrapperManager::compile(DomainManager::getDirs());
-    }
-
-    public static function compileDomain()
-    {
         DomainManager::compile(self::$root);
+
+        ConfigManager::load(DomainManager::getDirsD2M());
+
+        Container::build(DomainManager::getDirsD2M());
+
+        RepositoryManager::compile(DomainManager::getDirs());
+
+        OrmManager::compile(DomainManager::getDirs());
+
+        PipeManager::compile(DomainManager::getDirs());
+
+        WrapperManager::compile(DomainManager::getDirs());
+
+        RouteManager::compile(DomainManager::getDirs());
     }
 
     public static function getRoot()

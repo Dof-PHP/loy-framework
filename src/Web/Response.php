@@ -15,10 +15,13 @@ use Loy\Framework\Web\WrapperManager;
 
 class Response extends Facade
 {
-    public static $singleton = true;
+    protected static $singleton = true;
     protected static $namespace = Instance::class;
 
-    public static function parseResult($result)
+    /**
+     * Recognize supported result types and set particular attributes to properties of current response
+     */
+    public static function support($result)
     {
         if ($result instanceof ApplicationService) {
             if ($result->isSuccess()) {
@@ -32,9 +35,25 @@ class Response extends Facade
         return $result;
     }
 
+    /**
+     * Send a format-fixed exception response
+     *
+     * It's the system level error
+     */
+    public static function exception(int $status, string $message, array $context = [])
+    {
+        Response::new()->setStatus($status)->send([$status, $message, $context]);
+    }
+
+    /**
+     * Send a result response with dynamic format
+     *
+     * @param mixed $result: the response data origin
+     * @param bool|null $error: application logic level error
+     */
     public static function send($result, ?bool $error = null)
     {
-        $result   = self::parseResult($result);
+        $result   = self::support($result);
         $response = self::getInstance();
         if (is_null($error)) {
             $error = $response->getError();
@@ -42,24 +61,26 @@ class Response extends Facade
         }
 
         $wrapout = $error ? Route::get('wraperr') : Route::get('wrapout');
-        $wrapper = $error ? WrapperManager::getWrapperErr($wrapout) : WrapperManager::getWrapperOut($wrapout);
-        $result  = self::setWrapperOnResult($result, $wrapper);
+        $wrapper = WrapperManager::getWrapper(($error ? 'err' : 'out'), $wrapout);
+        $result  = self::package($result, $wrapper);
 
         try {
             $mimeout = Route::get('suffix.current') ?: Route::get('mimeout');
             $response->setMimeAlias($mimeout)->send($result);
         } catch (Exception | Error $e) {
-            Response::new()
-            ->setStatus(500)
-            ->send(self::setWrapperOnResult([
-                objectname($e),
-                $e->getCode(),
-                $e->getMessage(),
-            ], WrapperManager::getWrapperErr(Route::get('wraperr'))));
+            Response::error(500, $e->getMessage());
         }
     }
 
-    public static function setWrapperOnResult($result, array $wrapper = null, bool $final = false)
+    /**
+     * Package response result with given wrapper (if exists)
+     *
+     * @param $result mixed: result data to response
+     * @param $wrapper array: the wrapper used to package result data
+     * @param $final bool: whether the $wrapper is the final wapper format data or just wapper location config
+     * @return $result: Packaged response result
+     */
+    public static function package($result, array $wrapper = null, bool $final = false)
     {
         $wrapper = $final ? $wrapper : WrapperManager::getWrapperFinal($wrapper);
         if ((! $wrapper) || (! is_array($wrapper))) {

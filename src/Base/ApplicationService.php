@@ -9,10 +9,10 @@ use Loy\Framework\Base\Container;
 abstract class ApplicationService
 {
     protected $__code  = 200;
-    protected $__info  = null;
-    protected $__data  = null;
-    protected $__meta  = null;
-    protected $__extra = null;
+    protected $__info;
+    protected $__data;
+    protected $__meta;
+    protected $__extra;
 
     public function exec()
     {

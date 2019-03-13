@@ -5,15 +5,13 @@ declare(strict_types=1);
 namespace Loy\Framework\Storage;
 
 use Closure;
+use Exception;
 use Loy\Framework\Base\OrmManager;
 use Loy\Framework\Base\Validator;
 use Loy\Framework\Base\RepositoryManager;
 use Loy\Framework\Base\DomainManager;
 use Loy\Framework\Base\ConfigManager;
 use Loy\Framework\Base\DbManager;
-use Loy\Framework\Base\Exception\MethodNotExistsException;
-use Loy\Framework\Storage\Exception\OrmNotExistsException;
-use Loy\Framework\Base\Exception\ValidationFailureException;
 
 /**
  * The repository abstract persistence access, whatever storage it is. That is its purpose.
@@ -40,8 +38,7 @@ class Repository
         $storage = $this->prepare();
 
         if (! method_exists($storage, $api)) {
-            dd('ApiNotSupportedByStorageException');
-            // throw new ApiNotSupportedByStorageException($orm);
+            exception('ApiNotSupportedByStorage', ['storage' => $storage, 'api' => $api]);
         }
         if (method_exists($storage, 'setDbname') && ($dbname = ($this->__meta['DATABASE'] ?? false))) {
             $storage->setDbname($dbname);
@@ -80,8 +77,8 @@ class Repository
                     ];
                 },
             ]);
-        } catch (ValidationFailureException $e) {
-            throw new \Exception('Bad Repository Annotation: '.$e->getMessage());
+        } catch (Exception $e) {
+            exception($e, ['__error' => 'Bad Repository Annotation']);
         }
 
         $this->__meta = $repository['meta'] ?? [];
@@ -96,10 +93,10 @@ class Repository
     {
         $proxy = $this->__getDynamicProxy();
         if (! $proxy) {
-            throw new MethodNotExistsException(join('@', [__CLASS__, $method]));
+            exception('MethodNotExists', ['class' => __CLASS__, 'method' => $method]);
         }
         if (! method_exists($proxy, $method)) {
-            throw new MethodNotExistsException(join('@', [$this->__dynamicProxyNamespace, $method]));
+            exception('MethodNotExists', ['class' => $this->__dynamicProxyNamespace, 'method' => $method]);
         }
 
         return call_user_func_array([$proxy, $method], $argvs);

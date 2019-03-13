@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Base;
 
-use Loy\Framework\Base\Exception\InvalidProjectRootException;
-
 final class ConfigManager
 {
     const DEFAULT_DIR    = ['config', 'domain'];
@@ -40,7 +38,7 @@ final class ConfigManager
     public static function init(string $root)
     {
         if (! is_dir($root)) {
-            throw new InvalidProjectRootException($root);
+            exception('InvalidProjectRoot', ['root' => $root]);
         }
 
         self::$default = collect(self::loadDir(

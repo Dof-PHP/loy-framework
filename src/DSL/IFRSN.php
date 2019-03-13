@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace Loy\Framework\DSL;
 
-use Loy\Framework\DSL\Exception\InvalidInputFieldsSentenceTypeException;
-use Loy\Framework\DSL\Exception\InputFieldsSentenceGrammerError;
-use Loy\Framework\DSL\Exception\InputFieldsParameterGrammerError;
-
 /**
  * IFRSN: Input Fields Relation Structured Notation
  */
@@ -25,7 +21,7 @@ final class IFRSN
         $res = [];
         foreach ($arr as $item) {
             if (! is_string($item)) {
-                throw new InvalidInputFieldsSentenceTypeException;
+                exception('InvalidInputFieldsSentenceType', ['item' => $item]);
             }
             if (! trim($item)) {
                 continue;
@@ -59,9 +55,14 @@ final class IFRSN
         $leftCnt  = count($bracesLeft);
         $rightCnt = count($bracesRight);
         if ($leftCnt !== $rightCnt) {
-            throw new InputFieldsParameterGrammerError(
-                "Input Braces Mismatch => {$parameter} (L:{$leftCnt},R:{$rightCnt})"
-            );
+            exception('InputFieldsParameterGrammerError', [
+                '__error' => 'Input Braces Mismatch',
+                'parameter' => $parameter,
+                'count' => [
+                    'left'  => $leftCnt,
+                    'right' => $rightCnt,
+                ],
+            ]);
         }
 
         $braces = self::adjustBraces($bracesLeft, $bracesRight);
@@ -95,9 +96,14 @@ final class IFRSN
         $leftCnt  = count($parenthesesLeft);
         $rightCnt = count($parenthesesRight);
         if ($leftCnt !== $rightCnt) {
-            throw new InputFieldsSentenceGrammerError(
-                "Input Parentheses Mismatch => {$sentence} (L:{$leftCnt},R:{$rightCnt})"
-            );
+            exception('InputFieldsSentenceGrammerError', [
+                '__error' => 'Input Parentheses Mismatch',
+                'sentecne' => $sentence,
+                'count' => [
+                    'left'  => $leftCnt,
+                    'right' => $rightCnt,
+                ],
+            ]);
         }
 
         $parentheses = self::adjustParentheses($parenthesesLeft, $parenthesesRight);

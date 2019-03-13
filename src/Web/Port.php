@@ -7,7 +7,6 @@ namespace Loy\Framework\Web;
 use Loy\Framework\Web\Route;
 use Loy\Framework\Web\Request;
 use Loy\Framework\Web\Response;
-use Loy\Framework\Base\Exception\ApplicationServiceNotExistsExeception;
 
 class Port
 {
@@ -43,7 +42,7 @@ class Port
         $object = $service;
         if (! is_object($service)) {
             if (! class_exists($service)) {
-                throw new ApplicationServiceNotExistsExeception((string) $service);
+                exception('ApplicationServiceNotExists', ['service' => string_literal($service)]);
             }
             $object = new $service;
         }

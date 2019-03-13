@@ -18,20 +18,23 @@ final class DbManager
     {
         $conn = $conn ?: ConfigManager::getLatestByDomainRoot($domain, 'database.conn_default');
         if (! $conn) {
-            throw new \Exception('Missing Database Connnection for Domain: '.$domain);
+            exception('MissingDomainDatabaseConnnection', ['domain' => $domain]);
         }
         $pool   = ConfigManager::getLatestByDomainRoot($domain, 'database.conn_pool');
         $config = $pool[$conn] ?? false;
         if (false === $config) {
-            throw new \Exception('Database Connnection Not Found: '."{$conn} ($domain)");
+            exception('DatabaseConnnectionNotFound', [
+                'connection' => $conn,
+                'domain'     => $domain,
+            ]);
         }
         $driver = strtolower($config['driver'] ?? '');
         if (! $driver) {
-            throw new \Exception('Missing Database Driver');
+            exception('MissingDatabaseDriver');
         }
         $db = self::SUPPORT_DRIVERS[$driver] ?? false;
         if (! $db) {
-            throw new \Exception('Database Driver Not Suppert Yet: '.stringify($driver));
+            exception('Database Driver Not Suppert Yet', ['driver' => stringify($driver)]);
         }
         $key = join(':', [$driver, $conn]);
         $instance = self::$pool[$key] ?? false;

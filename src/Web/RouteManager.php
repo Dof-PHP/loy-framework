@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Loy\Framework\Web;
 
 use Loy\Framework\Facade\Annotation;
-use Loy\Framework\Base\Exception\DuplicateRouteDefinitionException;
-use Loy\Framework\Base\Exception\DuplicateRouteAliasDefinitionException;
 
 final class RouteManager
 {
@@ -92,6 +90,11 @@ final class RouteManager
         return false;
     }
 
+    /**
+     * Compile port classes and assemble formatted routes
+     *
+     * @param $dirs array: Directories store port classes
+     */
     public static function compile(array $dirs)
     {
         if (count($dirs) < 1) {
@@ -107,17 +110,18 @@ final class RouteManager
 
         // Excetions may thrown but let invoker to catch for different scenarios
         //
-        // use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
-        // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
         Annotation::parseClassDirs(self::$dirs, function ($annotations) {
             if ($annotations) {
                 list($ofClass, $ofProperties, $ofMethods) = $annotations;
-                self::assembleRoutesFromAnnotations($ofClass, $ofMethods);
+                self::assemble($ofClass, $ofMethods);
             }
         }, __CLASS__);
     }
 
-    public static function assembleRoutesFromAnnotations(array $ofClass, array $ofMethods)
+    /**
+     * Assemble routes definitions from class annotations
+     */
+    public static function assemble(array $ofClass, array $ofMethods)
     {
         $classNamespace = $ofClass['namespace']      ?? null;
         $routePrefix    = $ofClass['doc']['ROUTE']   ?? null;
@@ -156,7 +160,7 @@ final class RouteManager
             $urlpath = $routePrefix ? join('/', [$routePrefix, $route]) : $route;
             list($urlpath, $params) = self::parseRoute($urlpath);
             foreach ($verbs as $verb) {
-                self::validateDuplication($urlpath, $verb, $alias, $classNamespace, $method, true);
+                self::deduplicate($urlpath, $verb, $alias, $classNamespace, $method, true);
 
                 if ($alias) {
                     self::$aliases[$alias] = [
@@ -194,7 +198,10 @@ final class RouteManager
         }
     }
 
-    public static function validateDuplication(
+    /**
+     * De-duplicate route and alias definitions
+     */
+    public static function deduplicate(
         string $urlpath,
         string $verb,
         string $alias = null,
@@ -209,7 +216,18 @@ final class RouteManager
                 return false;
             }
 
-            throw new DuplicateRouteDefinitionException("{$verb} {$urlpath} ({$classns}@{$method}) <=> {$_classns}@{$_method}");
+            exception('DuplicateRouteDefinition', [
+                'verb' => $verb,
+                'path' => $urlpath,
+                'conflict' => [
+                    'class'  => $_classns,
+                    'method' => $_method,
+                ],
+                'previous' => [
+                    'class'  => $classns,
+                    'method' => $method,
+                ],
+            ]);
         }
 
         if ($alias && ($_alias = (self::$aliases[$alias] ?? false))) {
@@ -221,9 +239,22 @@ final class RouteManager
             $_route   = self::$routes[$_urlpath][$_verb] ?? [];
             $_classns = $_route['class']   ?? '?';
             $_method  = $_route['method']['name'] ?? '?';
-            throw new DuplicateRouteAliasDefinitionException(
-                "{$alias} => ({$verb} {$urlpath} | {$classns}@{$method}) <=> ({$_verb} {$_urlpath} | {$_classns}@{$_method})"
-            );
+
+            exception('DuplicateRouteAliasDefinition', [
+                'alias' => $alias,
+                'conflict' => [
+                    'verb'   => $_verb,
+                    'path'   => $_urlpath,
+                    'class'  => $_classns,
+                    'method' => $_method,
+                ],
+                'previous' => [
+                    'verb'   => $verb,
+                    'path'   => $urlpath,
+                    'class'  => $classns,
+                    'method' => $method,
+                ],
+            ]);
         }
     }
 

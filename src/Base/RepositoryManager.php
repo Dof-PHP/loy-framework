@@ -31,19 +31,19 @@ class RepositoryManager
         }, $dirs);
 
 
-        // Excetions may thrown but let invoker to catch for different scenarios
-        //
-        // use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
-        // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
+        // Exceptions may thrown but let invoker to catch for different scenarios
         Annotation::parseClassDirs(self::$dirs, function ($annotations) {
             if ($annotations) {
                 list($ofClass, , ) = $annotations;
-                self::assembleRepositoryFromAnnotations($ofClass);
+                self::assemble($ofClass);
             }
         }, __CLASS__);
     }
 
-    public static function assembleRepositoryFromAnnotations(array $ofClass)
+    /**
+     * Assemble Repository From Annotations
+     */
+    public static function assemble(array $ofClass)
     {
         $namespace = $ofClass['namespace'] ?? false;
         if (! $namespace) {
@@ -51,7 +51,7 @@ class RepositoryManager
         }
         if ($exists = (self::$repos[$namespace] ?? false)) {
             $ns = $exists['namespace'] ?? '?';
-            throw new \Exception('DuplicateRepositoryNamespaceException: '.$ns);
+            exception('DuplicateRepositoryNamespace', ['namespace' => $ns]);
         }
 
         self::$repos[$namespace]['meta'] = $ofClass['doc'] ?? [];

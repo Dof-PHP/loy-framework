@@ -31,19 +31,19 @@ class OrmManager
         }, $dirs);
 
 
-        // Excetions may thrown but let invoker to catch for different scenarios
-        //
-        // use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
-        // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
+        // Exceptions may thrown but let invoker to catch for different scenarios
         Annotation::parseClassDirs(self::$dirs, function ($annotations) {
             if ($annotations) {
-                list($ofClass, $ofProperties, $ofMethods) = $annotations;
-                self::assembleOrmsFromAnnotations($ofClass, $ofProperties);
+                list($ofClass, $ofProperties, ) = $annotations;
+                self::assemble($ofClass, $ofProperties);
             }
         }, __CLASS__);
     }
 
-    public static function assembleOrmsFromAnnotations(array $ofClass, array $ofProperties)
+    /**
+     * Assemble Orms From Annotations
+     */
+    public static function assemble(array $ofClass, array $ofProperties)
     {
         $namespace = $ofClass['namespace'] ?? false;
         if (! $namespace) {
@@ -51,7 +51,7 @@ class OrmManager
         }
         if ($exists = (self::$orms[$namespace] ?? false)) {
             $ns = $exists['namespace'] ?? '?';
-            throw new \Exception('DuplicateOrmNamespaceException: '.$ns);
+            exception('DuplicateOrmNamespace', ['namespace' => $ns]);
         }
         self::$orms[$namespace]['meta'] = $ofClass['doc'] ?? [];
 
@@ -63,9 +63,12 @@ class OrmManager
             }
             $_exists = self::$orms[$namespace]['columns'][$column] ?? false;
             if ($_exists) {
-                throw new \Exception(
-                    'DuplicateOrmColumnException: '."{$namespace} ({$column} <=> {$_exists} & {$name})"
-                );
+                exception('DuplicateOrmColumn', [
+                    'namespace' => $namespace,
+                    'column'    => $column,
+                    'exists'    => $_esists,
+                    'name'      => $name,
+                ]);
             }
             self::$orms[$namespace]['properties'][$name] = $attrs['doc'] ?? [];
             self::$orms[$namespace]['columns'][$column]  = $name;

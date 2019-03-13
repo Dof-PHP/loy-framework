@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Base;
 
+use Throwable;
 use Loy\Framework\Base\TypeHint;
-use Loy\Framework\Base\Exception\ValidatorNotFoundException;
-use Loy\Framework\Base\Exception\ValidationFailureException;
-use Loy\Framework\Base\Exception\BadValidatorRuleException;
-use Loy\Framework\Base\Exception\TypeHintConvertException;
 
 class Validator
 {
@@ -28,16 +25,25 @@ class Validator
         $result = $data;
         foreach ($rule as $key => $rules) {
             if (! is_string($key)) {
-                throw new BadValidatorRuleException('Non-String Key: '.stringify($key));
+                exception('BadValidatorRule', [
+                    '__error' => 'Non-string key',
+                    'key' => stringify($key),
+                ]);
             }
             if (is_closure($rules)) {
                 $val = array_key_exists($key, $data) ? $data[$key] : [];
                 if (! is_array($val)) {
-                    throw new BadValidatorRuleException('Non-Array Value: '.stringify($key));
+                    exception('BadValidatorRule', [
+                        '__error' => 'Non-array Value',
+                        'key' => stringify($key),
+                    ]);
                 }
                 $_rules = $rules();
                 if (! is_array($_rules)) {
-                    throw new BadValidatorRuleException('Non-Array Rules: '.stringify($key));
+                    exception('BadValidatorRule', [
+                        '__error' => 'Non-array rules',
+                        'key' => stringify($key)
+                    ]);
                 }
                 $res = [];
                 Validator::execute($val, $_rules, $res);
@@ -46,7 +52,10 @@ class Validator
             }
             if (! is_array($rules)) {
                 if (! is_string($rules)) {
-                    throw new BadValidatorRuleException('Non-Arrayable Value: '.stringify($key));
+                    exception('BadValidatorRule', [
+                        'error' => 'Non-arrayable value',
+                        'key' => stringify($key)
+                    ]);
                 }
 
                 $rules = array_trim(explode('|', $rules));
@@ -69,24 +78,33 @@ class Validator
                 }
                 $validator = 'validate'.ucfirst(strtolower($rule));
                 if (! method_exists($this, $validator)) {
-                    throw new ValidatorNotFoundException($rule);
+                    exception('ValidatorNotFound', ['rule' => $rule]);
                 }
                 $params = ($rule === 'default') ? [$_rule] : array_trim(explode(',', $arr[1] ?? ''));
                 try {
                     $res = $this->{$validator}($val, $data, $key, $params);
-                } catch (TypeHintConvertException $e) {
-                    throw new ValidationFailureException("{$error} ({$key})");
+                } catch (Throwable $e) {
+                    exception($e, ['error' => $error, 'key' => $key]);
                 }
+
                 $result[$key] = $val;
                 $_val = string_literal($val);
                 if (is_null($res)) {
                     break;
                 }
                 if (is_string($res)) {
-                    throw new BadValidatorRuleException("{$_rule} ({$res} => {$_val})");
+                    exception('BadValidatorRule', [
+                        'rule' => $_rule,
+                        'res'  => $res,
+                        'val'  => $_val,
+                    ]);
                 }
                 if (false === $res) {
-                    throw new ValidationFailureException("{$error} ({$key} => {$_val})");
+                    exception('ValidationFailure', [
+                        'error' => $error,
+                        'key'   => $key,
+                        'val'   => $_val
+                    ]);
                 }
                 if (true === $res) {
                     continue;

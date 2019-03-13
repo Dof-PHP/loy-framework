@@ -105,7 +105,7 @@ if (! function_exists('list_dir')) {
     function list_dir(string $dir, \Closure $callback)
     {
         if (! is_dir($dir)) {
-            throw new \Exception('LIST_DIR_NOT_EXISTS => '.$dir);
+            exception('ListDirNotExists', ['dir' => $dir]);
         }
 
         $list = (array) scandir($dir);
@@ -133,7 +133,7 @@ if (! function_exists('walk_dir')) {
     function walk_dir(string $dir, \Closure $callback)
     {
         if (! is_dir($dir)) {
-            throw new \Exception('WALK_DIR_NOT_EXISTS => '.$dir);
+            exception('WalkDirNotExists', ['dir' => $dir]);
         }
 
         $fsi = new \FilesystemIterator($dir);
@@ -248,7 +248,7 @@ if (! function_exists('dexml')) {
     function dexml(string $xml, bool $loaded = false) : array
     {
         if (! extension_loaded('libxml')) {
-            throw new \Exception('PHP extension missing: libxml');
+            exception('MissingPHPExtension', ['extension' => 'libxml']);
         }
         
         libxml_use_internal_errors(true);
@@ -261,7 +261,7 @@ if (! function_exists('dexml')) {
         );
         if (($error = libxml_get_last_error()) && isset($error->message)) {
             libxml_clear_errors();
-            // throw new \Exception('Illegal XML format: '.$error->message);
+            // exception('Illegal XML format', ['error' => $error->message]);
             return [];
         }
 
@@ -488,5 +488,45 @@ if (! function_exists('array_get_by_chain_key')) {
         }
 
         return $query;
+    }
+}
+if (! function_exists('is_throwable')) {
+    function is_throwable($throwable) : bool
+    {
+        return is_object($throwable) && ($throwable instanceof \Throwable);
+    }
+}
+if (! function_exists('is_anonymous')) {
+    function is_anonymous($instance) : bool
+    {
+        return is_object($instance) && (new ReflectionClass($instance))->isAnonymous();
+    }
+}
+if (! function_exists('parse_throwable')) {
+    function parse_throwable($throwable, array &$context = [])
+    {
+        if (is_throwable($throwable)) {
+            $message = is_anonymous($throwable) ? $throwable->getMessage() : objectname($throwable);
+            $context['__previous'] = $throwable->context;
+        } elseif (is_scalar($throwable)) {
+            $message = $throwable;
+        } else {
+            $message = string_literal($throwable);
+        }
+
+        return $message;
+    }
+}
+if (! function_exists('exception')) {
+    function exception($throwable, array $context = [])
+    {
+        throw new class($throwable, $context) extends \Exception {
+            public $context = [];
+            public function __construct($throwable, array $context = [])
+            {
+                $this->message = parse_throwable($throwable, $context);
+                $this->context = $context;
+            }
+        };
     }
 }

@@ -15,3 +15,7 @@ Loy did everything technical and fundamental related for you, make you more focu
 - Semantic
 
 Loy born with a lot of semantic concepts, can be used to place more concentrate aspects in application logics.
+
+###### TODO
+
+- managers cache logic

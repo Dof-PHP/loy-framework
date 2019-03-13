@@ -8,8 +8,6 @@ use Closure;
 use ReflectionClass;
 use ReflectionException;
 use Loy\Framework\Base\Reflector;
-use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
-use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
 
 class Annotation
 {
@@ -19,7 +17,7 @@ class Annotation
     {
         foreach ($dirs as $dir) {
             if ((! is_string($dir)) || (! is_dir($dir))) {
-                throw new InvalidAnnotationDirException(stringify($dir));
+                exception('InvalidAnnotationDir', ['dir' => stringify($dir)]);
             }
 
             $this->parseClassDir($dir, $callback, $origin);
@@ -49,7 +47,7 @@ class Annotation
     {
         $ns = get_namespace_of_file($path, true);
         if (! class_exists($ns)) {
-            throw new InvalidAnnotationNamespaceException($ns);
+            exception('InvalidAnnotationNamespace', ['namespace' => $ns]);
         }
 
         $annotations = $this->parseNamespace($ns, $origin);

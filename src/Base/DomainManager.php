@@ -76,7 +76,7 @@ final class DomainManager
     {
         $domainRoot = ospath($root, self::DOMAIN_DIR);
         if (! is_dir($domainRoot)) {
-            throw new Exception('INVALID_DOMAIN_ROOT');
+            exception('InvalidDomainRoot', ['root' => $domainRoot]);
         }
         self::$root = $domainRoot;
         self::$dirs = [];

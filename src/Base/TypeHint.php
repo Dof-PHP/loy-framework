@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Base;
 
-use Loy\Framework\Base\Exception\TypeHintConverterNotExistsException;
-use Loy\Framework\Base\Exception\TypeHintConvertException;
-
 final class TypeHint
 {
     public static function convert($val, string $type)
     {
         $converter = 'convertTo'.ucfirst(strtolower($type));
         if (! method_exists(__CLASS__, $converter)) {
-            throw new TypeHintConverterNotExistsException($type);
+            exception('TypeHintConverterNotExists', ['type' => $type]);
         }
 
         return self::$converter($val);
@@ -25,7 +22,10 @@ final class TypeHint
             return (string) $val;
         }
 
-        throw new TypeHintConvertException('Unable to convert to string => '.string_literal($val));
+        exception('TypeHintConvertFailed', [
+            '__error' => 'Unable to convert to string',
+            'value'   => string_literal($val)
+        ]);
     }
 
     public static function convertToInt($val)
@@ -34,7 +34,10 @@ final class TypeHint
             return intval($val);
         }
 
-        throw new TypeHintConvertException('Unable to convert to int => '.string_literal($val));
+        exception('TypeHintConvertFailed', [
+            '__error' => 'Unable to convert to int',
+            'value'   => string_literal($val),
+        ]);
     }
 
     public static function isString($val) : bool

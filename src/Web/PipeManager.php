@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Loy\Framework\Web;
 
 use Loy\Framework\Facade\Annotation;
-use Loy\Framework\Base\Exception\DuplicatePipeDefinitionException;
 
 final class PipeManager
 {
@@ -28,19 +27,19 @@ final class PipeManager
             }
         }, $dirs);
 
-        // Excetions may thrown but let invoker to catch for different scenarios
-        //
-        // use Loy\Framework\Base\Exception\InvalidAnnotationDirException;
-        // use Loy\Framework\Base\Exception\InvalidAnnotationNamespaceException;
+        // Exceptions may thrown but let invoker to catch for different scenarios
         Annotation::parseClassDirs(self::$dirs, function ($annotations) {
             if ($annotations) {
-                list($ofClass, $ofProperties, $ofMethods) = $annotations;
-                self::assemblePipesFromAnnotations($ofClass, $ofMethods);
+                list($ofClass, , $ofMethods) = $annotations;
+                self::assemble($ofClass, $ofMethods);
             }
         }, __CLASS__);
     }
 
-    public static function assemblePipesFromAnnotations(array $ofClass, array $ofMethods)
+    /**
+     * Assemble Pipes From Annotations
+     */
+    public static function assemble(array $ofClass, array $ofMethods)
     {
         $name = $ofClass['doc']['NAME'] ?? null;
         if (! $name) {
@@ -50,9 +49,11 @@ final class PipeManager
         $namespace = $ofClass['namespace'] ?? false;
         if ($namespace && class_exists($namespace)) {
             if ($exists = (self::$pipes[$name] ?? false)) {
-                throw new DuplicatePipeDefinitionException(
-                    "{$name} => {$namespace} ({$exists})"
-                );
+                exception('DuplicatePipeDefinition', [
+                    'name'   => $name,
+                    'class'  => $namespace,
+                    'exists' => $exists,
+                ]);
             }
 
             self::$pipes[$name] = $namespace;

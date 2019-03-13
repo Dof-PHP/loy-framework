@@ -31,7 +31,10 @@ class Container
         }
 
         if (! in_array('public', ($constructor['modifiers'] ?? []))) {
-            throw new \Exception('Unable to inject Non-Public constructor: '.$ns);
+            exception('UnInjectableDependency', [
+                '__error' => 'Non-public constructor',
+                'class'   => $ns
+            ]);
         }
 
         $params  = $constructor['parameters'] ?? [];
@@ -50,10 +53,12 @@ class Container
                     $_params[] = null;
                     continue;
                 }
-                throw new \Exception(
-                    'Unable to inject dependency due to constructor has builtin required parameter: '.
-                    "{$ns}@__construct(... {$type} ${$name} ...)"
-                );
+                exception('UnInjectableDependency', [
+                    '__error' => 'Constructor has builtin required parameter',
+                    'class' => $ns,
+                    'type'  => $type,
+                    'name'  => $name,
+                ]);
             }
             if (class_exists($type)) {
                 $_params[] = self::di($type);

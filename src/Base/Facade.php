@@ -9,7 +9,7 @@ use Error;
 
 abstract class Facade
 {
-    public static $singleton = true;
+    protected static $singleton = true;
     private static $__pool = [];
 
     public function __call(string $method, array $argvs = [])

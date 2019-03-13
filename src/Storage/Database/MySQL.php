@@ -9,7 +9,6 @@ use Error;
 use Exception;
 use PDOException;
 use Loy\Framework\Base\Validator;
-use Loy\Framework\Base\Exception\ValidationFailureException;
 
 class MySQL
 {
@@ -101,8 +100,8 @@ class MySQL
             ], $result);
 
             return $result;
-        } catch (ValidationFailureException $e) {
-            dd($e->getMessage());
+        } catch (Exception | Error $e) {
+            exception($e, $config);
         }
     }
 
