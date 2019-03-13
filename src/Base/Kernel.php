@@ -52,7 +52,7 @@ final class Kernel
 
         ConfigManager::load(DomainManager::getDirsD2M());
 
-        Container::build(DomainManager::getDirsD2M());
+        // Container::build(DomainManager::getDirsD2M());
 
         RepositoryManager::compile(DomainManager::getDirs());
 

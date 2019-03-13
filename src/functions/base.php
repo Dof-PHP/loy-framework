@@ -144,6 +144,16 @@ if (! function_exists('walk_dir')) {
         unset($fsi);
     }
 }
+if (! function_exists('get_file_of_namespace')) {
+    function get_file_of_namespace(string $ns)
+    {
+        if (! class_exists($ns)) {
+            return false;
+        }
+
+        return (new ReflectionClass($ns))->getFileName();
+    }
+}
 if (! function_exists('get_namespace_of_file')) {
     function get_namespace_of_file(string $path, bool $withClass = false)
     {
@@ -508,6 +518,9 @@ if (! function_exists('parse_throwable')) {
         if (is_throwable($throwable)) {
             $message = is_anonymous($throwable) ? $throwable->getMessage() : objectname($throwable);
             $context['__previous'] = $throwable->context ?? null;
+            $context['__error'] = $throwable->getMessage();
+            $context['__file']  = $throwable->getFile();
+            $context['__line']  = $throwable->getLine();
         } elseif (is_scalar($throwable)) {
             $message = $throwable;
         } else {
