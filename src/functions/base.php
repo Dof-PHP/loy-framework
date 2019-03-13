@@ -507,7 +507,7 @@ if (! function_exists('parse_throwable')) {
     {
         if (is_throwable($throwable)) {
             $message = is_anonymous($throwable) ? $throwable->getMessage() : objectname($throwable);
-            $context['__previous'] = $throwable->context;
+            $context['__previous'] = $throwable->context ?? null;
         } elseif (is_scalar($throwable)) {
             $message = $throwable;
         } else {

@@ -156,4 +156,4 @@ final class WrapperManager
     {
         return self::$wrappers;
     }
-
+}

@@ -44,7 +44,7 @@ final class Kernel
         });
         // Record every uncatched error regardless to the setting of the error_reporting setting
         set_error_handler(function ($errno, $errstr, $errfile, $errline) {
-            // pd('error_handler', $errstr);
+            pd('error_handler', $errstr, $errfile, $errline);
             // TODO: Logging
         });
 
