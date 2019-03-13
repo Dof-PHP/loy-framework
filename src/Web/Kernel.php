@@ -71,7 +71,7 @@ final class Kernel
         $verb  = Request::getVerb();
         $uri   = Request::getUri();
         $mimes = Request::getMimeAliases();
-        $route = RouteManager::findRouteByUriAndMethod($uri, $verb, $mimes);
+        $route = RouteManager::find($uri, $verb, $mimes);
         if ($route === false) {
             Kernel::throw('RouteNotExistsException', [
                 'method' => $verb,

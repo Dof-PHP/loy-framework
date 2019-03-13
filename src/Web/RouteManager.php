@@ -16,7 +16,10 @@ final class RouteManager
     private static $routes  = [];
     private static $dirs    = [];
 
-    public static function findRouteByUriAndMethod(string $uri = null, string $method = null, ?array $mimes = [])
+    /**
+     * Find route definition by given uri, verb and mimes
+     */
+    public static function find(string $uri = null, string $method = null, ?array $mimes = [])
     {
         if ((! $uri) || (! $method)) {
             return false;
