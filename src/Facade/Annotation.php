@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Facade;
 
-use Loy\Framework\Base\Facade;
-use Loy\Framework\Base\Annotation as Instance;
+use Loy\Framework\Facade;
+use Loy\Framework\Annotation as Instance;
 
 class Annotation extends Facade
 {

@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base;
+namespace Loy\Framework;
 
 use Closure;
 use ReflectionClass;
 use ReflectionException;
-use Loy\Framework\Base\Reflector;
 
 class Annotation
 {
@@ -46,8 +45,11 @@ class Annotation
     public function parseClassFile(string $path, Closure $callback = null, string $origin = null)
     {
         $ns = get_namespace_of_file($path, true);
-        if (! class_exists($ns)) {
-            exception('InvalidAnnotationNamespace', ['namespace' => $ns]);
+        if (! $ns) {
+            exception('InvalidAnnotationNamespace', [
+                'filepath'  => $path,
+                'namespace' => $ns,
+            ]);
         }
 
         $annotations = $this->parseNamespace($ns, $origin);

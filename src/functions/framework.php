@@ -21,9 +21,9 @@ if (! function_exists('domain')) {
             throw new \Exception;
         } catch (\Exception $e) {
             $filepath = $e->getTrace()[0]['file'] ?? null;
-            $domainRoot = \Loy\Framework\Base\DomainManager::getRoot();
+            $domainRoot = \Loy\Framework\DomainManager::getRoot();
             if (0 === mb_strpos($filepath, $domainRoot)) {
-                return \Loy\Framework\Base\DomainManager::initFromFilepath($filepath);
+                return \Loy\Framework\DomainManager::initFromFilepath($filepath);
             }
         }
     }
@@ -31,38 +31,25 @@ if (! function_exists('domain')) {
 if (! function_exists('config')) {
     function config(string $key = 'domain')
     {
-        return \Loy\Framework\Base\ConfigManager::get($key);
+        return \Loy\Framework\ConfigManager::get($key);
     }
 }
 if (! function_exists('validate')) {
     function validate(array $data, array $rule = [], array $message = [], bool $exception = false)
     {
-        try {
-            return \Loy\Framework\Base\Validator::execute($data, $rule, $message);
-        } catch (\Loy\Framework\Base\Exception\ValidationFailureException $e) {
-            if ($exception) {
-                throw $e;
-            }
-            return $e->getMessage();
-        }
+        return \Loy\Framework\Validator::execute($data, $rule, $message);
     }
 }
 if (! function_exists('request')) {
     function request()
     {
-        return \Loy\Framework\Web\Request::getInstance();
+        return \Loy\Framework\Facade\Request::getInstance();
     }
 }
 if (! function_exists('response')) {
     function response()
     {
-        return \Loy\Framework\Web\Response::getInstance();
-    }
-}
-if (! function_exists('port_get')) {
-    function port_get(string $uri, array $params = [], array $headers = [])
-    {
-        return \Loy\Framework\Web\Request::make('get', $uri, $params, $headers);
+        return \Loy\Framework\Facade\Response::getInstance();
     }
 }
 if (! function_exists('http')) {

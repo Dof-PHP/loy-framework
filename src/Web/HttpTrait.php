@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Web\Http;
+namespace Loy\Framework\Web;
 
 use Closure;
-use Loy\Framework\Base\Collection;
+use Loy\Framework\Collection;
 
-trait Http
+trait HttpTrait
 {
     protected $status = 200;
     private $headers  = [];

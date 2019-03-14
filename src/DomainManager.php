@@ -2,10 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base;
+namespace Loy\Framework;
 
-use Exception;
-use Loy\Framework\Base\ConfigManager;
 use Loy\Framework\Facade\Domain;
 
 final class DomainManager

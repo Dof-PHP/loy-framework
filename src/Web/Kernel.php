@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace Loy\Framework\Web;
 
 use Throwable;
-use Loy\Framework\Base\Kernel as CoreKernel;
-use Loy\Framework\Base\Container;
-use Loy\Framework\Base\TypeHint;
-use Loy\Framework\Base\Validator;
+use Loy\Framework\Kernel as Core;
+use Loy\Framework\Container;
+use Loy\Framework\RouteManager;
+use Loy\Framework\PipeManager;
+use Loy\Framework\WrapperManager;
+use Loy\Framework\TypeHint;
+use Loy\Framework\Validator;
+use Loy\Framework\Facade\Request;
+use Loy\Framework\Facade\Response;
 
 /**
  * Loy Framework Web Kernel
@@ -31,12 +36,13 @@ final class Kernel
         }
 
         try {
-            CoreKernel::boot($root);
+            Core::boot($root);
         } catch (Throwable $e) {
-            Kernel::throw('CoreKernelError', ['root' => $root], 500, $e);
+            Kernel::throw('KernelBootFailed', ['root' => $root], 500, $e);
         }
 
         self::routing();
+
         $class  = Route::get('class');
         $method = Route::get('method.name');
         if (! class_exists($class)) {
@@ -49,9 +55,11 @@ final class Kernel
             ]);
         }
 
-        self::throughPipes();
-        self::validateParameters();
-        $params = self::buildParameters();
+        self::validate();
+
+        self::piping();
+
+        $params = self::build();
 
         try {
             Response::send(call_user_func_array([(new $class), $method], $params));
@@ -116,7 +124,7 @@ final class Kernel
     /**
      * Through port pipes defined in current route
      */
-    private static function throughPipes()
+    private static function piping()
     {
         $pipes   = PipeManager::getPipes();
         $aliases = Route::get('pipes');
@@ -160,7 +168,7 @@ final class Kernel
     /**
      * Validate request body parameters against route wrapperin definitions
      */
-    private static function validateParameters()
+    private static function validate()
     {
         $wrapin = Route::get('wrapin');
         if (! $wrapin) {
@@ -205,7 +213,7 @@ final class Kernel
     /**
      * Build port parameters from port method definition and route params
      */
-    private static function buildParameters() : array
+    private static function build() : array
     {
         $route = Route::getData();
         $paramsMethod = $route['method']['params'] ?? [];

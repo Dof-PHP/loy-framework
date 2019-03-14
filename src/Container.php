@@ -2,29 +2,29 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base;
+namespace Loy\Framework;
 
-use Loy\Framework\Base\Reflector;
+use Loy\Framework\Facade\Annotation;
 
 /**
  * Classes container - the key of dependency injection
  */
-class Container
+final class Container
 {
-    private static $classes  = [];
-    private static $filenskv = [];    // filepath => namespace
+    private static $classes    = [];
+    private static $filenskv   = [];    // filepath => namespace
+    private static $interfaces = [];
 
     /**
-     * Dependency injection for injectable class
+     * Dependency injection for injectable class or interface
      *
-     * @param mixed $ns: expected namespace of expected class
+     * @param string $ns: expected namespace of expected class|interface
      */
-    public static function di(string $ns)
+    public static function di(string $namespace)
     {
-        $class = self::$classes[$ns] ?? false;
-        if (! $class) {
-            // Lazy loading - add class in container when really need it
-            $class = self::add($ns);
+        $class = self::get($namespace);
+        if (! ($ns = $class['namespace'] ?? false)) {
+            exception('ClassNamespaceMissing', ['namespace' => $namespace, 'class' => $class]);
         }
 
         // Get class constructor definition
@@ -41,8 +41,8 @@ class Container
         // Do not initialize non-public constructor
         if (! in_array('public', ($constructor['modifiers'] ?? []))) {
             exception('UnInjectableDependency', [
-                '__error' => 'Non-public constructor',
-                'class'   => $ns
+                'error' => 'Non-public constructor',
+                'class' => $ns
             ]);
         }
 
@@ -70,7 +70,7 @@ class Container
                     'name'  => $name,
                 ]);
             }
-            if (class_exists($type)) {
+            if (class_exists($type) || interface_exists($type)) {
                 $_params[] = self::di($type);
             }
         }
@@ -110,12 +110,77 @@ class Container
     }
 
     /**
-     * Add one class information to container
+     * Get class in container by namespace
+     */
+    public static function get(string $namespace) : array
+    {
+        $class = self::$classes[$namespace] ?? false;
+        if ($class) {
+            return $class;
+        }
+
+        $implementor = self::$interfaces[$namespace]['implementor'] ?? false;
+        if ($implementor) {
+            $class = self::$classes[$implementor] ?? false;
+            if ($class) {
+                return $class;
+            }
+        }
+
+        // Lazy loading - add class in container when really need it
+        return self::add($namespace);
+    }
+
+    /**
+     * Add one class information to container by the namespace of class or interface
      */
     public static function add(string $namespace, string $realpath = null, string $domain = null)
     {
-        if ((! $namespace) || (! class_exists($namespace))) {
-            exception('ClassNotExists', ['class' => $namespace]);
+        if (class_exists($namespace)) {
+            return self::addByClass($namespace, $realpath, $domain);
+        }
+
+        if (interface_exists($namespace)) {
+            return self::addByInterface($namespace, null, null);
+        }
+
+        exception('ClassOrInterfaceNotExists', ['namespace' => $namespace]);
+    }
+
+    /**
+     * Add one class information to container by the namespace of interface
+     */
+    public static function addByInterface(string $namespace, string $realpath = null, string $domain = null)
+    {
+        if (! interface_exists($namespace)) {
+            exception('InterfaceAddingToContainerNotFound', ['interface' => $namespace]);
+        }
+
+        list($reflection, , ) = Annotation::parseNamespace($namespace);
+        $implementor = $reflection['doc']['IMPLEMENTOR'] ?? false;
+        if (! class_exists($implementor)) {
+            exception('ImplementorNotExists', ['implementor' => $implementor]);
+        }
+
+        $class = self::$classes[$implementor] ?? false;
+        if ($class) {
+            return $class;
+        }
+
+        $_implementor = self::addByClass($implementor);
+
+        self::$interfaces[$namespace] = $implementor;
+
+        return $_implementor;
+    }
+
+    /**
+     * Add one class information to container by the namespace of class
+     */
+    public static function addByClass(string $namespace, string $realpath = null, string $domain = null)
+    {
+        if (! class_exists($namespace)) {
+            exception('ClassAddingToContainerNotFound', ['class' => $namespace]);
         }
 
         $realpath = $realpath ?: get_file_of_namespace($namespace);
@@ -131,6 +196,7 @@ class Container
         self::$classes[$namespace] = $class = [
             'filepath'    => $realpath,
             'domain'      => $domain,
+            'namespace'   => $namespace,
             'constructor' => Reflector::getClassConstructor($namespace),
         ];
 

@@ -2,15 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base;
-
-use Loy\Framework\Base\ConfigManager;
-use Loy\Framework\Base\DomainManager;
-use Loy\Framework\Base\OrmManager;
-use Loy\Framework\Base\RepositoryManager;
-use Loy\Framework\Web\RouteManager;
-use Loy\Framework\Web\PipeManager;
-use Loy\Framework\Web\WrapperManager;
+namespace Loy\Framework;
 
 /**
  * Loy Framework Core Kernel
@@ -54,9 +46,13 @@ final class Kernel
 
         // Container::build(DomainManager::getDirsD2M());
 
-        RepositoryManager::compile(DomainManager::getDirs());
+        EntityManager::compile(DomainManager::getDirs());
 
-        OrmManager::compile(DomainManager::getDirs());
+        // RepositoryManager::compile(DomainManager::getDirs());
+
+        // pd(RepositoryManager::getRepositories());
+
+        // StorageManager::compile(DomainManager::getDirs());
 
         PipeManager::compile(DomainManager::getDirs());
 

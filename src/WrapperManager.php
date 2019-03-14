@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Web;
+namespace Loy\Framework;
 
 use Loy\Framework\Facade\Annotation;
 

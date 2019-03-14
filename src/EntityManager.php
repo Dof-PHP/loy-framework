@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base;
+namespace Loy\Framework;
 
 use Loy\Framework\Facade\Annotation;
 
-class OrmManager
+final class EntityManager
 {
-    const ORM_DIR = 'ORM';
+    const ENTITY_DIR = 'Entity';
 
     private static $dirs = [];
     private static $orms = [];
@@ -24,12 +24,11 @@ class OrmManager
         self::$orms = [];
 
         array_map(function ($item) {
-            $dir = join(DIRECTORY_SEPARATOR, [$item, self::ORM_DIR]);
+            $dir = ospath($item, self::ENTITY_DIR);
             if (is_dir($dir)) {
                 self::$dirs[] = $dir;
             }
         }, $dirs);
-
 
         // Exceptions may thrown but let invoker to catch for different scenarios
         Annotation::parseClassDirs(self::$dirs, function ($annotations) {

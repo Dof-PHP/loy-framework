@@ -174,7 +174,7 @@ if (! function_exists('get_namespace_of_file')) {
                 $findingNS = false;
                 continue;
             }
-            if ($findingCN && ($tname === T_CLASS)) {
+            if ($findingCN && in_array($tname, [T_CLASS, T_INTERFACE, T_TRAIT])) {
                 $cnIdx = $i;
                 $findingCN = false;
                 continue;
@@ -214,7 +214,8 @@ if (! function_exists('get_namespace_of_file')) {
             return false;
         }
         $cn = join('\\', [$ns, $cn]);
-        return class_exists($cn) ? $cn : false;
+
+        return (class_exists($cn) || interface_exists($cn)) ? $cn : false;
     }
 }
 if (! function_exists('enxml')) {
@@ -526,12 +527,19 @@ if (! function_exists('parse_throwable')) {
         }
 
         $_context = $throwable->context ?? [];
-        $_context['__name']  = is_anonymous($throwable) ? $throwable->getMessage() : objectname($throwable);
-        $previous = $throwable->getTrace()[0] ?? null;
-        if ($previous) {
-            $_context['__file'] = $previous['file'] ?? 'unknown';
-            $_context['__line'] = $previous['line'] ?? 'unknown';
+        $name = objectname($throwable);
+        $file = $throwable->getFile();
+        $line = $throwable->getLine();
+        if (is_anonymous($throwable)) {
+            $previous = $throwable->getTrace()[0] ?? [];
+            $file = $previous['file'] ?? null;
+            $line = $previous['line'] ?? null;
+            $name = $throwable->getMessage();
         }
+        $_context['__name'] = $name;
+        $_context['__info'] = $throwable->getMessage();
+        $_context['__file'] = $file;
+        $_context['__line'] = $line;
 
         if (is_null($context)) {
             return $_context;

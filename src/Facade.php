@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base;
+namespace Loy\Framework;
 
-use Exception;
-use Error;
+use Throwable;
 
 abstract class Facade
 {
@@ -62,7 +61,7 @@ abstract class Facade
 
         try {
             return $child::$singleton;
-        } catch (Exception | Error $e) {
+        } catch (Throwable $e) {
             return true;
         }
     }
@@ -78,7 +77,7 @@ abstract class Facade
 
         try {
             return $child::$namespace;
-        } catch (Exception | Error $e) {
+        } catch (Throwable $e) {
             return get_called_class();
         }
     }

@@ -6,7 +6,7 @@ namespace Loy\Framework\Web;
 
 use Loy\Framework\Web\RouteManager;
 
-class Route
+final class Route
 {
     private static $data = [];
     private static $instance = null;

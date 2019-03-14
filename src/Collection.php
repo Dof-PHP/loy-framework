@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base;
+namespace Loy\Framework;
 
 use Iterator;
 use ArrayAccess;

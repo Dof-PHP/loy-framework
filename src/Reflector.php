@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base;
+namespace Loy\Framework;
 
 use Reflection;
 use ReflectionClass;
@@ -11,7 +11,7 @@ use ReflectionMethod;
 use ReflectionParameter;
 use ReflectionException;
 
-class Reflector
+final class Reflector
 {
     public static function getClassConstructor(string $namespace) : array
     {

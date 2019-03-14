@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base;
+namespace Loy\Framework;
 
 use Loy\Framework\Facade\Annotation;
 
-class RepositoryManager
+final class RepositoryManager
 {
-    const ORM_DIR = 'Repository';
+    const REPOSITORY_DIR = 'Repository';
 
     private static $dirs  = [];
     private static $repos = [];
@@ -24,7 +24,7 @@ class RepositoryManager
         self::$repos = [];
 
         array_map(function ($item) {
-            $dir = join(DIRECTORY_SEPARATOR, [$item, self::ORM_DIR]);
+            $dir = ospath($item, self::REPOSITORY_DIR);
             if (is_dir($dir)) {
                 self::$dirs[] = $dir;
             }
@@ -51,10 +51,19 @@ class RepositoryManager
         }
         if ($exists = (self::$repos[$namespace] ?? false)) {
             $ns = $exists['namespace'] ?? '?';
-            exception('DuplicateRepositoryNamespace', ['namespace' => $ns]);
+            exception('DuplicateRepositoryInterface', ['namespace' => $ns]);
         }
 
-        self::$repos[$namespace]['meta'] = $ofClass['doc'] ?? [];
+        self::$repos[$namespace] = $ofClass['doc'] ?? [];
+    }
+
+    public static function filterAnnotationImplementor(string $storage) : string
+    {
+        if (! class_exists($storage)) {
+            exception('StorageNotExists', ['namespace' => $storage]);
+        }
+
+        return $storage;
     }
 
     public static function get(string $namespace)

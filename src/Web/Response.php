@@ -4,128 +4,226 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web;
 
-use Closure;
-use Exception;
-use Error;
-use Loy\Framework\Base\Facade;
-use Loy\Framework\Base\ApplicationService;
-use Loy\Framework\Web\Http\Response as Instance;
-use Loy\Framework\Web\Route;
-use Loy\Framework\Web\WrapperManager;
-
-class Response extends Facade
+class Response
 {
-    protected static $singleton = true;
-    protected static $namespace = Instance::class;
+    use HttpTrait;
 
-    /**
-     * Recognize supported result types and set particular attributes to properties of current response
-     */
-    public static function support($result)
+    private $error = null;
+    private $body  = '';
+    private $mime  = 'text/html';
+
+    public function text($body, int $status = 200, array $headers = [])
     {
-        if ($result instanceof ApplicationService) {
-            if ($result->isSuccess()) {
-                return $result->__getData();
-            }
+        $this->body    = (string) $body;
+        $this->status  = $status;
+        $this->headers = $headers;
+        $this->mime    = 'text/plain';
 
-            self::getInstance()->setStatus($result->__getCode());
-            return array_values($result->__toArray());
-        }
-
-        return $result;
+        return $this;
     }
 
-    /**
-     * Send a format-fixed exception response
-     *
-     * It's the system level error
-     */
-    public static function exception(int $status, string $message, array $context = [])
+    public function view(string $body, int $status = 200, array $headers = [])
     {
-        Response::new()->setStatus($status)->send([$status, $message, $context]);
+        return $this->html($body, $status, $headers);
     }
 
-    /**
-     * Send a result response with dynamic format
-     *
-     * @param mixed $result: the response data origin
-     * @param bool|null $error: application logic level error
-     */
-    public static function send($result, ?bool $error = null)
+    public function html(string $body, int $status = 200, array $headers = [])
     {
-        $result   = self::support($result);
-        $response = self::getInstance();
-        if (is_null($error)) {
-            $error = $response->getError();
-            $error = is_null($error) ? $response->isFailed() : $error;
-        }
+        $this->body    = $body;
+        $this->status  = $status;
+        $this->headers = $headers;
+        $this->mime    = 'text/html';
 
-        $wrapout = $error ? Route::get('wraperr') : Route::get('wrapout');
-        $wrapper = WrapperManager::getWrapper(($error ? 'err' : 'out'), $wrapout);
-        $result  = self::package($result, $wrapper);
-
-        try {
-            $mimeout = Route::get('suffix.current') ?: Route::get('mimeout');
-            $response->setMimeAlias($mimeout)->send($result);
-        } catch (Exception | Error $e) {
-            Response::error(500, $e->getMessage());
-        }
+        return $this;
     }
 
-    /**
-     * Package response result with given wrapper (if exists)
-     *
-     * @param $result mixed: result data to response
-     * @param $wrapper array: the wrapper used to package result data
-     * @param $final bool: whether the $wrapper is the final wapper format data or just wapper location config
-     * @return $result: Packaged response result
-     */
-    public static function package($result, array $wrapper = null, bool $final = false)
+    public function xml($body, int $status = 200, array $headers = [])
     {
-        $wrapper = $final ? $wrapper : WrapperManager::getWrapperFinal($wrapper);
-        if ((! $wrapper) || (! is_array($wrapper))) {
-            return $result;
+        $this->body    = enxml($body);
+        $this->status  = $status;
+        $this->headers = $headers;
+        $this->mime    = 'application/xml';
+
+        return $this;
+    }
+
+    public function json($body, int $status = 200, array $headers = [])
+    {
+        $this->body    = enjson($body);
+        $this->status  = $status;
+        $this->headers = $headers;
+        $this->mime    = 'application/json';
+
+        return $this;
+    }
+
+    public function send($body = null, int $status = null, array $headers = null)
+    {
+        if ($body instanceof Response) {
+            return $body->__send();
         }
 
-        $data = [];
-        $idx  = -1;
-        foreach ($wrapper as $key => $default) {
-            $_key = is_int($key)    ? $default : $key;
-            $_val = is_string($key) ? $default : null;
-            ++$idx;
-            $val = null;
-            if (is_object($result)) {
-                if (method_exists($result, '__toArray')) {
-                    $val = $result->__toArray();
-                } elseif (method_exists($result, 'toArray')) {
-                    $val = $result->toArray();
-                } else {
-                    $getter = 'get'.ucfirst(strtolower($_key));
-                    if (method_exists($result, $getter)) {
-                        $val = $result->{$getter}();
-                    }
-                }
-            } elseif (is_scalar($result)) {
-                if (0 === $idx) {
-                    $val = $result;
-                } else {
-                    $val = $_val;
-                }
-            } elseif (is_array($result)) {
-                $val = $result[$_key] ?? ($result[$idx] ?? $_val);
-            }
-
-            if (is_object($val)) {
-                if (method_exists($val, '__toArray')) {
-                    $val = $val->__toArray();
-                } elseif (method_exists($val, 'toArray')) {
-                    $val = $val->toArray();
-                }
-            }
-
-            $data[$_key] = $val;
+        if (! is_null($body)) {
+            $this->stringBody($body);
+        }
+        if (! is_null($status)) {
+            $this->status = $status;
+        }
+        if (! is_null($headers)) {
+            $this->headers = $headers;
         }
 
-        return $data;
+        $this->__send();
+    }
+
+    private function __send()
+    {
+        if ($this->headers) {
+            foreach ($this->headers as $key => $value) {
+                header("{$key}: {$value}");
+            }
+        }
+
+        if ($this->mime) {
+            header("Content-Type: {$this->mime}; charset=UTF-8");
+        }
+
+        http_response_code($this->status);
+        echo (string) $this->body;
+        exit(0);
+    }
+
+    private function stringBody($body)
+    {
+        $alias = array_search($this->mime, self::$mimes);
+        if ($alias) {
+            $formatter = 'formatBody'.ucfirst($alias);
+            if (method_exists($this, $formatter)) {
+                return $this->{$formatter}($body);
+            }
+        }
+        if (is_scalar($body)) {
+            return $this->body = (string) $body;
+        }
+        if (is_array($body)) {
+            return $this->body = enjson($body);
+        }
+        if (is_object($body)) {
+            if ($body instanceof Response) {
+                return $this->__send();
+            }
+
+            if (method_exists($body, '__toString')) {
+                return $this->body = $this->stringBody($body->__toString());
+            }
+            if (method_exists($body, '__toArray')) {
+                return $this->body = $this->stringBody($body->__toArray());
+            }
+        }
+
+        $this->status = 500;
+        return $this->body = '__UNSTRINGABLE_RESPONSE__';
+    }
+
+    public function formatBodyXml($body = null)
+    {
+        $xml = enxml($body ?: $this->body);
+        if (true !== ($error = is_xml($xml))) {
+            $this->setStatus(500)->setMimeAlias('json');
+
+            return $this->body = enxml([
+                'error' => 'InvalidOriginAsXML',
+                'extra' => stringify($body),
+            ]);
+        }
+            
+        return $this->body = $xml;
+    }
+
+    public function formatBodyJson($body = null)
+    {
+        return $this->body = enjson($body ?: $this->body);
+    }
+
+    public function setMimeAlias(string $alias = null)
+    {
+        if (is_null($alias) || ($alias === '_')) {
+            $this->mime = false;
+            return $this;
+        }
+
+        $this->mime = self::$mimes[$alias] ?? 'text/html';
+        return $this;
+    }
+
+    public function getMime()
+    {
+        return $this->mime;
+    }
+
+    public function setMime(string $mime)
+    {
+        $this->mime = $mime;
+
+        return $this;
+    }
+
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    public function setStatus(int $status)
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+
+    public function getBody()
+    {
+        return $this->body;
+    }
+
+    public function setBody($body)
+    {
+        $this->body = $body;
+
+        return $this;
+    }
+
+    public function setError(bool $error)
+    {
+        $this->error = $error;
+
+        return $this;
+    }
+
+    public function getError()
+    {
+        return $this->error;
+    }
+
+    public function hasError() : bool
+    {
+        return $this->error === true;
+    }
+
+    public function isFailed(int $success = null) : bool
+    {
+        return !$this->isSuccess();
+    }
+
+    public function isSuccess(int $success = null) : bool
+    {
+        if ($success) {
+            return $this->status === $success;
+        }
+        return (100 <= $this->status) && ($this->status < 400);
+    }
+
+    public function __descruct()
+    {
+        $this->__send();
     }
 }

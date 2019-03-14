@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Base;
+namespace Loy\Framework\DDD;
 
-use Loy\Framework\Base\ConfigManager;
+use Loy\Framework\ConfigManager;
 
 class Domain
 {
