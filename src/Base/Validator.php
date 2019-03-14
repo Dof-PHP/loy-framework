@@ -84,7 +84,11 @@ class Validator
                 try {
                     $res = $this->{$validator}($val, $data, $key, $params);
                 } catch (Throwable $e) {
-                    exception($e, ['error' => $error, 'key' => $key]);
+                    exception('ValidatorInnerError', [
+                        'validator' => $validator,
+                        'error' => $error,
+                        'key'   => $key
+                    ], $e);
                 }
 
                 $result[$key] = $val;

@@ -64,7 +64,7 @@ class Container
                     continue;
                 }
                 exception('UnInjectableDependency', [
-                    '__error' => 'Constructor has builtin required parameter',
+                    'error' => 'Constructor has builtin required parameter',
                     'class' => $ns,
                     'type'  => $type,
                     'name'  => $name,

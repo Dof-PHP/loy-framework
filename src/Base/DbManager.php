@@ -34,7 +34,7 @@ final class DbManager
         }
         $db = self::SUPPORT_DRIVERS[$driver] ?? false;
         if (! $db) {
-            exception('Database Driver Not Suppert Yet', ['driver' => stringify($driver)]);
+            exception('DatabaseDriverNotSuppert', ['driver' => stringify($driver)]);
         }
         $key = join(':', [$driver, $conn]);
         $instance = self::$pool[$key] ?? false;

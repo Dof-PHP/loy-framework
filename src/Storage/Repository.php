@@ -78,7 +78,7 @@ class Repository
                 },
             ]);
         } catch (Exception $e) {
-            exception($e, ['__error' => 'Bad Repository Annotation']);
+            exception('InvalidRepositoryConfig', ['error' => 'Bad Repository Annotation'], $e);
         }
 
         $this->__meta = $repository['meta'] ?? [];

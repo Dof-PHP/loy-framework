@@ -37,9 +37,9 @@ final class Kernel
 
         ConfigManager::init(self::$root);
 
-        // Record every uncatched excptions
+        // Record every uncatched exceptions
         set_exception_handler(function ($throwable) {
-            pd($throwable->getTraceAsString());
+            pd('error_handler', $throwable->getTraceAsString());
             // TODO: Logging
         });
         // Record every uncatched error regardless to the setting of the error_reporting setting

@@ -23,8 +23,8 @@ final class TypeHint
         }
 
         exception('TypeHintConvertFailed', [
-            '__error' => 'Unable to convert to string',
-            'value'   => string_literal($val)
+            'error' => 'Unable to convert to string',
+            'value' => string_literal($val)
         ]);
     }
 
@@ -35,8 +35,8 @@ final class TypeHint
         }
 
         exception('TypeHintConvertFailed', [
-            '__error' => 'Unable to convert to int',
-            'value'   => string_literal($val),
+            'error' => 'Unable to convert to int',
+            'value' => string_literal($val),
         ]);
     }
 

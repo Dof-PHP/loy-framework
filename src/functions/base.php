@@ -271,7 +271,7 @@ if (! function_exists('dexml')) {
         );
         if (($error = libxml_get_last_error()) && isset($error->message)) {
             libxml_clear_errors();
-            // exception('Illegal XML format', ['error' => $error->message]);
+            // exception('IllegalXMLformat', ['xml' => $xml, 'error' => $error->message]);
             return [];
         }
 
@@ -513,32 +513,50 @@ if (! function_exists('is_anonymous')) {
     }
 }
 if (! function_exists('parse_throwable')) {
-    function parse_throwable($throwable, array &$context = [])
+    /**
+     * Parse throwable and get context as previous
+     *
+     * @param \Throwable $throwable
+     * @param array|null $context: Context saver
+     */
+    function parse_throwable(?\Throwable $throwable, ?array $context = []) : ?array
     {
-        if (is_throwable($throwable)) {
-            $message = is_anonymous($throwable) ? $throwable->getMessage() : objectname($throwable);
-            $context['__previous'] = $throwable->context ?? null;
-            $context['__error'] = $throwable->getMessage();
-            $context['__file']  = $throwable->getFile();
-            $context['__line']  = $throwable->getLine();
-        } elseif (is_scalar($throwable)) {
-            $message = $throwable;
-        } else {
-            $message = string_literal($throwable);
+        if (! is_throwable($throwable)) {
+            return $context;
         }
 
-        return $message;
+        $_context = $throwable->context ?? [];
+        $_context['__name']  = is_anonymous($throwable) ? $throwable->getMessage() : objectname($throwable);
+        $previous = $throwable->getTrace()[0] ?? null;
+        if ($previous) {
+            $_context['__file'] = $previous['file'] ?? 'unknown';
+            $_context['__line'] = $previous['line'] ?? 'unknown';
+        }
+
+        if (is_null($context)) {
+            return $_context;
+        }
+
+        $context['__previous'] = $_context;
+
+        return $context;
     }
 }
 if (! function_exists('exception')) {
-    function exception($throwable, array $context = [])
-    {
-        throw new class($throwable, $context) extends \Exception {
+    function exception(
+        string $name,
+        array $context = [],
+        Throwable $previous = null
+    ) {
+        throw new class($name, $context, $previous) extends \Exception {
             public $context = [];
-            public function __construct($throwable, array $context = [])
-            {
-                $this->message = parse_throwable($throwable, $context);
-                $this->context = $context;
+            public function __construct(
+                string $name,
+                array $context = [],
+                Throwable $previous = null
+            ) {
+                $this->message = $name;
+                $this->context = parse_throwable($previous, $context);
             }
         };
     }

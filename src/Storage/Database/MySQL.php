@@ -101,7 +101,7 @@ class MySQL
 
             return $result;
         } catch (Exception | Error $e) {
-            exception($e, $config);
+            exception('InvalidMySQLServerConfig', $config, $e);
         }
     }
 
