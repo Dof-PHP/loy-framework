@@ -468,6 +468,14 @@ if (! function_exists('ospath')) {
         return $path;
     }
 }
+if (! function_exists('fdate')) {
+    function fdate(string $format = null) : string
+    {
+        $format = $format ?: 'Y-m-d H:i:s';
+
+        return date($format);
+    }
+}
 if (! function_exists('is_date_format')) {
     function is_date_format(string $date, string $format = 'Y-m-d H:i:s') : bool
     {

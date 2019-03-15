@@ -11,10 +11,10 @@ use Loy\Framework\Validator;
 class MySQL
 {
     private $config = [];
-    private $conn   = null;
-    private $dbname = null;
-    private $table  = null;
-    private $prefix = null;
+    private $conn;
+    private $dbname;
+    private $table;
+    private $prefix;
 
     public function find(int $pk)
     {
@@ -107,8 +107,10 @@ class MySQL
         try {
             $this->conn = new PDO($dsn, $user, $pswd, [
                 PDO::ATTR_PERSISTENT => true,
+                // PDO::ATTR_TIMEOUT    => 3,
             ]);
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            // $this->conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
             return $this->conn;
         } catch (Throwable $e) {

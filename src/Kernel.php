@@ -9,8 +9,11 @@ namespace Loy\Framework;
  */
 final class Kernel
 {
-    /** @var string Project Root Directory */
-    protected static $root;
+    /** @var string: Project Root Directory */
+    private static $root;
+
+    /** @var float: Kernel boot */
+    private static $uptime;
 
     /**
      * Core kernel handler - The genesis of application
@@ -23,15 +26,30 @@ final class Kernel
      */
     public static function boot(string $root)
     {
+        self::$uptime = microtime(true);
+
         if (! is_dir(self::$root = $root)) {
             exception('InvalidProjectRoot', ['root' => $root]);
         }
 
         ConfigManager::init(self::$root);
 
+        // Do some cleaning works before PHP process exit
+        // - Clean up database locks
+        // - Rollback uncommitted transactions
+        // - Reset some file permissions
+        register_shutdown_function(function () {
+            $error = error_get_last();
+            if (! is_null($error)) {
+                dd($error);
+            }
+
+            // dd($_SERVER['REQUEST_TIME_FLOAT'], microtime(true), self::$uptime);
+        });
+
         // Record every uncatched exceptions
         set_exception_handler(function ($throwable) {
-            pd('error_handler', $throwable->getTraceAsString());
+            pd('exception_handler', $throwable->getTraceAsString());
             // TODO: Logging
         });
         // Record every uncatched error regardless to the setting of the error_reporting setting

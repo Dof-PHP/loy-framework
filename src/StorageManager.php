@@ -15,9 +15,9 @@ final class StorageManager
     private static $pool = [];
 
     /**
-     * Initialize storage instance from storage class
+     * Initialize storage driver instance for storage class
      *
-     * @param string $namespace: Namespace of strorage class
+     * @param string $namespace: Namespace of storage class
      * @return Storage Instance
      */
     public static function get(string $namespace)
