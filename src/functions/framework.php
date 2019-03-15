@@ -28,6 +28,27 @@ if (! function_exists('domain')) {
         }
     }
 }
+if (! function_exists('service')) {
+    function service($service, array $params = [])
+    {
+        $object = $service;
+        if (! is_object($service)) {
+            if (! class_exists($service)) {
+                exception('ServiceNotExists', ['service' => string_literal($service)]);
+            }
+            $object = new $service;
+        }
+
+        foreach ($params as $key => $val) {
+            $setter = 'set'.ucfirst((string) $key);
+            if (method_exists($service, $setter)) {
+                $object->{$setter}($val);
+            }
+        }
+
+        return $object->execute();
+    }
+}
 if (! function_exists('config')) {
     function config(string $key = 'domain')
     {
@@ -41,15 +62,30 @@ if (! function_exists('validate')) {
     }
 }
 if (! function_exists('request')) {
+    /**
+     * Get the request instance related to current http session
+     */
     function request()
     {
         return \Loy\Framework\Facade\Request::getInstance();
     }
 }
 if (! function_exists('response')) {
+    /**
+     * Get the response instance related to current http session
+     */
     function response()
     {
         return \Loy\Framework\Facade\Response::getInstance();
+    }
+}
+if (! function_exists('route')) {
+    /**
+     * Get the route collection instance related to current request
+     */
+    function route()
+    {
+        return \Loy\Framework\Web\Route::getInstance();
     }
 }
 if (! function_exists('http')) {
