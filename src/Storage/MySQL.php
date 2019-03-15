@@ -16,11 +16,12 @@ class MySQL
     private $table;
     private $prefix;
 
-    public function find(int $pk)
+    public function find(int $pk) : ?array
     {
         $sql = 'SELECT * FROM __TABLE__ WHERE `id` = ? LIMIT 1';
+        $res = $this->get($sql, [$pk]);
 
-        return $this->get($sql, [$pk]);
+        return $res[0] ?? null;
     }
 
     public function __construct(array $config = [])
@@ -53,8 +54,7 @@ class MySQL
             $sql = $this->buildSql($sql);
 
             if (is_null($params)) {
-                $res = $this->getConn()->query($sql);
-                pd($res);
+                return $this->getConn()->query($sql);
             }
 
             $statement = $this->getConn()->prepare($sql, [
@@ -62,9 +62,10 @@ class MySQL
             ]);
 
             $statement->execute($params);
-            pd($statement->fetchAll());
+
+            return $statement->fetchAll();
         } catch (Throwable $e) {
-            exception('QueriesToMySQLFailed', ['sql' => $sql, 'params' => $params], $e);
+            exception('QueryMySQLFailed', ['sql' => $sql, 'params' => $params], $e);
         }
     }
 

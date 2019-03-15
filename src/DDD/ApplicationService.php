@@ -8,7 +8,7 @@ use Loy\Framework\Container;
 
 abstract class ApplicationService
 {
-    protected $__code  = 200;
+    protected $__code = 200;
     protected $__info;
     protected $__data;
     protected $__meta;

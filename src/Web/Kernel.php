@@ -215,9 +215,8 @@ final class Kernel
      */
     private static function build() : array
     {
-        $route = Route::getData();
-        $paramsMethod = $route['method']['params'] ?? [];
-        $paramsRoute  = $route['params'] ?? [];
+        $paramsMethod = Route::get('method.params');
+        $paramsRoute  = Route::get('params');
         if ((! $paramsMethod) && (! $paramsRoute)) {
             return [];
         }
@@ -225,12 +224,11 @@ final class Kernel
         $class  = Route::get('class');
         $method = Route::get('method.name');
         $params = [];
-        $vflag  = '$';
         $count  = count($paramsMethod);
         foreach ($paramsMethod as $idx => $paramMethod) {
             $name = $paramMethod['name'] ?? '';
             $type = $paramMethod['type']['type'] ?? false;
-            $port = "{$class}@{$method}(... {$type} {$vflag}{$name} ...)";
+            $port = "{$class}@{$method}(... {$type} \${$name} ...)";
             $builtin    = $paramMethod['type']['builtin'] ?? false;
             $optional   = $paramMethod['optional'] ?? false;
             $hasDefault = $paramMethod['default']['status'] ?? false;
@@ -273,9 +271,9 @@ final class Kernel
     /**
      * Throw throwables from core kernel or web self in the web way
      *
-     * @param $throwable object (core kernel) | string (web self)
-     * @param $context array: Exception Context
-     * @param $code int: Error Code (compatible with HTTP status code)
+     * @param string $name: Exception name
+     * @param array $context: Exception Context
+     * @param int $status: Error Code (compatible with HTTP status code)
      * @return null
      */
     public static function throw(

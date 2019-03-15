@@ -6,6 +6,10 @@ namespace Loy\Framework\DDD;
 
 use Loy\Framework\StorageManager;
 
+/**
+ * Storage is the persistence layer implementations
+ * In Loy, it's also the configuration of ORM
+ */
 class Storage implements Repository
 {
     /** @var Storage Instance */
@@ -18,6 +22,14 @@ class Storage implements Repository
 
     public function find(int $pk) : ?Entity
     {
-        dd($this->__storage->find($pk));
+        return $this->__storage->find($pk);
+    }
+
+    public function add(Entity $entity) : ?int
+    {
+    }
+
+    public function remove($entity) : ?int
+    {
     }
 }

@@ -29,14 +29,14 @@ if (! function_exists('domain')) {
     }
 }
 if (! function_exists('service')) {
-    function service($service, array $params = [])
+    function service($service, array $params = [], bool $execute = true)
     {
         $object = $service;
         if (! is_object($service)) {
             if (! class_exists($service)) {
                 exception('ServiceNotExists', ['service' => string_literal($service)]);
             }
-            $object = new $service;
+            $object = \Loy\Framework\Container::di($service);
         }
 
         foreach ($params as $key => $val) {
@@ -46,7 +46,13 @@ if (! function_exists('service')) {
             }
         }
 
-        return $object->execute();
+        return $execute ? $object->execute() : $object;
+    }
+}
+if (! function_exists('assemble')) {
+    function assemble($target)
+    {
+        // TODO
     }
 }
 if (! function_exists('config')) {
@@ -56,7 +62,7 @@ if (! function_exists('config')) {
     }
 }
 if (! function_exists('validate')) {
-    function validate(array $data, array $rule = [], array $message = [], bool $exception = false)
+    function validate(array $data, array $rule = [], array $message = [])
     {
         return \Loy\Framework\Validator::execute($data, $rule, $message);
     }
