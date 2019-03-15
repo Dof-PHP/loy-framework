@@ -59,6 +59,7 @@ final class Kernel
         WrapperManager::compile(DomainManager::getDirs());
 
         RouteManager::compile(DomainManager::getDirs());
+        // pd(RouteManager::getRoutes());
     }
 
     public static function getRoot()

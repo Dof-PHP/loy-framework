@@ -9,6 +9,7 @@ use Loy\Framework\Facade\Annotation;
 final class RouteManager
 {
     const ROUTE_DIR = ['Http', 'Port'];
+    const AUTONOMY_HANLDER = 'execute';
 
     private static $aliases = [];
     private static $routes  = [];
@@ -109,7 +110,6 @@ final class RouteManager
         }, $dirs);
 
         // Excetions may thrown but let invoker to catch for different scenarios
-        //
         Annotation::parseClassDirs(self::$dirs, function ($annotations) {
             if ($annotations) {
                 list($ofClass, $ofProperties, $ofMethods) = $annotations;
@@ -120,55 +120,99 @@ final class RouteManager
 
     /**
      * Assemble routes definitions from class annotations
+     *
+     * @param array $ofClass: Annotations of class
+     * @param array $ofMethod: Annotations of methods
+     * @return null
      */
     public static function assemble(array $ofClass, array $ofMethods)
     {
-        $classNamespace = $ofClass['namespace']      ?? null;
-        $routePrefix    = $ofClass['doc']['ROUTE']   ?? null;
-        $middlewares    = $ofClass['doc']['PIPE']    ?? [];
-        $defaultVerbs   = $ofClass['doc']['VERB']    ?? [];
-        $defaultSuffix  = $ofClass['doc']['SUFFIX']  ?? [];
-        $defaultMimein  = $ofClass['doc']['MIMEIN']  ?? null;
-        $defaultMimeout = $ofClass['doc']['MIMEOUT'] ?? null;
-        $defaultWrapin  = $ofClass['doc']['WRAPIN']  ?? null;
-        $defaultWrapout = $ofClass['doc']['WRAPOUT'] ?? null;
-        $defaultWraperr = $ofClass['doc']['WRAPERR'] ?? null;
+        $namespace = $ofClass['namespace'] ?? null;
+        $autonomy  = $ofClass['doc']['AUTONOMY'] ?? false;
+        $docClass  = $ofClass['doc'] ?? [];
+        if ($autonomy) {
+            $handler = $ofMethods['self'][self::AUTONOMY_HANLDER] ?? false;
+            if (! $handler) {
+                exception('AutonomyHandlerNotExists', [
+                    'class'   => $namespace,
+                    'handler' => self::AUTONOMY_HANLDER,
+                ]);
+            }
+            self::add($namespace, self::AUTONOMY_HANLDER, $docClass, $handler);
+            return;
+        }
 
         $ofMethods = $ofMethods['self'] ?? [];
-        foreach ($ofMethods as $method => $_attrs) {
-            $attrs = $_attrs['doc'] ?? [];
-            $notroute = $attrs['NOTROUTE'] ?? false;
-            $route = $attrs['ROUTE'] ?? '';
-            if ($notroute || (! $route)) {
-                continue;
-            }
-            $alias   = $attrs['ALIAS']   ?? null;
-            $verbs   = $attrs['VERB']    ?? $defaultVerbs;
-            $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
-            $mimein  = ($mimein === '_') ? null : $mimein;
-            $mimeout = $attrs['MIMEOUT'] ?? $defaultMimeout;
-            $mimeout = ($mimeout === '_') ? null : $mimeout;
-            $wrapin  = $attrs['WRAPIN']  ?? $defaultWrapin;
-            $wrapin  = ($wrapin === '_') ? null : $wrapin;
-            $wrapout = $attrs['WRAPOUT'] ?? $defaultWrapout;
-            $wrapout = ($wrapout === '_') ? null : $wrapout;
-            $wraperr = $attrs['WRAPERR'] ?? $defaultWraperr;
-            $wraperr = ($wraperr === '_') ? null : $wraperr;
-            $suffix  = $attrs['SUFFIX']  ?? $defaultSuffix;
-            $middles = $attrs['PIPE'] ?? [];
-            $middles = array_unique(array_merge($middlewares, $middles));
-            $urlpath = $routePrefix ? join('/', [$routePrefix, $route]) : $route;
-            list($urlpath, $params) = self::parseRoute($urlpath);
-            foreach ($verbs as $verb) {
-                self::deduplicate($urlpath, $verb, $alias, $classNamespace, $method, true);
+        foreach ($ofMethods as $method => $ofMethod) {
+            self::add($namespace, $method, $docClass, $ofMethod);
+        }
+    }
 
-                if ($alias) {
-                    self::$aliases[$alias] = [
+    /**
+     * Add one single route
+     *
+     * @param string $namespace: the route port class namespace
+     * @param string $method: the route port class method
+     * @param array $docClass: the annotations from class doc comments
+     * @param array $docMethod: the annotations from class method doc comments
+     */
+    public static function add(string $namespace, string $method, array $docClass = [], array $ofMethod = [])
+    {
+        if (! class_exists($namespace)) {
+            exception('PortClassNotExists', ['namespace' => $namespace]);
+        }
+        if (! method_exists($namespace, $method)) {
+            exception('PortMethodNotExists', ['namespace' => $namespace, 'method' => $method]);
+        }
+
+        $attrs = $ofMethod['doc'] ?? [];
+        if (($attrs['NOTROUTE'] ?? false) || ($docClass['NOTROUTE'] ?? false)) {
+            return;
+        }
+
+        $routePrefix    = $docClass['ROUTE']   ?? null;
+        $middlewares    = $docClass['PIPE']    ?? [];
+        $defaultVerbs   = $docClass['VERB']    ?? [];
+        $defaultSuffix  = $docClass['SUFFIX']  ?? [];
+        $defaultMimein  = $docClass['MIMEIN']  ?? null;
+        $defaultMimeout = $docClass['MIMEOUT'] ?? null;
+        $defaultWrapin  = $docClass['WRAPIN']  ?? null;
+        $defaultWrapout = $docClass['WRAPOUT'] ?? null;
+        $defaultWraperr = $docClass['WRAPERR'] ?? null;
+
+        $route   = $attrs['ROUTE']   ?? null;
+        $alias   = $attrs['ALIAS']   ?? null;
+        $verbs   = $attrs['VERB']    ?? $defaultVerbs;
+        $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
+        $mimein  = ($mimein === '_')  ? null : $mimein;
+        $mimeout = $attrs['MIMEOUT'] ?? $defaultMimeout;
+        $mimeout = ($mimeout === '_') ? null : $mimeout;
+        $wrapin  = $attrs['WRAPIN']  ?? $defaultWrapin;
+        $wrapin  = ($wrapin === '_')  ? null : $wrapin;
+        $wrapout = $attrs['WRAPOUT'] ?? $defaultWrapout;
+        $wrapout = ($wrapout === '_') ? null : $wrapout;
+        $wraperr = $attrs['WRAPERR'] ?? $defaultWraperr;
+        $wraperr = ($wraperr === '_') ? null : $wraperr;
+        $suffix  = $attrs['SUFFIX']  ?? $defaultSuffix;
+        $middles = $attrs['PIPE']    ?? [];
+
+        $middles = array_unique(array_merge($middlewares, $middles));
+        $urlpath = $routePrefix ? join('/', [$routePrefix, $route]) : $route;
+        list($urlpath, $params) = self::parse($urlpath);
+        if (! $urlpath) {
+            return;
+        }
+
+        foreach ($verbs as $verb) {
+            self::deduplicate($urlpath, $verb, $alias, $namespace, $method, true);
+
+            if ($alias) {
+                self::$aliases[$alias] = [
                         'urlpath' => $urlpath,
                         'verb'    => $verb,
                     ];
-                }
-                self::$routes[$urlpath][$verb] = [
+            }
+            self::$routes[$urlpath][$verb] = [
                     'urlpath' => $urlpath,
                     'suffix'  => [
                         'allow'   => $suffix,
@@ -176,10 +220,10 @@ final class RouteManager
                     ],
                     'verb'    => $verb,
                     'alias'   => $alias,
-                    'class'   => $classNamespace,
+                    'class'   => $namespace,
                     'method'  => [
                         'name'   => $method,
-                        'params' => $_attrs['parameters'] ?? [],
+                        'params' => $ofMethod['parameters'] ?? [],
                     ],
                     'pipes'   => $middles,
                     'params'  => [
@@ -194,7 +238,6 @@ final class RouteManager
                     'wrapout' => $wrapout,
                     'wraperr' => $wraperr,
                 ];
-            }
         }
     }
 
@@ -258,9 +301,15 @@ final class RouteManager
         }
     }
 
-    public static function parseRoute(string $route) : array
+    /**
+     * Parse route with route expression and route parameters
+     *
+     * @param string $route: Raw route from reqeust uri
+     * @return array: A list with route expression and route parameters
+     */
+    public static function parse(string $route) : array
     {
-        $route  = self::filterAnnotationRoute($route, true);
+        $route  = self::__annotationFilterRoute($route, true);
         $params = [];
         array_walk($route, function (&$val, $key) use (&$params) {
             $matches = [];
@@ -277,22 +326,22 @@ final class RouteManager
         return [$route, $params];
     }
 
-    public static function filterAnnotationPipe(string $val) : array
+    public static function __annotationFilterPipe(string $val) : array
     {
         return array_trim(explode(',', trim($val)));
     }
 
-    public static function filterAnnotationSuffix(string $val) : array
+    public static function __annotationFilterSuffix(string $val) : array
     {
         return array_trim(explode(',', strtolower(trim($val))));
     }
 
-    public static function filterAnnotationVerb(string $val) : array
+    public static function __annotationFilterVerb(string $val) : array
     {
         return array_trim(explode(',', strtoupper(trim($val))));
     }
 
-    public static function filterAnnotationRoute(string $val, bool $array = false)
+    public static function __annotationFilterRoute(string $val, bool $array = false)
     {
         $arr = array_trim(explode('/', trim($val)));
 
@@ -301,6 +350,11 @@ final class RouteManager
         }
 
         return empty($arr) ? '/' : join('/', $arr);
+    }
+
+    public static function __annotationMultiplePipe() : bool
+    {
+        return true;
     }
 
     public static function getAliases() : array

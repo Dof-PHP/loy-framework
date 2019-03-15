@@ -46,7 +46,7 @@ final class WrapperManager
     {
         $namespace = $ofClass['namespace'] ?? false;
         if ((! $namespace) || (! class_exists($namespace))) {
-            return;
+            exception('InvalidWrapperNamespace', ['namespace' => $namespace]);
         }
 
         $namePrefix  = $ofClass['doc']['PREFIX'] ?? null;
@@ -95,7 +95,7 @@ final class WrapperManager
         return !is_null(self::getWrapperErr($err));
     }
 
-    public static function getWrapperErr(string $err = null) : ?array
+    public static function getWrapperErr(?string $err) : ?array
     {
         return $err ? (self::$wrappers['err'][$err] ?? null) : $arr;
     }
@@ -105,7 +105,7 @@ final class WrapperManager
         return !is_null(self::getWrapperOut($out));
     }
 
-    public static function getWrapperOut(string $out = null) : ?array
+    public static function getWrapperOut(?string $out) : ?array
     {
         return $out ? (self::$wrappers['out'][$out] ?? null) : $arr;
     }
@@ -115,7 +115,7 @@ final class WrapperManager
         return !is_null(self::getWrapperIn($in));
     }
 
-    public static function getWrapperIn(string $in = null) : ?array
+    public static function getWrapperIn(?string $in) : ?array
     {
         return $in ? (self::$wrappers['in'][$in] ?? null) : $arr;
     }
@@ -147,7 +147,7 @@ final class WrapperManager
         return is_array($result) ? $result : null;
     }
 
-    public static function getWrapper(string $type, string $name) : ?array
+    public static function getWrapper(string $type, ?string $name) : ?array
     {
         return self::$wrappers[$type][$name] ?? null;
     }

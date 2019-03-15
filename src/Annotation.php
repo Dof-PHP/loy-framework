@@ -133,12 +133,8 @@ class Annotation
         }
 
         $res = [];
-        $arr = explode(PHP_EOL, $comment);
+        $arr = array_trim_from_string($comment, PHP_EOL);
         foreach ($arr as $line) {
-            $line = trim($line);
-            if (! $line) {
-                continue;
-            }
             $matches = [];
             if (1 !== preg_match($this->regex, $line, $matches)) {
                 continue;
@@ -148,15 +144,29 @@ class Annotation
             if ((! $key) || (is_null($val))) {
                 continue;
             }
+            $valueMultiple = false;
             if (! is_null($origin)) {
-                $callback = 'filterAnnotation'.ucfirst(strtolower($key));
-                if (method_exists($origin, $callback)) {
-                    $val = call_user_func_array([$origin, $callback], [$val]);
-                    // $val = is_object($origin) ? $origin->{$callback}($val) : $origin::$callback($val);
+                $suffix = ucfirst(strtolower($key));
+                $filterCallback = '__annotationFilter'.$suffix;
+                if (method_exists($origin, $filterCallback)) {
+                    $val = call_user_func_array([$origin, $filterCallback], [$val]);
+                    // $val = is_object($origin) ? $origin->{$filterCallback}($val) : $origin::$filterCallback($val);
                 }
+                $multipleCallback = '__annotationMultiple'.$suffix;
+                $valueMultiple = (
+                    true
+                    && method_exists($origin, $multipleCallback)
+                    && call_user_func_array([$origin, $multipleCallback], [])
+                );
             }
 
-            $res[strtoupper($key)] = $val;
+            $key = strtoupper($key);
+            if ($valueMultiple) {
+                $_val = $res[$key] ?? [];
+                $val  = array_unique(array_merge($_val, $val));
+            }
+
+            $res[$key] = $val;
         }
 
         return $res;

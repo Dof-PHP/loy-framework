@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Web;
 
-use Loy\Framework\Web\Route;
 use Loy\Framework\Facade\Request;
 use Loy\Framework\Facade\Response;
 

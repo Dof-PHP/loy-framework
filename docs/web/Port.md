@@ -16,9 +16,17 @@ Part of request uri. If both class annotation and method annotation are defined 
 
 Ask for ignorance of this port explicitly, thus this class or method will not expose to client.
 
+### `autonomy`
+
+**Applicable only to class annotation**, determines where the whole port class is one single route which does one single thing.
+
 ### `verb`
 
 Allowed request methods on this port, support multiple http verbs.
+
+### `pipe`
+
+The pipelines that current requested route will through before excite port method.
 
 ### `alias`
 
@@ -64,6 +72,9 @@ use Loy\Framework\Web\Port;
 /**
  * @route(users)
  * @pipe(api_auth)
+ * @pipe(p0,p1)
+ * @pipe(p2)
+ * @pipe(p3)
  * @wraperr(error.default)
  * @wrapout(output.classic)
  * @suffix(xml,json)

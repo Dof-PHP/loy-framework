@@ -57,7 +57,7 @@ final class RepositoryManager
         self::$repos[$namespace] = $ofClass['doc'] ?? [];
     }
 
-    public static function filterAnnotationImplementor(string $storage) : string
+    public static function __annotationFilterImplementor(string $storage) : string
     {
         if (! class_exists($storage)) {
             exception('StorageNotExists', ['namespace' => $storage]);
