@@ -62,9 +62,18 @@ final class Kernel
         $params = self::build();
 
         try {
-            Response::send(call_user_func_array([(new $class), $method], $params));
+            $result = call_user_func_array([(new $class), $method], $params);
         } catch (Throwable $e) {
-            Kernel::throw('SendResponseFailed', ['class' => $class, 'method' => $method], 500, $e);
+            Kernel::throw('ResultingResponseFailed', [
+                'class'  => $class,
+                'method' => $method
+            ], 500, $e);
+        }
+
+        try {
+            Response::send($result);
+        } catch (Throwable $e) {
+            Kernel::throw('SendResponseFailed', [], 500, $e);
         }
     }
 

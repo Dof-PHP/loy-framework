@@ -12,18 +12,36 @@ class Annotation
 {
     private $regex = '#@([a-zA-z]+)\((.*)\)#';
 
-    public function parseClassDirs(array $dirs, Closure $callback = null, string $origin = null)
+    /**
+     * Parse class files or interface files annotations by directory paths
+     *
+     * @param array $dirs: a list of php class or interface directory paths
+     * @param Closure $callback: The callback when parse given file finished
+     * @return array: A list of a annotations of class/interface, properties and methods of the whole directories
+     */
+    public function parseClassDirs(array $dirs, Closure $callback = null, $origin = null) : array
     {
+        $result = [];
+
         foreach ($dirs as $dir) {
             if ((! is_string($dir)) || (! is_dir($dir))) {
                 exception('InvalidAnnotationDir', ['dir' => stringify($dir)]);
             }
 
-            $this->parseClassDir($dir, $callback, $origin);
+            $result[$dir] = $this->parseClassDir($dir, $callback, $origin);
         }
+
+        return $result;
     }
 
-    public function parseClassDir(string $dir, Closure $callback = null, string $origin = null)
+    /**
+     * Parse class files or interface files annotations by directory path
+     *
+     * @param string $dir: the php class or interface directory path
+     * @param Closure $callback: The callback when parse given file finished
+     * @return array: A list of a annotations of class/interface, properties and methods of the whole directory
+     */
+    public function parseClassDir(string $dir, Closure $callback = null, $origin = null) : array
     {
         $result = [];
 
@@ -42,7 +60,14 @@ class Annotation
         return $result;
     }
 
-    public function parseClassFile(string $path, Closure $callback = null, string $origin = null)
+    /**
+     * Parse class file or interface file annotations by filepath
+     *
+     * @param string $path: the php class or interface file path
+     * @param Closure $callback: The callback when parse given file finished
+     * @return array: A list of a annotations of class/interface, properties and methods
+     */
+    public function parseClassFile(string $path, Closure $callback = null, $origin = null)
     {
         $ns = get_namespace_of_file($path, true);
         if (! $ns) {
@@ -61,7 +86,14 @@ class Annotation
         return $annotations;
     }
 
-    public function parseNamespace(string $namespace, string $origin = null) : array
+    /**
+     * Parse class or interface annotations by namespace
+     *
+     * @param string $namespace
+     * @param mixed:object/string $origin: Object/Class using annotation parsing
+     * @return array: A list of annotations of class/interface, properties and methods
+     */
+    public function parseNamespace(string $namespace, $origin = null) : array
     {
         try {
             $reflector = new ReflectionClass($namespace);
@@ -85,7 +117,7 @@ class Annotation
         ];
     }
 
-    public function parseProperties(array $properties, string $namespace, string $origin = null) : array
+    public function parseProperties(array $properties, string $namespace, $origin = null) : array
     {
         if (! $properties) {
             return [];
@@ -106,7 +138,7 @@ class Annotation
         return $res;
     }
 
-    public function parseMethods(array $methods, string $namespace, string $origin = null) : array
+    public function parseMethods(array $methods, string $namespace, $origin = null) : array
     {
         if (! $methods) {
             return [];
@@ -126,7 +158,7 @@ class Annotation
         return $res;
     }
 
-    public function parseComment(string $comment, string $origin = null) : array
+    public function parseComment(string $comment, $origin = null) : array
     {
         if (! $comment) {
             return [];

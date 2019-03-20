@@ -55,6 +55,12 @@ if (! function_exists('assemble')) {
         // TODO
     }
 }
+if (! function_exists('annotation')) {
+    function annotation(string $target, bool $file = false) : array
+    {
+        return \Loy\Framework\Facade\Annotation::get($target, $file);
+    }
+}
 if (! function_exists('config')) {
     function config(string $key = 'domain')
     {
@@ -92,6 +98,12 @@ if (! function_exists('route')) {
     function route()
     {
         return \Loy\Framework\Web\Route::getInstance();
+    }
+}
+if (! function_exists('rpc')) {
+    function rpc()
+    {
+        // TODO
     }
 }
 if (! function_exists('http')) {

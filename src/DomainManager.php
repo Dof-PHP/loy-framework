@@ -87,8 +87,8 @@ final class DomainManager
     /**
      * Find domains in given directory
      *
-     * @param $dir String Derectory absolute path
-     * @param $last String Last domain absolute path
+     * @param string $dir: Derectory absolute path
+     * @param string $last: Last domain absolute path
      */
     private static function find(string $dir, string $last = null)
     {
