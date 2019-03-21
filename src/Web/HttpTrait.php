@@ -9,8 +9,7 @@ use Loy\Framework\Collection;
 
 trait HttpTrait
 {
-    protected $status = 200;
-    private $headers  = [];
+    private $headers = [];
 
     protected static $mimes = [
         'text' => 'text/plain',
@@ -56,7 +55,6 @@ trait HttpTrait
 
         return $value;
     }
-
 
     public function convertStringAsMime(string $input, string $mime = null)
     {

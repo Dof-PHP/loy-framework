@@ -12,6 +12,7 @@ use Loy\Framework\PipeManager;
 use Loy\Framework\WrapperManager;
 use Loy\Framework\TypeHint;
 use Loy\Framework\Validator;
+use Loy\Framework\Facade\Log;
 use Loy\Framework\Facade\Request;
 use Loy\Framework\Facade\Response;
 
@@ -37,6 +38,15 @@ final class Kernel
 
         try {
             Core::boot($root);
+
+            Core::register('shutdown', function () {
+                $uptime   = $_SERVER['REQUEST_TIME_FLOAT'] ?? Core::getUptime();
+                $duration = microtime(true) - $uptime;
+                Log::log('http', $duration, [
+                    'request'  => Request::getContext(),
+                    'response' => Response::getContext(),
+                ]);
+            });
         } catch (Throwable $e) {
             Kernel::throw('KernelBootFailed', ['root' => $root], 500, $e);
         }

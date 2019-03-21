@@ -418,7 +418,7 @@ if (! function_exists('string_literal')) {
             return get_class($val);
         }
 
-        return 'unknown variable type';
+        return '__UNKNOWN_VARIABLE_TYPE__';
     }
 }
 if (! function_exists('is_xml')) {
@@ -474,6 +474,26 @@ if (! function_exists('fdate')) {
         $format = $format ?: 'Y-m-d H:i:s';
 
         return date($format);
+    }
+}
+if (! function_exists('microftime')) {
+    function microftime(string $format = 'Y-m-d H:i:s', string $separate = '.') : string
+    {
+        $mts = explode('.', (string) microtime(true));
+
+        return join($separate, [date($format, (int) $mts[0]), $mts[1]]);
+    }
+}
+if (! function_exists('timezone')) {
+    /**
+     * Get timezone abbreviation
+     */
+    function timezone(string $tz = null) : string
+    {
+        $tz = $tz ?: date_default_timezone_get();
+        $dt = (new \Datetime())->setTimeZone((new \DateTimeZone($tz)));
+
+        return $dt->format('T');
     }
 }
 if (! function_exists('is_date_format')) {
@@ -553,6 +573,7 @@ if (! function_exists('parse_throwable')) {
             return $_context;
         }
 
+        $context['__trace']    = explode(PHP_EOL, $throwable->getTraceAsString());
         $context['__previous'] = $_context;
 
         return $context;

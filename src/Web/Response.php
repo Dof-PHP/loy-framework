@@ -8,7 +8,9 @@ class Response
 {
     use HttpTrait;
 
-    private $error = null;
+    private $error  = null;
+    private $status = 200;
+    private $info  = 'ok';
     private $body  = '';
     private $mime  = 'text/html';
 
@@ -147,12 +149,8 @@ class Response
 
     public function setMimeAlias(string $alias = null)
     {
-        if (is_null($alias) || ($alias === '_')) {
-            $this->mime = false;
-            return $this;
-        }
-
         $this->mime = self::$mimes[$alias] ?? 'text/html';
+
         return $this;
     }
 
@@ -161,14 +159,14 @@ class Response
         return $this->mime;
     }
 
-    public function setMime(string $mime)
+    public function setMime(string $mime = null)
     {
         $this->mime = $mime;
 
         return $this;
     }
 
-    public function getStatus()
+    public function getStatus() : int
     {
         return $this->status;
     }
@@ -188,6 +186,18 @@ class Response
     public function setBody($body)
     {
         $this->body = $body;
+
+        return $this;
+    }
+
+    public function getInfo()
+    {
+        return $this->info;
+    }
+
+    public function setInfo(string $info)
+    {
+        $this->info = $info;
 
         return $this;
     }
@@ -225,5 +235,15 @@ class Response
     public function __descruct()
     {
         $this->__send();
+    }
+
+    public function getContext() : array
+    {
+        return [
+            'status' => $this->getStatus(),
+            'error'  => $this->getError(),
+            'info'   => $this->getInfo(),
+            'mime'   => $this->getMime(),
+        ];
     }
 }

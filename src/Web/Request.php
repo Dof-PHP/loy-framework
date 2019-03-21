@@ -60,6 +60,21 @@ class Request
         return $res;
     }
 
+    public function isNotGet() : bool
+    {
+        return $this->getVerb() !== 'GET';
+    }
+
+    public function isGet() : bool
+    {
+        return $this->getVerb() === 'GET';
+    }
+
+    public function isPost() : bool
+    {
+        return $this->getVerb() === 'POST';
+    }
+
     public function post(string $key, $default = null)
     {
         $post = $this->getPost();
@@ -144,7 +159,9 @@ class Request
 
     public function getMime() : ?string
     {
-        return $this->getMimeShort();
+        $mime = $this->getMimeShort();
+
+        return ($this->isNotGet() && (! $mime)) ? 'form' : $mime;
     }
 
     public function getMimeShort() : ?string
@@ -189,6 +206,18 @@ class Request
             $res = (string) parse_url("http://loy{$uri}", PHP_URL_QUERY);
 
             return $res;
+        });
+    }
+
+    public function getScheme() : string
+    {
+        return $_SERVER['REQUEST_SCHEME'] ?? '?';
+    }
+
+    public function getUrl() : string
+    {
+        return $this->getOrSet('url', function () {
+            return sprintf('%s://%s%s', $this->getScheme(), $this->getHost(), $this->getRequestUri());
         });
     }
 
@@ -250,11 +279,12 @@ class Request
         return $this;
     }
 
-    public function __get(string $key)
+    public function getContext() : array
     {
-        $method = 'get'.ucfirst($key);
-        if (method_exists($this, $method)) {
-            return $this->{$method}();
-        }
+        return [
+            'verb' => $this->getVerb(),
+            'url'  => $this->getUrl(),
+            'mime' => $this->getMime(),
+        ];
     }
 }

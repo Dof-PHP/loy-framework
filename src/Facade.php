@@ -36,6 +36,11 @@ abstract class Facade
         return call_user_func_array([$instance, $method], $argvs);
     }
 
+    public static function setInstance($instance)
+    {
+        self::$__pool[static::class] = $instance;
+    }
+
     public static function getInstance()
     {
         $namespace = static::__getProxyNamespace();

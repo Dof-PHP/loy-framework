@@ -19,6 +19,8 @@ class Response extends Facade
 
     /**
      * Recognize supported result types and set particular attributes to properties of current response
+     *
+     * @param mixed $result: Respond result
      */
     public static function support($result)
     {
@@ -37,11 +39,20 @@ class Response extends Facade
     /**
      * Send a format-fixed exception response
      *
-     * It's the system level error
+     * It's a system level error
      */
     public static function exception(int $status, string $message, array $context = [])
     {
-        Response::new()->setStatus($status)->send([$status, $message, $context]);
+        Log::log('exception', $message, $context);
+
+        $response = Response::new();
+        self::setInstance($response);
+
+        $response
+            ->setStatus($status)
+            // ->setError(true)
+            ->setInfo($message)
+            ->send([$status, $message]);
     }
 
     /**
@@ -67,7 +78,11 @@ class Response extends Facade
             $mimeout = Route::get('suffix.current') ?: Route::get('mimeout');
             $response->setMimeAlias($mimeout)->send($result);
         } catch (Throwable $e) {
-            Response::error(500, $e->getMessage());
+            Response::exception(
+                500,
+                'SendingResponseError',
+                parse_throwable($e, compact('mimeout', 'wrapper', 'wrapout'))
+            );
         }
     }
 

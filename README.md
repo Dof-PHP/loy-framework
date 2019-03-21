@@ -1,4 +1,8 @@
-Loy Framework.
+Loy Framework
+
+- Not only about coding
+
+Loy cares about the whole lifetime of an application.
 
 - Domain Oriented
 
