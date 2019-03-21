@@ -54,7 +54,7 @@ class File implements LoggerInterface
     public function save(string $log)
     {
         $path = ospath(Kernel::getRoot(), $this->directory, $this->origin);
-        $file = ospath($path, join('.', [$this->live, $this->level, $this->suffix]));
+        $file = ospath($path, join('.', [$this->level, $this->live, $this->suffix]));
         if (! is_dir($path)) {
             mkdir($path, $this->permission, true);
         }

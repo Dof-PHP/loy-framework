@@ -37,8 +37,6 @@ final class Kernel
         }
 
         try {
-            Core::boot($root);
-
             Core::register('shutdown', function () {
                 $uptime   = $_SERVER['REQUEST_TIME_FLOAT'] ?? Core::getUptime();
                 $duration = microtime(true) - $uptime;
@@ -47,6 +45,8 @@ final class Kernel
                     'out' => Response::getContext(),
                 ]);
             });
+
+            Core::boot($root);
         } catch (Throwable $e) {
             Kernel::throw('KernelBootFailed', ['root' => $root], 500, $e);
         }
