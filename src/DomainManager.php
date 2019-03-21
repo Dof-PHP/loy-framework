@@ -167,6 +167,32 @@ final class DomainManager
         return self::$namespaces[$ns] ?? null;
     }
 
+    public static function getDomainKeyByFilepath(string $path = null) : ?string
+    {
+        $domain = self::$files[$path] ?? null;
+
+        return self::getDomainKeyByMeta($domain);
+    }
+
+    public static function getDomainKeyByMeta(string $domain = null) : ?string
+    {
+        if (! $domain) {
+            return null;
+        }
+
+        $key = str_replace(self::DOMAIN_FLAG, '', str_replace(self::$root, '', $domain));
+        $key = array_trim_from_string($key, DIRECTORY_SEPARATOR);
+
+        return strtolower(join('-', $key));
+    }
+
+    public static function getDomainKeyByNamespace(string $ns = null) : ?string
+    {
+        $domain = self::$namespaces[$ns] ?? null;
+
+        return self::getDomainKeyByMeta($domain);
+    }
+
     public static function getDomainParentByRoot(string $root = null) : ?string
     {
         $meta = self::getDomainMetaByRoot($root);
@@ -211,6 +237,11 @@ final class DomainManager
     public static function getMetaDirs() : array
     {
         return self::$dirs['M'] ?? [];
+    }
+
+    public static function getFiles() : array
+    {
+        return self::$files;
     }
 
     public static function getDirs() : array

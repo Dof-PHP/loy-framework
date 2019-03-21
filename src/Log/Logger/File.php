@@ -44,7 +44,7 @@ class File implements LoggerInterface
 
         // Hard-code an index array to shorten log text
         $this->save(enjson([
-            microftime('Ymd His'),
+            microftime('Ymd-His'),
             timezone(),
             stringify($message),
             $context,

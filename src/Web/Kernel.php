@@ -43,8 +43,8 @@ final class Kernel
                 $uptime   = $_SERVER['REQUEST_TIME_FLOAT'] ?? Core::getUptime();
                 $duration = microtime(true) - $uptime;
                 Log::log('http', $duration, [
-                    'request'  => Request::getContext(),
-                    'response' => Response::getContext(),
+                    'in'  => Request::getContext(),
+                    'out' => Response::getContext(),
                 ]);
             });
         } catch (Throwable $e) {
@@ -245,9 +245,9 @@ final class Kernel
         $params = [];
         $count  = count($paramsMethod);
         foreach ($paramsMethod as $idx => $paramMethod) {
-            $name = $paramMethod['name'] ?? '';
-            $type = $paramMethod['type']['type'] ?? false;
-            $port = "{$class}@{$method}(... {$type} \${$name} ...)";
+            $name = $paramMethod['name'] ?? null;
+            $type = $paramMethod['type']['type'] ?? null;
+            $port = compact(['class', 'method', 'name', 'type']);
             $builtin    = $paramMethod['type']['builtin'] ?? false;
             $optional   = $paramMethod['optional'] ?? false;
             $hasDefault = $paramMethod['default']['status'] ?? false;
@@ -260,7 +260,7 @@ final class Kernel
                 : ($paramsRoute['res'][$idx] ?? null);
 
                 if (is_null($val) && (! $optional)) {
-                    Kernel::throw('MissingPortMethodParameter', ['port' => $port]);
+                    Kernel::throw('MissingPortMethodParameter', $port);
                 }
                 try {
                     $val = TypeHint::convert($val, $type);
@@ -270,6 +270,7 @@ final class Kernel
                 $params[] = $val;
                 continue;
             }
+            // Ignore optional parameters check
             if ($optional && (($idx + 1) !== $count)) {
                 break;
             }
@@ -277,10 +278,10 @@ final class Kernel
                 $params[] = Container::di($type);
             } catch (Throwable $e) {
                 $error = ($builtin || (! $optional) || (! $hasDefault))
-                ? 'PortMethodParameterMissing'
-                : 'BrokenHttpPortMethodDefinition';
+                ? 'MissingHttppPortParameters'
+                : 'BrokenHttpPortDefinition';
 
-                Kernel::throw($error, ['port' => $port], 500, $e);
+                Kernel::throw($error, $port, 500, $e);
             }
         }
 
