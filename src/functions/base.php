@@ -511,10 +511,18 @@ if (! function_exists('is_closure')) {
     }
 }
 if (! function_exists('array_get_by_chain_key')) {
-    function array_get_by_chain_key(array $haystack, string $key, string $explode = '.')
+    function array_get_by_chain_key($haystack, string $key = null, string $explode = '.')
     {
-        if ((! $haystack) || (! $key)) {
+        if ((! $haystack) || (! $key) || ((! is_array($haystack)) && (! is_object($haystack)))) {
             return null;
+        }
+        if (is_object($haystack)) {
+            if (method_exists($haystack, 'toArray')) {
+                $haystack->toArray();
+            } elseif (method_exists($haystack, '__toArray')) {
+            } else {
+                return null;
+            }
         }
         if (array_key_exists($key, $haystack)) {
             return $haystack[$key] ?? null;

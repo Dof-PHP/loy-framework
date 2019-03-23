@@ -79,32 +79,31 @@ final class Container
     }
 
     /**
-     * Build container classes by directories
+     * Build container by namespaces
      */
     public static function build(array $dirs)
     {
-        foreach ($dirs as $domain => $meta) {
-            self::load($domain, $domain, [$meta]);
+        foreach ($dirs as $domain) {
+            self::load($domain, $domain);
         }
     }
 
     /**
      * Load classes by domain
      */
-    private static function load(string $dir, string $domain, array $exclude = [])
+    private static function load(string $dir, string $domain)
     {
-        walk_dir($dir, function ($path) use ($domain, $exclude) {
+        walk_dir($dir, function ($path) use ($domain) {
             $realpath = $path->getRealpath();
             if ($path->isDir()) {
-                if ($exclude && in_array($realpath, $exclude)) {
-                    return;
-                }
                 return self::load($realpath, $domain);
             }
 
             if ($path->isFile() && ('php' === $path->getExtension())) {
                 $ns = get_namespace_of_file($realpath, true);
-                self::add($ns, $realpath, $domain);
+                if ($ns) {
+                    self::add($ns, $realpath, $domain);
+                }
             }
         });
     }
@@ -187,7 +186,7 @@ final class Container
         if (! $realpath) {
             exception('ClassFileNotFound', ['class' => $namespace]);
         }
-        $domain = $domain ?: DomainManager::getDomainRootByFilePath($realpath);
+        $domain = $domain ?: DomainManager::getByFile($realpath);
         if (! $domain) {
             exception('DomainNotFound', ['filepath' => $realpath]);
         }
@@ -203,14 +202,19 @@ final class Container
         return $class;
     }
 
+    public static function getClass($ns)
+    {
+        return self::$classes[$ns] ?? null;
+    }
+
     public static function getFilenskv()
     {
         return self::$filenskv;
     }
 
-    public static function getClass($ns)
+    public static function getInterfaces()
     {
-        return self::$classes[$ns] ?? null;
+        return self::$interfaces;
     }
 
     public static function getClasses()

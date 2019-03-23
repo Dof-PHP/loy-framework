@@ -159,10 +159,10 @@ final class RouteManager
     public static function add(string $namespace, string $method, array $docClass = [], array $ofMethod = [])
     {
         if (! class_exists($namespace)) {
-            exception('PortClassNotExists', ['namespace' => $namespace]);
+            exception('PortClassNotExists', compact('namespace'));
         }
         if (! method_exists($namespace, $method)) {
-            exception('PortMethodNotExists', ['namespace' => $namespace, 'method' => $method]);
+            exception('PortMethodNotExists', compact('namespace', 'method'));
         }
 
         $attrs = $ofMethod['doc'] ?? [];
@@ -227,10 +227,11 @@ final class RouteManager
                     ],
                     'pipes'   => $middles,
                     'params'  => [
-                        'raw' => $params,
-                        'res' => [],
-                        'api' => [],
-                        'kv'  => [],
+                        'raw'  => $params,    // Route parameter keys from definition
+                        'res'  => [],         // Route parameter values from request uri
+                        'api'  => [],
+                        'kv'   => [],
+                        'pipe' => [],
                     ],
                     'mimein'  => $mimein,
                     'mimeout' => $mimeout,

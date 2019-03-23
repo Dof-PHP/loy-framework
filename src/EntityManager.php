@@ -11,7 +11,7 @@ final class EntityManager
     const ENTITY_DIR = 'Entity';
 
     private static $dirs = [];
-    private static $orms = [];
+    private static $entities = [];
 
     public static function compile(array $dirs)
     {
@@ -21,7 +21,7 @@ final class EntityManager
 
         // Reset
         self::$dirs = [];
-        self::$orms = [];
+        self::$entities = [];
 
         array_map(function ($item) {
             $dir = ospath($item, self::ENTITY_DIR);
@@ -49,38 +49,23 @@ final class EntityManager
             return;
         }
         if ($exists = (self::$orms[$namespace] ?? false)) {
-            $ns = $exists['namespace'] ?? '?';
-            exception('DuplicateOrmNamespace', ['namespace' => $ns]);
+            exception('DuplicateOrmNamespace', ['namespace' => $namespace]);
         }
-        self::$orms[$namespace]['meta'] = $ofClass['doc'] ?? [];
+        self::$entities[$namespace]['meta'] = $ofClass['doc'] ?? [];
 
         $ofProperties = $ofProperties['self'] ?? [];
         foreach ($ofProperties as $name => $attrs) {
-            $column = $attrs['doc']['COLUMN'] ?? false;
-            if (! $column) {
-                continue;
-            }
-            $_exists = self::$orms[$namespace]['columns'][$column] ?? false;
-            if ($_exists) {
-                exception('DuplicateOrmColumn', [
-                    'namespace' => $namespace,
-                    'column'    => $column,
-                    'exists'    => $_esists,
-                    'name'      => $name,
-                ]);
-            }
-            self::$orms[$namespace]['properties'][$name] = $attrs['doc'] ?? [];
-            self::$orms[$namespace]['columns'][$column]  = $name;
+            self::$entities[$namespace]['properties'][$name] = $attrs['doc'] ?? [];
         }
     }
 
     public static function get(string $namespace)
     {
-        return self::$orms[$namespace] ?? null;
+        return self::$entities[$namespace] ?? null;
     }
 
-    public static function getOrms()
+    public static function getEntities()
     {
-        return self::$orms;
+        return self::$entities;
     }
 }

@@ -4,119 +4,68 @@ declare(strict_types=1);
 
 namespace Loy\Framework;
 
-use Loy\Framework\Facade\Domain;
-
+/**
+ * Rules about domain:
+ * - One domain CAN NOT contains others, domains are peers
+ * - Every domains share a root domain named `Root`
+ */
 final class DomainManager
 {
     const DOMAIN_DIR  = 'domain';
     const DOMAIN_FLAG = '__domain__';
     const DOMAIN_FILE = 'domain.php';
 
-    private static $root  = '';
+    /** @var string: Domain root */
+    private static $root;
+
+    /** @var array: Domain dirs */
+    private static $dirs = [];
+
+    /** @var array: Domain meta dirs */
+    private static $metas = [];
+
+    /** @var array: Domain keys */
+    private static $keys = [];
+
+    /** @var array: PHP files list in domains */
     private static $files = [];
-    private static $pool  = [];
-    private static $chain = [
-        'root' => [],    // domain ancestor (outside domain directory)
-        'up'   => [],    // child  => parent
-        'down' => [],    // parent => child
-    ];
-    private static $dirs  = [
-        'D' => [],    // domain root only
-        'M' => [],    // domain meta dir only
-        'M2D' => [],    // domain meta dir => domain root
-        'D2M' => [],    // domain root => domain meta dir
-    ];
+
+    /** @var array: Namespaces list in domains */
     private static $namespaces = [];
 
-    public static function initFromNamespace(string $namespace)
-    {
-        $domainMeta = self::$namespaces[$namespace] ?? null;
-
-        return self::initFromDomainMeta($domainMeta);
-    }
-
-    public static function initFromDomainMeta(string $domainMeta = null)
-    {
-        if (! $domainMeta) {
-            return zombie_object();
-        }
-
-        $domainRoot = self::$dirs['M2D'][$domainMeta] ?? null;
-
-        return self::initFromDomainRoot($domainRoot);
-    }
-
-    public static function initFromDomainRoot(string $domainRoot = null)
-    {
-        if (! $domainRoot) {
-            return zombie_object();
-        }
-        if ($object = (self::$pool[$domainRoot] ?? false)) {
-            return $object;
-        }
-
-        $domainMeta = self::$dirs['D2M'][$domainRoot] ?? false;
-        if (! $domainMeta) {
-            return zombie_object();
-        }
-
-        return self::$pool[$domainRoot] = Domain::new($domainMeta, $domainRoot, self::$chain);
-    }
-
-    public static function initFromFilepath(string $path)
-    {
-        $domainMeta = self::$files[$path] ?? null;
-
-        return self::initFromDomainMeta($domainMeta);
-    }
+    /** @var array: Domain collection object pool */
+    private static $pool = [];
 
     public static function compile(string $root)
     {
         $domainRoot = ospath($root, self::DOMAIN_DIR);
         if (! is_dir($domainRoot)) {
-            exception('InvalidDomainRoot', ['root' => $domainRoot]);
+            exception('InvalidDomainRoot', compact(['root', 'domainRoot']));
         }
         self::$root = $domainRoot;
         self::$dirs = [];
+        self::$keys = [];
         self::$namespaces = [];
-        self::$chain['root'] = ConfigManager::getDefaultPath();
 
-        self::find(self::$root, self::$chain['root']);
+        self::find(self::$root);
     }
-
+    
     /**
-     * Find domains in given directory
+     * Assemble domain files and namespaces for given domain target
      *
-     * @param string $dir: Derectory absolute path
-     * @param string $last: Last domain absolute path
+     * @param string $target: target domain absolute path
+     * @param string $domain: domain absolute path targets belongs to
      */
-    private static function find(string $dir, string $last = null)
+    private static function assemble(string $target, string $key)
     {
-        list_dir($dir, function (array $list, string $dir) use ($last) {
-            if (in_array(self::DOMAIN_FLAG, $list)) {
-                $domain  = ospath($dir, self::DOMAIN_FLAG);
-                $_domain = ospath($domain, self::DOMAIN_FILE);
-                if (is_dir($domain) && is_file($_domain)) {
-                    if ($last && ($last !== (self::$chain['root'] ?? false))) {
-                        self::$chain['up'][$domain] = $last;
-                        self::$chain['down'][$last][$domain] = $dir;
-                    }
-                    $last = $domain;
-                    self::$files[$_domain] = $domain;
-                    self::$dirs['D'][] = $dir;
-                    self::$dirs['M'][] = $domain;
-                    self::$dirs['D2M'][$dir]    = $domain;
-                    self::$dirs['M2D'][$domain] = $dir;
-                }
-            }
-
+        list_dir($target, function (array $list, string $dir) use ($key) {
             foreach ($list as $pathname) {
-                $path = ospath($dir, $pathname);
                 if (in_array($pathname, ['.', '..', self::DOMAIN_FLAG])) {
                     continue;
                 }
+                $path = ospath($dir, $pathname);
                 if (is_dir($path)) {
-                    self::find($path, $last);
+                    self::assemble($path, $key);
                     continue;
                 }
 
@@ -124,119 +73,170 @@ final class DomainManager
                     continue;
                 }
 
-                self::$files[$path] = $last;
                 $ns = get_namespace_of_file($path, true);
                 if ($ns) {
-                    self::$namespaces[$ns] = $last;
+                    // Only save php file with full namespace (classes or interfaces)
+                    self::$files[$path]    = $key;
+                    self::$namespaces[$ns] = $key;
                 }
             }
         });
     }
 
-    public static function getRoot() : string
+    /**
+     * Find domains in given directory
+     *
+     * @param string $dir: Directory absolute path
+     */
+    private static function find(string $target)
     {
-        return self::$root;
+        list_dir($target, function (array $list, string $dir) {
+            if (in_array(self::DOMAIN_FLAG, $list)) {
+                $domain  = ospath($dir, self::DOMAIN_FLAG);
+                $_domain = ospath($domain, self::DOMAIN_FILE);
+                if ((! is_dir($domain)) || (! is_file($_domain))) {
+                    // Ignore invalid domain directory (no domain file)
+                    return;
+                }
+
+                self::$dirs[] = $dir;
+                $key = self::metaToKey($domain);
+                self::$metas[$domain] = $key;
+                self::$keys[$key] = $dir;
+                self::assemble($dir, $key);
+            }
+
+            foreach ($list as $pathname) {
+                if (in_array($pathname, ['.', '..', self::DOMAIN_FLAG])) {
+                    continue;
+                }
+                $path = ospath($dir, $pathname);
+                if (is_dir($path)) {
+                    self::find($path);
+                }
+
+                // Ignore non-domain files
+            }
+        });
     }
 
-    public static function getDomainRootByFilePath(string $path = null) : ?string
+    public static function metaToKey(string $meta = null) : ?string
     {
-        $meta = self::getDomainMetaByFilepath($path);
-
-        return $meta ? (self::$dirs['M2D'][$meta] ?? null) : null;
-    }
-
-    public static function getDomainMetaByRoot(string $root = null) : ?string
-    {
-        return self::$dirs['D2M'][$root] ?? null;
-    }
-
-    public static function getDomainMetaByFilePath(string $path = null) : ?string
-    {
-        return self::$files[$path] ?? null;
-    }
-
-    public static function getDomainRootByNamespace(string $ns = null) : ?string
-    {
-        $meta = self::$namespaces[$ns] ?? null;
-
-        return $meta ? (self::$dirs['M2D'][$meta] ?? null) : null;
-    }
-
-    public static function getDomainMetaByNamespace(string $ns = null) : ?string
-    {
-        return self::$namespaces[$ns] ?? null;
-    }
-
-    public static function getDomainKeyByFilepath(string $path = null) : ?string
-    {
-        $domain = self::$files[$path] ?? null;
-
-        return self::getDomainKeyByMeta($domain);
-    }
-
-    public static function getDomainKeyByMeta(string $domain = null) : ?string
-    {
-        if (! $domain) {
-            return null;
-        }
-
-        $key = str_replace(self::DOMAIN_FLAG, '', str_replace(self::$root, '', $domain));
+        $key = str_replace(self::DOMAIN_FLAG, '', str_replace(self::$root, '', $meta));
         $key = array_trim_from_string($key, DIRECTORY_SEPARATOR);
 
         return strtolower(join('-', $key));
     }
 
-    public static function getDomainKeyByNamespace(string $ns = null) : ?string
+    public static function hasFile(string $path = null) : bool
     {
-        $domain = self::$namespaces[$ns] ?? null;
-
-        return self::getDomainKeyByMeta($domain);
+        return isset(self::$files[$path]);
     }
 
-    public static function getDomainParentByRoot(string $root = null) : ?string
+    public static function hasNamesapce(string $ns = null) : bool
     {
-        $meta = self::getDomainMetaByRoot($root);
-
-        return $meta ? (self::$chain['up'][$meta] ?? null) : null;
+        return isset(self::$namespaces[$ns]);
     }
 
-    public static function getDomainParentByNamespace(string $ns = null) : ?string
+    public static function hasKey(string $key = null) : bool
     {
-        $meta = self::getDomainMetaByNamespace($ns);
-
-        return $meta ? (self::$chain['up'][$meta] ?? null) : null;
+        return isset(self::$keys[$key]);
     }
 
-    public static function getDomainParentByFilePath(string $path = null) : ?string
+    public static function collectByKey(string $key = null)
     {
-        $meta = self::getDomainMetaByFilePath($path);
+        if (! $key) {
+            return null;
+        }
+        if ($domain = (self::$pool[$key] ?? false)) {
+            return $domain;
+        }
 
-        return $meta ? (self::$chain['up'][$meta] ?? null) : null;
+        return self::$pool[$key] = new class($key) {
+            private $key;
+            public function __construct(string $key)
+            {
+                $this->key = $key;
+            }
+            public function config(string $type = 'domain')
+            {
+                return $this->__config()->get($type);
+            }
+            private function __config()
+            {
+                return new class($this->key) {
+                    private $domain;
+                    public function __construct(string $domain)
+                    {
+                        $this->domain = $domain;
+                    }
+                    public function get(string $key)
+                    {
+                        $config = (array) ConfigManager::getDomainFinalByKey($this->domain, $key);
+
+                        return collect($config);
+                    }
+                    public function __get(string $attr)
+                    {
+                        return $this->get($attr);
+                    }
+                };
+            }
+
+            public function __get(string $attr)
+            {
+                if ('config' === $attr) {
+                    return $this->__config();
+                }
+
+                return $this->{$attr} ?? null;
+            }
+        };
     }
- 
-    public static function getChain() : array
+
+    public static function collectByNamespace(string $ns = null)
     {
-        return self::$chain ?? [];
+        return self::collectByKey(self::$namespaces[$ns] ?? null);
+    }
+
+    public static function collectByFile(string $path = null)
+    {
+        return self::collectByKey(self::$files[$path] ?? null);
+    }
+
+    public static function getByKey(string $key = null) : ?string
+    {
+        return self::$keys[$key] ?? null;
+    }
+
+    public static function getByFile(string $path = null) : ?string
+    {
+        return self::$keys[self::$files[$path] ?? null] ?? null;
+    }
+
+    public static function getByNamespace(string $ns = null) : ?string
+    {
+        return self::$keys[self::$namespaces[$ns] ?? null] ?? null;
+    }
+
+    public static function getKeyByMeta(string $meta = null) : ?string
+    {
+        return self::$metas[$meta] ?? null;
+    }
+
+    public static function getKeyByFile(string $path = null) : ?string
+    {
+        return self::$files[$path] ?? null;
+    }
+
+    public static function getKeyByNamespace(string $ns = null) : ?string
+    {
+        return self::$namespaces[$ns] ?? null;
     }
 
     public static function getNamespaces() : array
     {
-        return self::$namespaces ?? [];
-    }
-
-    public static function getDirsD2M() : array
-    {
-        return self::$dirs['D2M'] ?? [];
-    }
-
-    public static function getDirsM2D() : array
-    {
-        return self::$dirs['M2D'] ?? [];
-    }
-
-    public static function getMetaDirs() : array
-    {
-        return self::$dirs['M'] ?? [];
+        return self::$namespaces;
     }
 
     public static function getFiles() : array
@@ -244,8 +244,23 @@ final class DomainManager
         return self::$files;
     }
 
+    public static function getKeys() : array
+    {
+        return self::$keys;
+    }
+
+    public static function getMetas() : array
+    {
+        return self::$metas;
+    }
+
     public static function getDirs() : array
     {
-        return self::$dirs['D'] ?? [];
+        return self::$dirs;
+    }
+
+    public static function getRoot() : ?string
+    {
+        return self::$root;
     }
 }

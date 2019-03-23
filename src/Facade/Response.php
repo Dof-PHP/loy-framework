@@ -52,7 +52,8 @@ class Response extends Facade
             ->setStatus($status)
             // ->setError(true)
             ->setInfo($message)
-            ->send([$status, $message]);
+            ->setMimeAlias('json')
+            ->send([$status, $message, $context]);
     }
 
     /**
@@ -96,6 +97,10 @@ class Response extends Facade
      */
     public static function package($result, array $wrapper = null, bool $final = false)
     {
+        if (is_null($result)) {
+            return '';
+        }
+
         $wrapper = $final ? $wrapper : WrapperManager::getWrapperFinal($wrapper);
         if ((! $wrapper) || (! is_array($wrapper))) {
             return $result;

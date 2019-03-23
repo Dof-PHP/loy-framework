@@ -22,7 +22,8 @@ final class StorageManager
      */
     public static function get(string $namespace)
     {
-        $domain = DomainManager::getDomainRootByNamespace($namespace);
+        $domain = DomainManager::getKeyByNamespace($namespace);
+
         list($config, , ) = Annotation::parseNamespace($namespace);
         $config = $config['doc'] ?? [];
         $conn   = $config['CONNECTION'] ?? null;
@@ -30,11 +31,11 @@ final class StorageManager
         $table  = $config['TABLE'] ?? false;
         $prefix = $config['PREFIX'] ?? '';
 
-        $conn = $conn ?: ConfigManager::getLatestByDomainRoot($domain, 'database.conn_default');
+        $conn = $conn ?: ConfigManager::getDomainFinalByKey($domain, 'database.conn_default');
         if (! $conn) {
             exception('MissingDomainDatabaseConnnection', ['domain' => $domain]);
         }
-        $pool   = ConfigManager::getLatestByDomainRoot($domain, 'database.conn_pool');
+        $pool   = ConfigManager::getDomainFinalByKey($domain, 'database.conn_pool');
         $config = $pool[$conn] ?? false;
         if (false === $config) {
             exception('DatabaseConnnectionNotFound', [

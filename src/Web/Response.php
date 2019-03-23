@@ -91,7 +91,7 @@ class Response
         }
 
         http_response_code($this->status);
-        echo (string) $this->body;
+        echo stringify($this->body);
         exit(0);
     }
 
@@ -240,10 +240,10 @@ class Response
     public function getContext() : array
     {
         return [
-            'status' => $this->getStatus(),
-            'error'  => $this->getError(),
-            'info'   => $this->getInfo(),
-            'mime'   => $this->getMime(),
+            $this->getStatus(),
+            $this->getInfo(),
+            $this->getMimeAlias(),
+            $this->getError(),
         ];
     }
 }

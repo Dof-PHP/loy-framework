@@ -15,7 +15,7 @@ final class Kernel
     /** @var string: Project Root Directory */
     private static $root;
 
-    /** @var float: Kernel boot */
+    /** @var float: Kernel boot time */
     private static $uptime;
 
     /** @var array: Callbacks registered on kernel */
@@ -73,15 +73,13 @@ final class Kernel
 
         DomainManager::compile(self::$root);
 
-        ConfigManager::load(DomainManager::getDirsD2M());
-
-        // Container::build(DomainManager::getDirsD2M());
+        ConfigManager::load(DomainManager::getMetas());
+        
+        Container::build(DomainManager::getDirs());
 
         EntityManager::compile(DomainManager::getDirs());
 
-        // RepositoryManager::compile(DomainManager::getDirs());
-
-        // pd(RepositoryManager::getRepositories());
+        RepositoryManager::compile(DomainManager::getDirs());
 
         // StorageManager::compile(DomainManager::getDirs());
 
@@ -90,7 +88,6 @@ final class Kernel
         WrapperManager::compile(DomainManager::getDirs());
 
         RouteManager::compile(DomainManager::getDirs());
-        // pd(RouteManager::getRoutes());
     }
 
     public static function register(string $event, Closure $callback)

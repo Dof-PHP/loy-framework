@@ -59,10 +59,7 @@ final class Kernel
             Kernel::throw('PortClassNotExist', ['class' => $class]);
         }
         if (! method_exists($class, $method)) {
-            Kernel::throw('PortMethodNotExist', [
-                'class'  => $class,
-                'method' => $method,
-            ]);
+            Kernel::throw('PortMethodNotExist', compact('class', 'method'));
         }
 
         self::validate();
@@ -74,10 +71,7 @@ final class Kernel
         try {
             $result = call_user_func_array([(new $class), $method], $params);
         } catch (Throwable $e) {
-            Kernel::throw('ResultingResponseFailed', [
-                'class'  => $class,
-                'method' => $method
-            ], 500, $e);
+            Kernel::throw('ResultingResponseFailed', compact('class', 'method'), 500, $e);
         }
 
         try {
@@ -118,25 +112,13 @@ final class Kernel
         $class  = Route::get('class');
         $method = Route::get('method.name');
         if (($wrapin = Route::get('wrapin')) && (! WrapperManager::hasWrapperIn($wrapin))) {
-            Kernel::throw('WrapperInNotExists', [
-                'wapper' => $wrapin,
-                'class'  => $class,
-                'method' => $method,
-            ]);
+            Kernel::throw('WrapperInNotExists', compact('wrapin', 'class', 'method'));
         }
         if (($wrapout = Route::get('wrapout')) && (! WrapperManager::hasWrapperOut($wrapout))) {
-            Kernel::throw('WrapperOutNotExists', [
-                'wapper' => $wrapout,
-                'class'  => $class,
-                'method' => $method,
-            ]);
+            Kernel::throw('WrapperOutNotExists', compact('wrapout', 'class', 'method'));
         }
         if (($wraperr = Route::get('wraperr')) && (! WrapperManager::hasWrapperErr($wraperr))) {
-            Kernel::throw('WrapperErrNotExists', [
-                'wapper' => $wraperr,
-                'class'  => $class,
-                'method' => $method,
-            ]);
+            Kernel::throw('WrapperErrNotExists', compact('wraperr', 'class', 'method'));
         }
     }
 
@@ -153,10 +135,10 @@ final class Kernel
         foreach ($aliases as $alias) {
             $pipe = $pipes[$alias] ?? false;
             if (! $pipe) {
-                Kernel::throw('PipeAliasNotExists', ['alias' => $alias]);
+                Kernel::throw('PipeAliasNotExists', compact('alias'));
             }
             if (! class_exists($pipe)) {
-                Kernel::throw('PipeClassNotExists', ['class' => $pipe]);
+                Kernel::throw('PipeClassNotExists', compact('pipe'));
             }
             if (! method_exists($pipe, PipeManager::PIPE_HANDLER)) {
                 Kernel::throw('PipeHandlerNotExists', [
@@ -169,6 +151,7 @@ final class Kernel
                 $res = call_user_func_array([(new $pipe), PipeManager::PIPE_HANDLER], [
                     Request::getInstance(),
                     Response::getInstance(),
+                    Route::getInstance(),
                 ]);
                 if (true !== $res) {
                     Kernel::throw('PipeThroughFailed', [
@@ -177,9 +160,7 @@ final class Kernel
                     ], 400);
                 }
             } catch (Throwable $e) {
-                Kernel::throw('PipeThroughFailed', [
-                    'class' => $pipe,
-                ], 500, $e);
+                Kernel::throw('PipeThroughFailed', compact('pipe'), 500, $e);
             }
         }
     }
@@ -195,13 +176,13 @@ final class Kernel
         }
         $wrapper = WrapperManager::getWrapperIn($wrapin);
         if (! $wrapper) {
-            Kernel::throw('WrapperInNotExists', ['name' => $wrapin]);
+            Kernel::throw('WrapperInNotExists', compact('wrapper'));
         }
 
         $class  = $wrapper['class']  ?? '?';
         $method = $wrapper['method'] ?? '?';
         if (! class_exists($class)) {
-            Kernel::throw('WrapperInClassNotExists', ['class' => $class]);
+            Kernel::throw('WrapperInClassNotExists', compact('class'));
         }
         if (! method_exists($class, $method)) {
             Kernel::throw('WrapperInMethodNotExists', [
@@ -213,11 +194,7 @@ final class Kernel
         try {
             $rules = call_user_func_array([(new $class), $method], []);
             if (! is_array($rules)) {
-                Kernel::throw('InvalidWrapperinReturnValue', [
-                    'class'  => $class,
-                    'method' => $method,
-                    'return' => $rules,
-                ]);
+                Kernel::throw('InvalidWrapperinReturn', compact('class', 'method', 'return'));
             }
             $params = array_keys($rules);
             $result = [];
@@ -247,7 +224,7 @@ final class Kernel
         foreach ($paramsMethod as $idx => $paramMethod) {
             $name = $paramMethod['name'] ?? null;
             $type = $paramMethod['type']['type'] ?? null;
-            $port = compact(['class', 'method', 'name', 'type']);
+            $port = compact('class', 'method', 'name', 'type');
             $builtin    = $paramMethod['type']['builtin'] ?? false;
             $optional   = $paramMethod['optional'] ?? false;
             $hasDefault = $paramMethod['default']['status'] ?? false;
@@ -278,7 +255,7 @@ final class Kernel
                 $params[] = Container::di($type);
             } catch (Throwable $e) {
                 $error = ($builtin || (! $optional) || (! $hasDefault))
-                ? 'MissingHttppPortParameters'
+                ? 'MissingHttpPortParameters'
                 : 'BrokenHttpPortDefinition';
 
                 Kernel::throw($error, $port, 500, $e);

@@ -6,27 +6,29 @@ namespace Loy\Framework;
 
 final class ConfigManager
 {
-    const DEFAULT_DIR    = ['config', 'domain'];
-    const FRAMEWORK_DIR  = ['config', 'framework'];
+    const DEFAULT_DIR    = ['domain', 'Root', '__domain__'];
+    const FRAMEWORK_DIR  = ['framework', 'config'];
     const FILENAME_REGEX = '#^([a-z]+)\.php$#';
 
-    private static $default   = [];
-    private static $framework = [];
-    private static $domains   = [];
+    private static $data = [
+        'default'   => [],
+        'framework' => [],
+    ];
     private static $path = [
         'default'   => null,
         'framework' => null,
     ];
+    private static $domains = [];
 
     /**
      * Load configs from domains
      *
-     * @param $dirs Array (Domain Root => Domain Meta Path)
+     * @param array $dirs: Domain directories
      */
     public static function load(array $dirs)
     {
-        foreach ($dirs as $domain => $dir) {
-            self::$domains[$domain] = self::loadDir($dir);
+        foreach ($dirs as $meta => $domain) {
+            self::$domains[$domain] = self::loadDir($meta);
         }
     }
 
@@ -38,15 +40,15 @@ final class ConfigManager
     public static function init(string $root)
     {
         if (! is_dir($root)) {
-            exception('InvalidProjectRoot', ['root' => $root]);
+            exception('InvalidProjectRoot', compact('root'));
         }
 
-        self::$default = collect(self::loadDir(
+        self::$data['default'] = self::loadDir(
             self::$path['default'] = ospath($root, self::DEFAULT_DIR)
-        ));
-        self::$framework = collect(self::loadDir(
+        );
+        self::$data['framework'] = self::loadDir(
             self::$path['framework'] = ospath($root, self::FRAMEWORK_DIR)
-        ));
+        );
     }
 
     public static function loadDir(string $path)
@@ -76,49 +78,45 @@ final class ConfigManager
         return $result;
     }
 
-    public static function getLatestByDomainRoot(string $root, string $key, $default = null)
+    public static function get(string $key)
     {
-        $val = array_get_by_chain_key(self::getDomain($root), $key);
-        if (! is_null($val)) {
-            return $val;
-        }
-        $parent = DomainManager::getDomainParentByRoot($root);
-        if (! $parent) {
-            return $default;
-        }
-
-        return self::getLatestByDomainRoot($parent, $key, $default);
+        return array_get_by_chain_key(self::$data, $key, '.');
     }
 
-    public static function getLatestByFilePath(string $path, string $key, $default = null)
+    public static function getDomainByKey(string $domain = null, string $key = null)
     {
-        $domainRoot = DomainManager::getDomainRootByFilePath($path);
+        $key = is_null($key) ? $domain : "{$domain}.{$key}";
 
-        return $domainRoot ? self::getLatestByDomainRoot($domainRoot, $key, $default) : [];
+        return array_get_by_chain_key(self::$domains, $key, '.');
     }
 
-    public static function getLatestByNamespace(string $namespace, string $key, $default = null)
+    public static function getDomainByFile(string $file, string $key = null)
     {
-        $domainRoot = DomainManager::getDomainRootByNamespace($namespace);
+        $domain = DomainManager::getKeyByFile($file);
 
-        return $domainRoot ? self::getLatestByDomainRoot($domainRoot, $key, $default) : [];
+        return self::getDomainByKey($domain, $key);
     }
 
-    public static function get(string $key = 'domain')
+    public static function getDomainByNamespace(string $ns, string $key = null)
     {
-        if ($key === 'domain') {
-            return self::getDefault();
-        }
-        if ($key === 'framework') {
-            return self::getFramework();
-        }
+        $domain = DomainManager::getKeyByNamesapce($ns);
 
-        return self::getDomain($key);
+        return self::getDomainByKey($domain, $key);
     }
 
-    public static function getDomain(string $domain)
+    public static function getDomainFinalByNamespace(string $ns, string $key = null)
     {
-        return self::$domains[$domain] ?? [];
+        return self::getDomainByNamesapce($ns) ?: self::getDefault($key);
+    }
+
+    public static function getDomainFinalByFile(string $file, string $key = null)
+    {
+        return self::getDomainByFile($file, $key) ?: self::getDefault($key);
+    }
+
+    public static function getDomainFinalByKey(string $domain, string $key = null)
+    {
+        return self::getDomainByKey($domain, $key) ?: self::getDefault($key);
     }
 
     public static function getDomains()
@@ -126,23 +124,23 @@ final class ConfigManager
         return self::$domains;
     }
 
-    public static function getFramework()
+    public static function getDefault(string $key = null)
     {
-        return self::$framework;
+        return is_null($key) ? self::$data['default'] : array_get_by_chain_key(self::$data['default'], $key, '.');
     }
 
-    public static function getFrameworkPath()
+    public static function getFramework(string $key = null)
     {
-        return self::$path['framework'];
-    }
-
-    public static function getDefault()
-    {
-        return self::$default;
+        return is_null($key) ? self::$data['framework'] : array_get_by_chain_key(self::$data['framework'], $key, '.');
     }
 
     public static function getDefaultPath()
     {
         return self::$path['default'];
+    }
+
+    public static function getFrameworkPath()
+    {
+        return self::$path['framework'];
     }
 }

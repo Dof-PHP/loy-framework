@@ -282,9 +282,9 @@ class Request
     public function getContext() : array
     {
         return [
-            'verb' => $this->getVerb(),
-            'url'  => $this->getUrl(),
-            'mime' => $this->getMime(),
+            $this->getVerb(),
+            $this->getUri(),
+            $this->getMime(),
         ];
     }
 }

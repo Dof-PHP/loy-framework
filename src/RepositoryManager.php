@@ -10,8 +10,8 @@ final class RepositoryManager
 {
     const REPOSITORY_DIR = 'Repository';
 
-    private static $dirs  = [];
-    private static $repos = [];
+    private static $dirs = [];
+    private static $repositories = [];
 
     public static function compile(array $dirs)
     {
@@ -20,8 +20,8 @@ final class RepositoryManager
         }
 
         // Reset
-        self::$dirs  = [];
-        self::$repos = [];
+        self::$dirs = [];
+        self::$repositories = [];
 
         array_map(function ($item) {
             $dir = ospath($item, self::REPOSITORY_DIR);
@@ -29,7 +29,6 @@ final class RepositoryManager
                 self::$dirs[] = $dir;
             }
         }, $dirs);
-
 
         // Exceptions may thrown but let invoker to catch for different scenarios
         Annotation::parseClassDirs(self::$dirs, function ($annotations) {
@@ -49,12 +48,11 @@ final class RepositoryManager
         if (! $namespace) {
             return;
         }
-        if ($exists = (self::$repos[$namespace] ?? false)) {
-            $ns = $exists['namespace'] ?? '?';
-            exception('DuplicateRepositoryInterface', ['namespace' => $ns]);
+        if ($exists = (self::$repositories[$namespace] ?? false)) {
+            exception('DuplicateRepositoryInterface', compact(['exists']));
         }
 
-        self::$repos[$namespace] = $ofClass['doc'] ?? [];
+        self::$repositories[$namespace] = $ofClass['doc'] ?? [];
     }
 
     public static function __annotationFilterImplementor(string $storage) : string
@@ -68,11 +66,11 @@ final class RepositoryManager
 
     public static function get(string $namespace)
     {
-        return self::$repos[$namespace] ?? null;
+        return self::$repositories[$namespace] ?? null;
     }
 
     public static function getRepositories()
     {
-        return self::$repos;
+        return self::$repositories;
     }
 }

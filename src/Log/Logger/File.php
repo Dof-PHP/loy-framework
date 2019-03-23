@@ -35,6 +35,9 @@ class File implements LoggerInterface
     /** @var string: Log level keyword */
     private $level;
 
+    /** @var string: Separator of each single log text */
+    private $separator = PHP_EOL;
+
     public function log($level, $message, array $context = [])
     {
         $this->level = stringify($level);
@@ -71,7 +74,12 @@ class File implements LoggerInterface
             rename($file, $_archive);
         }
 
-        file_put_contents($file, $log.PHP_EOL, FILE_APPEND);
+        file_put_contents($file, $this->seperate($log), FILE_APPEND);
+    }
+
+    public function seperate(string $log) : string
+    {
+        return sprintf("%s%s", $log, $this->separator);
     }
 
     /**
@@ -162,6 +170,19 @@ class File implements LoggerInterface
         if ($filesize > 0) {
             $this->filesize = $filesize;
         }
+    
+        return $this;
+    }
+
+    /**
+     * Setter for separator
+     *
+     * @param string $separator
+     * @return File
+     */
+    public function setSeparator(string $separator)
+    {
+        $this->separator = $separator;
     
         return $this;
     }

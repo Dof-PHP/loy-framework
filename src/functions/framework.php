@@ -15,16 +15,29 @@ if (! function_exists('collect')) {
     }
 }
 if (! function_exists('domain')) {
-    function domain()
+    /**
+     * Get a domain instance by given key
+     *
+     * @param string $key
+     */
+    function domain(string $key = null)
     {
-        try {
-            throw new \Exception;
-        } catch (\Exception $e) {
-            $filepath = $e->getTrace()[0]['file'] ?? null;
-            $domainRoot = \Loy\Framework\DomainManager::getRoot();
-            if (0 === mb_strpos($filepath, $domainRoot)) {
-                return \Loy\Framework\DomainManager::initFromFilepath($filepath);
+        if (is_null($key)) {
+            try {
+                throw new \Exception;
+            } catch (\Exception $e) {
+                $file = $e->getTrace()[0]['file'] ?? null;
+                return \Loy\Framework\DomainManager::collectByFile($file);
             }
+        }
+        if (\Loy\Framework\DomainManager::hasKey($key)) {
+            return \Loy\Framework\DomainManager::collectByKey($key);
+        }
+        if (class_exists($key)) {
+            return \Loy\Framework\DomainManager::collectByNamespace($key);
+        }
+        if (is_file($key)) {
+            return \Loy\Framework\DomainManager::collectByFile($key);
         }
     }
 }
@@ -50,7 +63,7 @@ if (! function_exists('service')) {
     }
 }
 if (! function_exists('assemble')) {
-    function assemble($target)
+    function assemble($target, $assembler)
     {
         // TODO
     }

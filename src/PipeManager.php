@@ -9,7 +9,7 @@ use Loy\Framework\Facade\Annotation;
 final class PipeManager
 {
     const PIPE_DIR = ['Http', 'Pipe'];
-    const PIPE_HANDLER = 'through';
+    const PIPE_HANDLER = 'pipe';
 
     private static $dirs  = [];
     private static $pipes = [];
