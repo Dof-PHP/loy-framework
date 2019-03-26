@@ -114,8 +114,11 @@ if (! function_exists('route')) {
     }
 }
 if (! function_exists('wrapper')) {
-    function wrapper(string $namespace)
+    function wrapper(string $namespace = null)
     {
+        if (is_null($namespace)) {
+            return null;
+        }
         if (! class_exists($namespace)) {
             exception('WrapperClassNotExists', compact('namespace'));
         }

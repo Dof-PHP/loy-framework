@@ -70,7 +70,8 @@ final class Kernel
         $params = self::build();
 
         try {
-            $result = call_user_func_array([(new $class), $method], $params);
+            $result = (new $class)->{$method}(...$params);
+            // $result = call_user_func_array([(new $class), $method], $params);
         } catch (Throwable $e) {
             Kernel::throw('ResultingResponseFailed', compact('class', 'method'), 500, $e);
         }

@@ -102,6 +102,11 @@ final class RouteManager
             return;
         }
 
+        // Reset
+        self::$dirs    = [];
+        self::$routes  = [];
+        self::$aliases = [];
+
         array_map(function ($item) {
             $dir = ospath($item, self::ROUTE_DIR);
             if (is_dir($dir)) {

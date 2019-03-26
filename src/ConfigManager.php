@@ -90,14 +90,18 @@ final class ConfigManager
 
     public static function get(string $key)
     {
-        return array_get_by_chain_key(self::$data, $key, '.');
+        return array_get_by_chain_key(self::$default, $key, '.');
     }
 
     public static function getDomainByKey(string $domain = null, string $key = null)
     {
-        $key = is_null($key) ? $domain : "{$domain}.{$key}";
+        if (! $domain) {
+            return null;
+        }
 
-        return array_get_by_chain_key(self::$domains, $key, '.');
+        $config = self::$domains[$domain] ?? null;
+
+        return is_null($key) ? $config : array_get_by_chain_key($config, $key, '.');
     }
 
     public static function getDomainByFile(string $file, string $key = null)
@@ -116,21 +120,41 @@ final class ConfigManager
 
     public static function getDomainFinalByNamespace(string $ns, string $key = null)
     {
-        return self::getDomainByNamesapce($ns) ?: self::getDefault($key);
+        return self::getDomainByNamesapce($ns) ?: self::getDomain($key);
     }
 
     public static function getDomainFinalByFile(string $file, string $key = null)
     {
-        return self::getDomainByFile($file, $key) ?: self::getDefault($key);
+        return self::getDomainByFile($file, $key) ?: self::getDomain($key);
     }
 
     public static function getDomainFinalByKey(string $domain, string $key = null)
     {
-        return self::getDomainByKey($domain, $key) ?: self::getDefault($key);
+        return self::getDomainByKey($domain, $key) ?: self::getDomain($key);
+    }
+
+    public static function getEnv(string $key = null)
+    {
+        return array_get_by_chain_key(self::$default['env'] ?? [], $key);
+    }
+
+    public static function getFramework(string $key = null)
+    {
+        return array_get_by_chain_key(self::$default['framework'] ?? [], $key);
+    }
+
+    public static function getDomain(string $key = null)
+    {
+        return array_get_by_chain_key(self::$default['domain'] ?? [], $key);
     }
 
     public static function getDomains()
     {
         return self::$domains;
+    }
+
+    public static function getDefault()
+    {
+        return self::$default;
     }
 }

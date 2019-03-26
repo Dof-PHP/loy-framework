@@ -45,6 +45,8 @@ final class DomainManager
         self::$root = $domainRoot;
         self::$dirs = [];
         self::$keys = [];
+        self::$metas = [];
+        self::$files = [];
         self::$namespaces = [];
 
         self::find(self::$root);
@@ -158,9 +160,9 @@ final class DomainManager
             {
                 $this->key = $key;
             }
-            public function config(string $type = 'domain')
+            public function config(string $type = null)
             {
-                return $this->__config()->get($type);
+                return $type ? $this->__config()->get($type) : $this->__config();
             }
             private function __config()
             {
@@ -172,13 +174,17 @@ final class DomainManager
                     }
                     public function get(string $key)
                     {
-                        $config = (array) ConfigManager::getDomainFinalByKey($this->domain, $key);
+                        $config = ConfigManager::getDomainFinalByKey($this->domain, $key);
 
-                        return collect($config);
+                        return is_array($config) ? collect($config, $this) : $config;
                     }
                     public function __get(string $attr)
                     {
                         return $this->get($attr);
+                    }
+                    public function __collectionGet(string $key, Collection $collector)
+                    {
+                        return $this->get($key);
                     }
                 };
             }

@@ -181,8 +181,8 @@ class Annotation
                 $suffix = ucfirst(strtolower($key));
                 $filterCallback = '__annotationFilter'.$suffix;
                 if (method_exists($origin, $filterCallback)) {
-                    $val = call_user_func_array([$origin, $filterCallback], [$val]);
-                    // $val = is_object($origin) ? $origin->{$filterCallback}($val) : $origin::$filterCallback($val);
+                    // $val = call_user_func_array([$origin, $filterCallback], [$val]);
+                    $val = is_object($origin) ? $origin->{$filterCallback}($val) : $origin::$filterCallback($val);
                 }
                 $multipleCallback = '__annotationMultiple'.$suffix;
                 $valueMultiple = (

@@ -45,9 +45,19 @@ class Collection implements
 
     public function get($key)
     {
+        $val = null;
         if (is_scalar($key)) {
-            return $this->data[(string) $key] ?? null;
+            $val = $this->data[(string) $key] ?? null;
         }
+
+        if (is_null($val) && $this->origin && method_exists($this->origin, '__collectionGet')) {
+            // $val = call_user_func_array([$this->origin, '__collectionGet'], [$key, $this]);
+            $val = is_object($this->origin)
+                ? $this->origin->__collectionGet($key)
+                : $this->origin::__collectionGet($key);
+        }
+
+        return $val;
     }
 
     public function set(string $key, $value)
@@ -78,7 +88,6 @@ class Collection implements
         return $this->get($key);
     }
     
-
     public function last()
     {
         $key = $this->keys[$this->count - 1] ?? false;

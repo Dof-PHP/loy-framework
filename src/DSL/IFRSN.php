@@ -56,7 +56,7 @@ final class IFRSN
         $rightCnt = count($bracesRight);
         if ($leftCnt !== $rightCnt) {
             exception('InputFieldsParameterGrammerError', [
-                '__error' => 'Input Braces Mismatch',
+                'error' => 'Input Braces Mismatch',
                 'parameter' => $parameter,
                 'count' => [
                     'left'  => $leftCnt,
@@ -97,7 +97,7 @@ final class IFRSN
         $rightCnt = count($parenthesesRight);
         if ($leftCnt !== $rightCnt) {
             exception('InputFieldsSentenceGrammerError', [
-                '__error' => 'Input Parentheses Mismatch',
+                'error' => 'Input Parentheses Mismatch',
                 'sentecne' => $sentence,
                 'count' => [
                     'left'  => $leftCnt,
@@ -293,7 +293,7 @@ final class IFRSN
 
         $key = mb_strcut($contentStr, 0, $idxStart);
         if (! $key) {
-            return false;
+            return null;
         }
         if (false !== ($idx = mb_strripos($key, ','))) {
             $key = mb_strcut($key, $idx+1);
