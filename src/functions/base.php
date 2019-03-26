@@ -161,7 +161,7 @@ if (! function_exists('get_namespace_of_file')) {
             return false;
         }
 
-        $tokens = token_get_all(file_get_contents($path));
+        $tokens = token_get_all(php_strip_whitespace($path));
         $cnt = count($tokens);
         $ns  = $cn = '';
         $nsIdx = $cnIdx = 0;
@@ -216,6 +216,78 @@ if (! function_exists('get_namespace_of_file')) {
         $cn = join('\\', [$ns, $cn]);
 
         return (class_exists($cn) || interface_exists($cn)) ? $cn : false;
+    }
+}
+if (! function_exists('get_used_classes')) {
+    /**
+     * Get classes used by class or interface
+     *
+     * @param string $target
+     * @param bool $namespace: if target is a namespace
+     * @return array|null
+     */
+    function get_used_classes(string $target, bool $namespace = true) : ?array
+    {
+        if ($namespace && (! ($target = get_file_of_namespace($target)))) {
+            return null;
+        }
+        if (! is_file($target)) {
+            return null;
+        }
+
+        $tokens = token_get_all(php_strip_whitespace($target));
+        $usedClasses = [];
+        $foundNamespace = false;
+        $findingUsedClass = false;
+        $findingAlias = false;
+        $usedClass = [];
+        foreach ($tokens as $token) {
+            $tokenId = $token[0] ?? false;
+            $hasNamespace = $tokenId === T_NAMESPACE;
+            if ((! $foundNamespace) && (! $hasNamespace)) {
+                continue;
+            } else {
+                $foundNamespace = true;
+            }
+
+            $foundClassname = $tokenId === T_CLASS;
+            if ($foundClassname) {
+                break;
+            }
+            if ($tokenId === T_USE) {
+                $findingUsedClass = true;
+                $findingAlias = false;
+                continue;
+            }
+            if ($findingUsedClass) {
+                if ($token === ';') {
+                    $findingUsedClass = false;
+                    if ($usedClass) {
+                        $ns = join('', $usedClass['nspath']);
+                        $alias = $usedClass['alias'] ?? null;
+                        $usedClasses[] = [
+                            $ns => $alias,
+                        ];
+                        $usedClass = [];
+                    }
+                    continue;
+                }
+                if (($tokenId !== T_WHITESPACE) && ($tokenName = ($token[1] ?? false))) {
+                    if ($tokenId === T_AS) {
+                        $findingAlias = true;
+                        continue;
+                    }
+
+                    if ($findingAlias) {
+                        $usedClass['alias'] = $tokenName;
+                    } else {
+                        $usedClass['nspath'][] = $tokenName;
+                    }
+                }
+            }
+        }
+
+        return $usedClasses;
     }
 }
 if (! function_exists('enxml')) {
