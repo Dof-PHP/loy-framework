@@ -6,19 +6,26 @@ namespace Loy\Framework;
 
 final class ConfigManager
 {
-    const DEFAULT_DIR    = ['domain', 'Root', '__domain__'];
-    const FRAMEWORK_DIR  = ['framework', 'config'];
-    const FILENAME_REGEX = '#^([a-z]+)\.php$#';
+    const DEFAULT_DIR = ['config'];
+    const FILE_REGEX  = '#^([a-z]+)\.(php|json|ini|yml|yaml|xml)$#';
+    const SUPPORTS    = ['php', 'json', 'xml'];
 
-    private static $data = [
-        'default'   => [],
-        'framework' => [],
-    ];
-    private static $path = [
-        'default'   => null,
-        'framework' => null,
-    ];
+    private static $default = [];
     private static $domains = [];
+
+    /**
+     * Init default/basic configs for domain and framework
+     *
+     * @param string $root: Absolute path of config dir
+     */
+    public static function init(string $root)
+    {
+        if (! is_dir($root)) {
+            exception('InvalidProjectRoot', compact('root'));
+        }
+
+        self::$default = self::loadDir(ospath($root, self::DEFAULT_DIR));
+    }
 
     /**
      * Load configs from domains
@@ -32,25 +39,6 @@ final class ConfigManager
         }
     }
 
-    /**
-     * Init default/basic configs for domain and framework
-     *
-     * @param $root String (Absolute dir path)
-     */
-    public static function init(string $root)
-    {
-        if (! is_dir($root)) {
-            exception('InvalidProjectRoot', compact('root'));
-        }
-
-        self::$data['default'] = self::loadDir(
-            self::$path['default'] = ospath($root, self::DEFAULT_DIR)
-        );
-        self::$data['framework'] = self::loadDir(
-            self::$path['framework'] = ospath($root, self::FRAMEWORK_DIR)
-        );
-    }
-
     public static function loadDir(string $path)
     {
         $result = [];
@@ -62,10 +50,11 @@ final class ConfigManager
                     }
                     $path = ospath($dir, $filename);
                     $matches = [];
-                    if (1 === preg_match(self::FILENAME_REGEX, $filename, $matches)) {
-                        $key = $matches[1] ?? false;
-                        if ($key) {
-                            $result[$key] = load_php($path);
+                    if (1 === preg_match(self::FILE_REGEX, $filename, $matches)) {
+                        $key  = $matches[1] ?? false;
+                        $type = $matches[2] ?? false;
+                        if ($key && $type && in_array($type, self::SUPPORTS)) {
+                            $result[$key] = self::loadFile($path, $type);
                         }
                         continue;
                     }
@@ -76,6 +65,27 @@ final class ConfigManager
         }
 
         return $result;
+    }
+
+    /**
+     * Read raw configs by file path and config type
+     *
+     * @param string $file: Config file path
+     * @param string $type: Config file type
+     * @return array: Final configs
+     */
+    public static function loadFile(string $file, string $type) : array
+    {
+        switch ($type) {
+            case 'php':
+                return load_php($file);
+            case 'json':
+                return dejson($file, true, true);
+            case 'xml':
+                return dexml($file, false, true);
+            default:
+                return [];
+        }
     }
 
     public static function get(string $key)
@@ -122,25 +132,5 @@ final class ConfigManager
     public static function getDomains()
     {
         return self::$domains;
-    }
-
-    public static function getDefault(string $key = null)
-    {
-        return is_null($key) ? self::$data['default'] : array_get_by_chain_key(self::$data['default'], $key, '.');
-    }
-
-    public static function getFramework(string $key = null)
-    {
-        return is_null($key) ? self::$data['framework'] : array_get_by_chain_key(self::$data['framework'], $key, '.');
-    }
-
-    public static function getDefaultPath()
-    {
-        return self::$path['default'];
-    }
-
-    public static function getFrameworkPath()
-    {
-        return self::$path['framework'];
     }
 }

@@ -256,8 +256,17 @@ if (! function_exists('enxml')) {
     }
 }
 if (! function_exists('dexml')) {
-    function dexml(string $xml, bool $loaded = false) : array
+    function dexml(string $xml, bool $loaded = false, bool $file = false) : array
     {
+        if ($file) {
+            if (is_file($xml)) {
+                $xml = file_get_contents($xml);
+                $loaded = false;
+            }
+
+            exception('XmlFileNotExists', ['file' => $xml]);
+        }
+
         if (! extension_loaded('libxml')) {
             exception('MissingPHPExtension', ['extension' => 'libxml']);
         }
@@ -300,8 +309,16 @@ if (! function_exists('enjson')) {
     }
 }
 if (! function_exists('dejson')) {
-    function dejson(string $json, bool $assoc = true)
+    function dejson(string $json, bool $assoc = true, bool $file = false)
     {
+        if ($file) {
+            if (is_file($json)) {
+                $json = file_get_contents($json);
+            }
+
+            exception('JsonFileNotExists', ['file' => $json]);
+        }
+
         $res = json_decode($json, $assoc);
 
         return (is_array($res) || is_object($res)) ? $res : [];
