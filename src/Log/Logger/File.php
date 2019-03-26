@@ -47,8 +47,7 @@ class File implements LoggerInterface
 
         // Hard-code an index array to shorten log text
         $this->save(enjson([
-            microftime('Ymd-His'),
-            timezone(),
+            microftime('T Ymd His'),
             stringify($message),
             $context,
         ]));
@@ -57,7 +56,7 @@ class File implements LoggerInterface
     public function save(string $log)
     {
         $path = ospath(Kernel::getRoot(), $this->directory, $this->origin);
-        $file = ospath($path, join('.', [$this->level, $this->live, $this->suffix]));
+        $file = ospath($path, join('.', [$this->level, PHP_SAPI, $this->live, $this->suffix]));
         if (! is_dir($path)) {
             mkdir($path, $this->permission, true);
         }
@@ -68,7 +67,7 @@ class File implements LoggerInterface
                 mkdir($archive, $this->permission, true);
             }
 
-            $_archive = join('.', [microftime('Ymd-His', '-'), $this->suffix]);
+            $_archive = join('.', [PHP_SAPI, microftime('Ymd-His', '-'), $this->suffix]);
             $_archive = ospath($archive, $_archive);
 
             rename($file, $_archive);

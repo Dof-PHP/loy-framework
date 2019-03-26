@@ -113,6 +113,23 @@ if (! function_exists('route')) {
         return \Loy\Framework\Web\Route::getInstance();
     }
 }
+if (! function_exists('wrapper')) {
+    function wrapper(string $namespace)
+    {
+        if (! class_exists($namespace)) {
+            exception('WrapperClassNotExists', compact('namespace'));
+        }
+        $handler = \Loy\Framework\Web\Kernel::WRAPPER_HANDLER;
+        if (! method_exists($namespace, $handler)) {
+            exception('WrapperHandlerNotExists', [
+                'namespace' => $namespace,
+                'handler'   => $handler,
+            ]);
+        }
+
+        return (new $namespace)->{$handler}();
+    }
+}
 if (! function_exists('rpc')) {
     function rpc()
     {

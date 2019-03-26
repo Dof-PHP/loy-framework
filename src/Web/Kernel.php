@@ -8,8 +8,6 @@ use Throwable;
 use Loy\Framework\Kernel as Core;
 use Loy\Framework\Container;
 use Loy\Framework\RouteManager;
-use Loy\Framework\PipeManager;
-use Loy\Framework\WrapperManager;
 use Loy\Framework\TypeHint;
 use Loy\Framework\Validator;
 use Loy\Framework\Facade\Log;
@@ -21,6 +19,9 @@ use Loy\Framework\Facade\Response;
  */
 final class Kernel
 {
+    const PIPE_HANDLER = 'pipe';
+    const WRAPPER_HANDLER = 'wrapper';
+
     /**
      * Web kernel handler - The entry of HTTP world
      *
@@ -111,13 +112,13 @@ final class Kernel
 
         $class  = Route::get('class');
         $method = Route::get('method.name');
-        if (($wrapin = Route::get('wrapin')) && (! WrapperManager::hasWrapperIn($wrapin))) {
+        if (($wrapin = Route::get('wrapin')) && (! class_exists($wrapin))) {
             Kernel::throw('WrapperInNotExists', compact('wrapin', 'class', 'method'));
         }
-        if (($wrapout = Route::get('wrapout')) && (! WrapperManager::hasWrapperOut($wrapout))) {
+        if (($wrapout = Route::get('wrapout')) && (! class_exists($wrapout))) {
             Kernel::throw('WrapperOutNotExists', compact('wrapout', 'class', 'method'));
         }
-        if (($wraperr = Route::get('wraperr')) && (! WrapperManager::hasWrapperErr($wraperr))) {
+        if (($wraperr = Route::get('wraperr')) && (! class_exists($wraperr))) {
             Kernel::throw('WrapperErrNotExists', compact('wraperr', 'class', 'method'));
         }
     }
@@ -127,28 +128,23 @@ final class Kernel
      */
     private static function piping()
     {
-        $pipes   = PipeManager::getPipes();
-        $aliases = Route::get('pipes');
-        if (! $aliases) {
+        $pipes = Route::get('pipes');
+        if (! $pipes) {
             return;
         }
-        foreach ($aliases as $alias) {
-            $pipe = $pipes[$alias] ?? false;
-            if (! $pipe) {
-                Kernel::throw('PipeAliasNotExists', compact('alias'));
-            }
+        foreach ($pipes as $pipe) {
             if (! class_exists($pipe)) {
                 Kernel::throw('PipeClassNotExists', compact('pipe'));
             }
-            if (! method_exists($pipe, PipeManager::PIPE_HANDLER)) {
+            if (! method_exists($pipe, Kernel::PIPE_HANDLER)) {
                 Kernel::throw('PipeHandlerNotExists', [
                     'class'   => $pipe,
-                    'hanlder' => PipeManager::PIPE_HANDLER
+                    'hanlder' => Kernel::PIPE_HANDLER
                 ]);
             }
 
             try {
-                $res = call_user_func_array([(new $pipe), PipeManager::PIPE_HANDLER], [
+                $res = call_user_func_array([(new $pipe), Kernel::PIPE_HANDLER], [
                     Request::getInstance(),
                     Response::getInstance(),
                     Route::getInstance(),
@@ -174,20 +170,14 @@ final class Kernel
         if (! $wrapin) {
             return;
         }
-        $wrapper = WrapperManager::getWrapperIn($wrapin);
-        if (! $wrapper) {
-            Kernel::throw('WrapperInNotExists', compact('wrapper'));
+        if (! class_exists($wrapin)) {
+            Kernel::throw('WrapperInNotExists', compact('wrapin'));
         }
 
-        $class  = $wrapper['class']  ?? '?';
-        $method = $wrapper['method'] ?? '?';
-        if (! class_exists($class)) {
-            Kernel::throw('WrapperInClassNotExists', compact('class'));
-        }
-        if (! method_exists($class, $method)) {
-            Kernel::throw('WrapperInMethodNotExists', [
-                'class'  => $class,
-                'method' => $method,
+        if (! method_exists($wrapin, self::WRAPPER_HANDLER)) {
+            Kernel::throw('WrapperInHandlerNotExists', [
+                'wrapin'  => $wrapin,
+                'handler' => self::WRAPPER_HANDLER,
             ]);
         }
 

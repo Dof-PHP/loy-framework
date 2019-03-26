@@ -83,10 +83,6 @@ final class Kernel
 
         // StorageManager::compile(DomainManager::getDirs());
 
-        PipeManager::compile(DomainManager::getDirs());
-
-        WrapperManager::compile(DomainManager::getDirs());
-
         RouteManager::compile(DomainManager::getDirs());
     }
 

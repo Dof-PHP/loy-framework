@@ -7,7 +7,6 @@ namespace Loy\Framework\Facade;
 use Closure;
 use Throwable;
 use Loy\Framework\Facade;
-use Loy\Framework\WrapperManager;
 use Loy\Framework\DDD\ApplicationService;
 use Loy\Framework\Web\Response as Instance;
 use Loy\Framework\Web\Route;
@@ -72,8 +71,7 @@ class Response extends Facade
         }
 
         $wrapout = $error ? Route::get('wraperr') : Route::get('wrapout');
-        $wrapper = WrapperManager::getWrapper(($error ? 'err' : 'out'), $wrapout);
-        $result  = self::package($result, $wrapper);
+        $result  = self::package($result, $wrapout);
 
         try {
             $mimeout = Route::get('suffix.current') ?: Route::get('mimeout');
@@ -101,7 +99,7 @@ class Response extends Facade
             return '';
         }
 
-        $wrapper = $final ? $wrapper : WrapperManager::getWrapperFinal($wrapper);
+        $wrapper = $final ? $wrapper : wrapper($wrapper);
         if ((! $wrapper) || (! is_array($wrapper))) {
             return $result;
         }
