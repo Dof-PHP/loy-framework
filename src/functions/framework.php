@@ -113,6 +113,38 @@ if (! function_exists('route')) {
         return \Loy\Framework\Web\Route::getInstance();
     }
 }
+if (! function_exists('get_annotation_ns')) {
+    function get_annotation_ns(string $annotation, string $origin)
+    {
+        if (class_exists($annotation)) {
+            return $annotation;
+        }
+
+        if ('::class' === mb_substr($annotation, -7, 7)) {
+            $annotation = mb_substr($annotation, 0, -7);
+        }
+
+        if (class_exists($annotation)) {
+            return $annotation;
+        }
+
+        $uses = get_used_classes($origin);
+        if ($uses) {
+            foreach ($uses as $ns => $alias) {
+                if ($alias === $annotation) {
+                    return $ns;
+                }
+                $_ns   = explode('\\', $ns);
+                $short = $_ns[count($_ns) - 1];
+                if ($short === $annotation) {
+                    return $ns;
+                }
+            }
+        }
+
+        return false;
+    }
+}
 if (! function_exists('wrapper')) {
     function wrapper(string $namespace = null)
     {

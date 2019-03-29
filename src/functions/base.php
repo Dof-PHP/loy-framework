@@ -265,9 +265,7 @@ if (! function_exists('get_used_classes')) {
                     if ($usedClass) {
                         $ns = join('', $usedClass['nspath']);
                         $alias = $usedClass['alias'] ?? null;
-                        $usedClasses[] = [
-                            $ns => $alias,
-                        ];
+                        $usedClasses[$ns] = $alias;
                         $usedClass = [];
                     }
                     continue;

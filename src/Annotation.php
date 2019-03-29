@@ -10,7 +10,7 @@ use ReflectionException;
 
 class Annotation
 {
-    private $regex = '#@([a-zA-z]+)\((.*)\)#';
+    private $regex = '#@([a-zA-z]+)\((.*)\)(\{(.*)\})?#';
 
     /**
      * Parse class files or interface files annotations by directory paths
@@ -173,6 +173,7 @@ class Annotation
             }
             $key = $matches[1] ?? false;
             $val = $matches[2] ?? null;
+            $ext = $matches[4] ?? null;
             if ((! $key) || (is_null($val))) {
                 continue;
             }
@@ -180,9 +181,18 @@ class Annotation
             if (! is_null($origin)) {
                 $suffix = ucfirst(strtolower($key));
                 $filterCallback = '__annotationFilter'.$suffix;
+                $_ext = [];
+                if ($ext) {
+                    parse_str($ext, $_ext);
+                }
                 if (method_exists($origin, $filterCallback)) {
                     // $val = call_user_func_array([$origin, $filterCallback], [$val]);
-                    $val = is_object($origin) ? $origin->{$filterCallback}($val) : $origin::$filterCallback($val);
+                    $val = is_object($origin)
+                        ? $origin->{$filterCallback}($val, $_ext)
+                        : $origin::$filterCallback($val, $_ext);
+                    if (is_null($val)) {
+                        continue;
+                    }
                 }
                 $multipleCallback = '__annotationMultiple'.$suffix;
                 $valueMultiple = (
@@ -195,7 +205,8 @@ class Annotation
             $key = strtoupper($key);
             if ($valueMultiple) {
                 $_val = $res[$key] ?? [];
-                $val  = array_unique(array_merge($_val, $val));
+                $_val[] = $val;
+                $val  = $_val;
             }
 
             $res[$key] = $val;

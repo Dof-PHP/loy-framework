@@ -157,7 +157,7 @@ final class Container
 
         list($reflection, , ) = Annotation::parseNamespace($namespace);
         $implementor = $reflection['doc']['IMPLEMENTOR'] ?? false;
-        if (! class_exists($implementor)) {
+        if ((! $implementor) || (! class_exists($implementor))) {
             exception('ImplementorNotExists', ['implementor' => $implementor]);
         }
 

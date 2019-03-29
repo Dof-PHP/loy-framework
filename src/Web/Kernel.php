@@ -113,13 +113,19 @@ final class Kernel
 
         $class  = Route::get('class');
         $method = Route::get('method.name');
-        if (($wrapin = Route::get('wrapin')) && (! class_exists($wrapin))) {
+        if (($wrapin = Route::get('wrapin')) && (
+            (! ($_wrapin = get_annotation_ns($wrapin, $class))) || (! class_exists($_wrapin))
+        )) {
             Kernel::throw('WrapperInNotExists', compact('wrapin', 'class', 'method'));
         }
-        if (($wrapout = Route::get('wrapout')) && (! class_exists($wrapout))) {
+        if (($wrapout = Route::get('wrapout')) && (
+            (! ($_wrapout = get_annotation_ns($wrapout, $class))) || (! class_exists($_wrapout))
+        )) {
             Kernel::throw('WrapperOutNotExists', compact('wrapout', 'class', 'method'));
         }
-        if (($wraperr = Route::get('wraperr')) && (! class_exists($wraperr))) {
+        if (($wraperr = Route::get('wraperr')) && (
+            (! ($_wraperr = get_annotation_ns($wraperr, $class))) || (! class_exists($_wraperr))
+        )) {
             Kernel::throw('WrapperErrNotExists', compact('wraperr', 'class', 'method'));
         }
     }
@@ -133,13 +139,19 @@ final class Kernel
         if (! $pipes) {
             return;
         }
-        foreach ($pipes as $pipe) {
-            if (! class_exists($pipe)) {
-                Kernel::throw('PipeClassNotExists', compact('pipe'));
+
+        foreach ($pipes as $_pipe) {
+            $pipe = get_annotation_ns($_pipe, Route::get('class'));
+            if ((! $pipe) || (! class_exists($pipe))) {
+                Kernel::throw('PipeClassNotExists', [
+                    'port'   => Route::get('class'),
+                    'method' => Route::get('method.name'),
+                    'pipe'   => $_pipe,
+                ]);
             }
             if (! method_exists($pipe, Kernel::PIPE_HANDLER)) {
                 Kernel::throw('PipeHandlerNotExists', [
-                    'class'   => $pipe,
+                    'pipe'    => $pipe,
                     'hanlder' => Kernel::PIPE_HANDLER
                 ]);
             }

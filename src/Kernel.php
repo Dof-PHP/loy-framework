@@ -75,13 +75,11 @@ final class Kernel
 
         ConfigManager::load(DomainManager::getMetas());
         
-        Container::build(DomainManager::getDirs());
-
         EntityManager::compile(DomainManager::getDirs());
 
         RepositoryManager::compile(DomainManager::getDirs());
 
-        // StorageManager::compile(DomainManager::getDirs());
+        CommandManager::compile(DomainManager::getDirs());
 
         RouteManager::compile(DomainManager::getDirs());
     }

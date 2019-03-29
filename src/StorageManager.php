@@ -22,9 +22,12 @@ final class StorageManager
      */
     public static function get(string $namespace)
     {
+        // Find storage driver from orm annotation (first) and domain database config (second)
         $domain = DomainManager::getKeyByNamespace($namespace);
 
-        list($config, , ) = Annotation::parseNamespace($namespace);
+        list($config, $columns, ) = Annotation::parseNamespace($namespace);
+        pd($domain, $columns, $config);
+
         $config = $config['doc'] ?? [];
         $conn   = $config['CONNECTION'] ?? null;
         $dbname = $config['DATABASE'] ?? null;

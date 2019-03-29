@@ -11,9 +11,6 @@ class File implements LoggerInterface
 {
     use LoggerTrait;
 
-    /** @var string: Logging origin(domain,framework,...) */
-    private $origin = 'domain';
-
     /** @var string: Where Log files will be stored, relative to project root */
     private $directory = ['var', 'log'];
 
@@ -55,7 +52,7 @@ class File implements LoggerInterface
 
     public function save(string $log)
     {
-        $path = ospath(Kernel::getRoot(), $this->directory, $this->origin);
+        $path = ospath(Kernel::getRoot(), $this->directory);
         $file = ospath($path, join('.', [$this->level, PHP_SAPI, $this->live, $this->suffix]));
         if (! is_dir($path)) {
             mkdir($path, $this->permission, true);
@@ -79,23 +76,6 @@ class File implements LoggerInterface
     public function seperate(string $log) : string
     {
         return sprintf("%s%s", $log, $this->separator);
-    }
-
-    /**
-     * Setter for origin
-     *
-     * Usually only framework will use
-     *
-     * @param string $origin
-     * @return File
-     */
-    public function setOrigin(string $origin)
-    {
-        if ($origin = trim($origin)) {
-            $this->origin = $origin;
-        }
-    
-        return $this;
     }
 
     /**

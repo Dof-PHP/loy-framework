@@ -315,7 +315,7 @@ final class RouteManager
      */
     public static function parse(string $route) : array
     {
-        $route  = self::__annotationFilterRoute($route, true);
+        $route  = explode('/', self::__annotationFilterRoute($route));
         $params = [];
         array_walk($route, function (&$val, $key) use (&$params) {
             $matches = [];
@@ -332,9 +332,9 @@ final class RouteManager
         return [$route, $params];
     }
 
-    public static function __annotationFilterPipe(string $val) : array
+    public static function __annotationFilterPipe(string $val) : ?string
     {
-        return array_trim(explode(',', trim($val)));
+        return trim($val) ?: null;
     }
 
     public static function __annotationFilterSuffix(string $val) : array
@@ -347,13 +347,9 @@ final class RouteManager
         return array_trim(explode(',', strtoupper(trim($val))));
     }
 
-    public static function __annotationFilterRoute(string $val, bool $array = false)
+    public static function __annotationFilterRoute(string $val)
     {
         $arr = array_trim(explode('/', trim($val)));
-
-        if ($array) {
-            return $arr;
-        }
 
         return empty($arr) ? '/' : join('/', $arr);
     }

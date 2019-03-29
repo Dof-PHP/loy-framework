@@ -106,16 +106,12 @@ final class ConfigManager
 
     public static function getDomainByFile(string $file, string $key = null)
     {
-        $domain = DomainManager::getKeyByFile($file);
-
-        return self::getDomainByKey($domain, $key);
+        return self::getDomainByKey(DomainManager::getKeyByFile($file), $key);
     }
 
     public static function getDomainByNamespace(string $ns, string $key = null)
     {
-        $domain = DomainManager::getKeyByNamesapce($ns);
-
-        return self::getDomainByKey($domain, $key);
+        return self::getDomainByKey(DomainManager::getKeyByNamesapce($ns), $key);
     }
 
     public static function getDomainFinalByNamespace(string $ns, string $key = null)

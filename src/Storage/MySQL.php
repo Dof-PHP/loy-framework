@@ -18,10 +18,16 @@ class MySQL
 
     public function find(int $pk) : ?array
     {
-        $sql = 'SELECT * FROM __TABLE__ WHERE `id` = ? LIMIT 1';
+        $sql = 'SELECT * FROM #{TABLE} WHERE `id` = ?';
         $res = $this->get($sql, [$pk]);
 
         return $res[0] ?? null;
+    }
+
+    public function delete(int $pk) : void
+    {
+        $sql = 'DELETE FROM #{TABLE} WHERE `id` = ?';
+        $this->exec($sql, [$pk]);
     }
 
     public function __construct(array $config = [])
@@ -69,7 +75,7 @@ class MySQL
         }
     }
 
-    public function set(string $sql)
+    public function exec(string $sql)
     {
         try {
             $this->getConn()->exec($sql);
@@ -82,7 +88,7 @@ class MySQL
     {
         $sql = "USE `{$dbname}`";
 
-        $this->set($sql);
+        $this->exec($sql);
 
         return $this;
     }
@@ -130,7 +136,7 @@ class MySQL
             exception('MissingTableName');
         }
 
-        return str_replace('__TABLE__', $table, $sql);
+        return str_replace('#{TABLE}', $table, $sql);
     }
 
     public function getFullTableName() : string
