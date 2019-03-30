@@ -12,6 +12,8 @@ use Loy\Framework\Facade\Log;
  */
 final class Kernel
 {
+    const RUNTIME_DIR = 'var';
+
     /** @var string: Project Root Directory */
     private static $root;
 
@@ -42,10 +44,10 @@ final class Kernel
 
         ConfigManager::init(self::$root);
 
-        // Do some cleaning works before PHP process exit
-        // - TODO: Clean up database locks
-        // - TODO: Rollback uncommitted transactions
-        // - TODO: Reset some file permissions
+        // Do some cleaning works before PHP process exit, like:
+        // - Clean up database locks
+        // - Rollback uncommitted transactions
+        // - Reset some file permissions
         register_shutdown_function(function () {
             $error = error_get_last();
             if (! is_null($error)) {

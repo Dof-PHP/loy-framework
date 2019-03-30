@@ -129,19 +129,19 @@ final class ConfigManager
         return self::getDomainByKey($domain, $key) ?: self::getDomain($key);
     }
 
-    public static function getEnv(string $key = null)
+    public static function getEnv(string $key = null, $default = null)
     {
-        return array_get_by_chain_key(self::$default['env'] ?? [], $key);
+        return array_get_by_chain_key(self::$default['env'] ?? [], $key) ?: $default;
     }
 
-    public static function getFramework(string $key = null)
+    public static function getFramework(string $key = null, $default = null)
     {
-        return array_get_by_chain_key(self::$default['framework'] ?? [], $key);
+        return array_get_by_chain_key(self::$default['framework'] ?? [], $key) ?: $default;
     }
 
-    public static function getDomain(string $key = null)
+    public static function getDomain(string $key = null, $default = null)
     {
-        return array_get_by_chain_key(self::$default['domain'] ?? [], $key);
+        return array_get_by_chain_key(self::$default['domain'] ?? [], $key) ?: $default;
     }
 
     public static function getDomains()

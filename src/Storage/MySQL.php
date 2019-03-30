@@ -199,4 +199,13 @@ class MySQL
     
         return $this;
     }
+
+    public function __cleanup()
+    {
+        // Unlock tables of current session
+        $this->exec('UNLOCK TABLES');
+
+        // Rollback uncommited transactions
+        // TODO
+    }
 }

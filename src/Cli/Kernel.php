@@ -6,6 +6,7 @@ namespace Loy\Framework\Cli;
 
 use Throwable;
 use Loy\Framework\Kernel as Core;
+use Loy\Framework\ConfigManager;
 use Loy\Framework\CommandManager;
 use Loy\Framework\DSL\CLIA;
 use Loy\Framework\Facade\Console;
@@ -19,6 +20,22 @@ final class Kernel
         }
 
         try {
+            Core::register('shutdown', function () {
+                // Reset file/directory permission
+                $runtime = ospath(Core::getRoot(), Core::RUNTIME_DIR);
+                if (is_dir($runtime)) {
+                    if ($owner = ConfigManager::getFramework('runtime.permission.owner')) {
+                        chownr($runtime, $owner);
+                    }
+                    if ($group = ConfigManager::getFramework('runtime.permission.group')) {
+                        chgrpr($runtime, $group);
+                    }
+                    if ($mode = ConfigManager::getFramework('runtime.permission.mode', 0644)) {
+                        chmodr($runtime, $mode);
+                    }
+                }
+            });
+
             Core::boot($root);
         } catch (Throwable $e) {
             Kernel::throw('KernelBootFailed', compact('root', 'argvs'), $e);

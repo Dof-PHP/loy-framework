@@ -712,3 +712,92 @@ if (! function_exists('getallheaders')) {
         return $headers;
     }
 }
+if (! function_exists('chownr')) {
+    function chownr($path, string $owner)
+    {
+        if (is_link($path)) {
+            lchown($path, $owner);
+        }
+        if (is_file($path)) {
+            chown($path, $owner);
+            return;
+        }
+        if (! is_dir($path)) {
+            return;
+        }
+
+        list_dir($path, function ($list) use ($path, $owner) {
+            foreach ($list as $file) {
+                if ($file === '.' || '..' === $file) {
+                    continue;
+                }
+                $_path = ospath($path, $file);
+                if (is_dir($_path)) {
+                    chownr($_path, $owner);
+                } elseif (is_link($_path)) {
+                    lchown($_path, $owner);
+                } elseif (is_file($_path)) {
+                    chown($_path, $owner);
+                }
+            }
+        });
+    }
+}
+if (! function_exists('chgrpr')) {
+    function chgrpr($path, string $group)
+    {
+        if (is_link($path)) {
+            lchgrp($path, $mode);
+            return;
+        }
+        if (is_file($path)) {
+            chgrp($path, $group);
+            return;
+        }
+        if (! is_dir($path)) {
+            return;
+        }
+
+        list_dir($path, function ($list) use ($path, $group) {
+            foreach ($list as $file) {
+                if ($file === '.' || '..' === $file) {
+                    continue;
+                }
+                $_path = ospath($path, $file);
+                if (is_dir($_path)) {
+                    chgrpr($_path, $group);
+                } elseif (is_link($_path)) {
+                    lchgrp($_path, $group);
+                } elseif (is_file($_path)) {
+                    chown($_path, $group);
+                }
+            }
+        });
+    }
+}
+if (! function_exists('chmodr')) {
+    function chmodr($path, int $mode)
+    {
+        if (is_file($path)) {
+            chmod($path, $mode);
+            return;
+        }
+        if (! is_dir($path)) {
+            return;
+        }
+
+        list_dir($path, function ($list) use ($path, $mode) {
+            foreach ($list as $file) {
+                if ($file === '.' || '..' === $file) {
+                    continue;
+                }
+                $_path = ospath($path, $file);
+                if (is_dir($_path)) {
+                    chmodr($_path, $mode);
+                } elseif (is_file($_path)) {
+                    chmod($_path, $mode);
+                }
+            }
+        });
+    }
+}
