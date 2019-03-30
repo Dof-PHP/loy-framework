@@ -527,6 +527,12 @@ if (! function_exists('is_xml')) {
         return true;
     }
 }
+if (! function_exists('ci_equal')) {
+    function ci_equal(string $a, string $b) : bool
+    {
+        return strtolower($b) === strtolower($b);
+    }
+}
 if (! function_exists('objectname')) {
     function objectname($object) : ?string
     {
@@ -691,5 +697,18 @@ if (! function_exists('exception')) {
                 $this->context = parse_throwable($previous, $context);
             }
         };
+    }
+}
+if (! function_exists('getallheaders')) {
+    // For nginx, compatible with apache format
+    function getallheaders() : array
+    {
+        $headers = [];
+        foreach ($_SERVER as $name => $value) {
+            if (mb_substr($name, 0, 5) === 'HTTP_') {
+                $headers[mb_substr($name, 5)] = $value;
+            }
+        }
+        return $headers;
     }
 }

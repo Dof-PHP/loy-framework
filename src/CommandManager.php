@@ -5,23 +5,30 @@ declare(strict_types=1);
 namespace Loy\Framework;
 
 use Loy\Framework\Facade\Annotation;
+use Loy\Framework\Cli\Command\Command;
 
 final class CommandManager
 {
     const COMMAND_DIR = 'Command';
 
     private static $dirs = [];
-    private static $commands = [];
+    private static $commands = [
+        'default' => [],
+        'domain'  => [],
+    ];
 
     public static function compile(array $dirs)
     {
+        self::$commands['default'] = [];
+        self::loadDirs([dirname(get_file_of_namespace(Command::class))], 'default');
+
         if (count($dirs) < 1) {
             return;
         }
 
         // Reset
         self::$dirs = [];
-        self::$commands = [];
+        self::$commands['domain'] = [];
 
         array_map(function ($item) {
             $dir = ospath($item, self::COMMAND_DIR);
@@ -30,11 +37,16 @@ final class CommandManager
             }
         }, $dirs);
 
+        self::loadDirs(self::$dirs, 'domain');
+    }
+
+    public static function loadDirs(array $dirs, string $type)
+    {
         // Exceptions may thrown but let invoker to catch for different scenarios
-        Annotation::parseClassDirs(self::$dirs, function ($annotations) {
+        Annotation::parseClassDirs($dirs, function ($annotations) use ($type) {
             if ($annotations) {
                 list($ofClass, , $ofMethods) = $annotations;
-                self::assemble($ofClass, $ofMethods);
+                self::assemble($ofClass, $ofMethods, $type);
             }
         }, __CLASS__);
     }
@@ -42,7 +54,7 @@ final class CommandManager
     /**
      * Assemble Repository From Annotations
      */
-    public static function assemble(array $ofClass, array $ofMethods)
+    public static function assemble(array $ofClass, array $ofMethods, string $type)
     {
         $namespace    = $ofClass['namespace']      ?? null;
         $cmdPrefix    = $ofClass['doc']['CMD']     ?? null;
@@ -55,7 +67,7 @@ final class CommandManager
             if ((! $docMethod) || (! $cmd)) {
                 continue;
             }
-            $command = join('.', [$cmdPrefix, $cmd]);
+            $command = $cmdPrefix ? join('.', [$cmdPrefix, $cmd]) : $cmd;
             $comment = $docMethod['COMMENT'] ?? null;
             $comment = join(': ', [$commentGroup, $comment]);
             $options = $docMethod['OPTION']  ?? [];
@@ -72,7 +84,7 @@ final class CommandManager
                 $_options[$name] = $option;
             }
 
-            self::$commands[$command] = [
+            self::$commands[$type][$command] = [
                 'class'   => $namespace,
                 'method'  => $method,
                 'comment' => $comment,
@@ -99,9 +111,11 @@ final class CommandManager
         return true;
     }
 
-    public static function get(string $name) : ?array
+    public static function get(string $name, bool $isDomain = false) : ?array
     {
-        return self::$commands[$name] ?? null;
+        return $isDomain
+            ? self::$commands['domain'][$name] ?? null
+            : self::$commands['default'][$name] ?? null;
     }
 
     public static function getCommands()

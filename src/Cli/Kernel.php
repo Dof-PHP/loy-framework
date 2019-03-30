@@ -25,7 +25,15 @@ final class Kernel
         }
 
         list($entry, $cmd, $options, $params) = CLIA::build($argvs);
-        $_cmd = CommandManager::get($cmd);
+        $isDomain = strtolower($cmd) === 'domain';
+        if ($isDomain) {
+            $cmd = array_shift($params);
+            if (is_null($cmd)) {
+                Kernel::throw('MissingDomainCommandName');
+            }
+        }
+
+        $_cmd = CommandManager::get($cmd, $isDomain);
         if (! $_cmd) {
             Kernel::throw('CommandNotFound', compact('cmd'));
         }
@@ -43,7 +51,9 @@ final class Kernel
         try {
             $result = (new $class)->{$method}($console);
 
-            $console->output($result);
+            if (! is_null($result)) {
+                $console->output($result);
+            }
         } catch (Throwable $e) {
             Kernel::throw('CommandExecuteFailed', compact('cmd', 'class', 'method'), $e);
         }

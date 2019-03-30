@@ -187,6 +187,26 @@ class Request
         return $this->getMethod();
     }
 
+    public function getHeader(string $keyupper) : ?string
+    {
+        $keyupper = strtoupper($keyupper);
+        $headers  = $this->getHeaders();
+
+        return $headers[$keyupper] ?? ($headers[str_replace('-', '_', $keyupper)] ?? null);
+    }
+
+    public function hasHeader(string $keyupper) : bool
+    {
+        return isset($this->getHeaders()[strtoupper($keyupper)]);
+    }
+
+    public function getHeaders() : array
+    {
+        return $this->getOrSet('headers', function () {
+            return getallheaders();
+        });
+    }
+
     public function getMethod() : ?string
     {
         return $this->getOrSet('method', function () {

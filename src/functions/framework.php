@@ -146,7 +146,7 @@ if (! function_exists('get_annotation_ns')) {
     }
 }
 if (! function_exists('wrapper')) {
-    function wrapper(string $namespace = null)
+    function wrapper(string $namespace = null, string $type = null)
     {
         if (is_null($namespace)) {
             return null;
@@ -154,7 +154,17 @@ if (! function_exists('wrapper')) {
         if (! class_exists($namespace)) {
             exception('WrapperClassNotExists', compact('namespace'));
         }
-        $handler = \Loy\Framework\Web\Kernel::WRAPPER_HANDLER;
+
+        if (ci_equal($type, 'out')) {
+            $handler = \Loy\Framework\Web\Kernel::WRAPOUT_HANDLER;
+        } elseif (ci_equal($type, 'in')) {
+            $handler = \Loy\Framework\Web\Kernel::WRAPIN_HANDLER;
+        } elseif (ci_equal($type, 'err')) {
+            $handler = \Loy\Framework\Web\Kernel::WRAPERR_HANDLER;
+        } else {
+            return null;
+        }
+
         if (! method_exists($namespace, $handler)) {
             exception('WrapperHandlerNotExists', [
                 'namespace' => $namespace,
@@ -162,7 +172,7 @@ if (! function_exists('wrapper')) {
             ]);
         }
 
-        return (new $namespace)->{$handler}();
+        return singleton($namespace)->{$handler}();
     }
 }
 if (! function_exists('rpc')) {
@@ -211,5 +221,28 @@ if (! function_exists('http_delete')) {
     function http_delete(string $url, $params = [], array $headers = [], array $options = [])
     {
         return \Loy\Framework\Facade\Curl::delete($url, $params, $headers, $options);
+    }
+}
+if (! function_exists('singleton')) {
+    function singleton(string $namespace)
+    {
+        return \Loy\Framework\Facade\Singleton::get($namespace);
+    }
+}
+if (! function_exists('is_exception')) {
+    function is_exception($e, string $name = null) : bool
+    {
+        if (! ($e instanceof \Throwable)) {
+            return false;
+        }
+        if (is_null($name)) {
+            return true;
+        }
+
+        if (is_anonymous($e)) {
+            return ci_equal($e->getMessage(), $name);
+        }
+
+        return ci_equal(objectname($e), $name);
     }
 }

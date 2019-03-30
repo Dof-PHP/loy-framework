@@ -70,8 +70,8 @@ class Response extends Facade
             $error = is_null($error) ? $response->isFailed() : $error;
         }
 
-        $wrapout = $error ? Route::get('wraperr') : Route::get('wrapout');
-        $result  = self::package($result, $wrapout);
+        $wrapper = $error ? 'err' : 'out';
+        $result  = self::package($result, $wrapper, Route::get("wrap{$wrapper}"), false);
 
         try {
             $mimeout = Route::get('suffix.current') ?: Route::get('mimeout');
@@ -88,18 +88,18 @@ class Response extends Facade
     /**
      * Package response result with given wrapper (if exists)
      *
-     * @param $result mixed: result data to response
-     * @param $wrapper array: the wrapper used to package result data
-     * @param $final bool: whether the $wrapper is the final wapper format data or just wapper location config
+     * @param mixed $result: result data to response
+     * @param array|string|null $wrapper: the wrapper used to package result data
+     * @param bool $final: whether the $wrapper is the final wapper format data or just wapper location config
      * @return $result: Packaged response result
      */
-    public static function package($result, array $wrapper = null, bool $final = false)
+    public static function package($result, string $type, $wrapper = null, bool $final = false)
     {
         if (is_null($result)) {
             return '';
         }
 
-        $wrapper = $final ? $wrapper : wrapper($wrapper);
+        $wrapper = $final ? $wrapper : wrapper($wrapper, $type);
         if ((! $wrapper) || (! is_array($wrapper))) {
             return $result;
         }

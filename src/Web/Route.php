@@ -31,6 +31,11 @@ final class Route
         return self::$instance;
     }
 
+    public static function set(string $key, $value)
+    {
+        self::getInstance()->set($key, $value);
+    }
+
     public static function get(string $key)
     {
         $getter = self::getInstance();

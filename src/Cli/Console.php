@@ -25,7 +25,7 @@ class Console
 
     public function exception(string $message, array $context = [])
     {
-        exit(enjson([$message, $context]));
+        exit($context ? enjson([$message, $context]) : $message);
     }
 
     /**

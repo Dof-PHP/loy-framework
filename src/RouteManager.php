@@ -17,6 +17,11 @@ final class RouteManager
 
     /**
      * Find route definition by given uri, verb and mimes
+     *
+     * @param string $uri: URL path
+     * @param string $method: HTTP verb
+     * @param array|null $mimes
+     * @return array|bool
      */
     public static function find(string $uri = null, string $method = null, ?array $mimes = [])
     {
@@ -169,14 +174,12 @@ final class RouteManager
         if (! method_exists($namespace, $method)) {
             exception('PortMethodNotExists', compact('namespace', 'method'));
         }
-
         $attrs = $ofMethod['doc'] ?? [];
         if (($attrs['NOTROUTE'] ?? false) || ($docClass['NOTROUTE'] ?? false)) {
             return;
         }
 
-        $routePrefix    = $docClass['ROUTE']   ?? null;
-        $middlewares    = $docClass['PIPE']    ?? [];
+        $defaultRoute   = $docClass['ROUTE']   ?? null;
         $defaultVerbs   = $docClass['VERB']    ?? [];
         $defaultSuffix  = $docClass['SUFFIX']  ?? [];
         $defaultMimein  = $docClass['MIMEIN']  ?? null;
@@ -184,6 +187,10 @@ final class RouteManager
         $defaultWrapin  = $docClass['WRAPIN']  ?? null;
         $defaultWrapout = $docClass['WRAPOUT'] ?? null;
         $defaultWraperr = $docClass['WRAPERR'] ?? null;
+        $defaultPipein    = $docClass['PIPEIN']    ?? [];
+        $defaultPipeout   = $docClass['PIPEOUT']   ?? [];
+        $defaultNoPipein  = $docClass['NOPIPEIN']  ?? [];
+        $defaultNoPipeout = $docClass['NOPIPEOUT'] ?? [];
 
         $route   = $attrs['ROUTE']   ?? null;
         $alias   = $attrs['ALIAS']   ?? null;
@@ -199,10 +206,17 @@ final class RouteManager
         $wraperr = $attrs['WRAPERR'] ?? $defaultWraperr;
         $wraperr = ($wraperr === '_') ? null : $wraperr;
         $suffix  = $attrs['SUFFIX']  ?? $defaultSuffix;
-        $middles = $attrs['PIPE']    ?? [];
+        $pipein    = $attrs['PIPEIN']    ?? [];
+        $pipeout   = $attrs['PIPEOUT']   ?? [];
+        $nopipein  = $attrs['NOPIPEIN']  ?? [];
+        $nopipeout = $attrs['NOPIPEOUT'] ?? [];
 
-        $middles = array_unique(array_merge($middlewares, $middles));
-        $urlpath = $routePrefix ? join('/', [$routePrefix, $route]) : $route;
+        $pipeinList    = array_unique(array_merge($defaultPipein, $pipein));
+        $pipeoutList   = array_unique(array_merge($defaultPipeout, $pipeout));
+        $nopipeinList  = array_unique(array_merge($defaultNoPipein, $nopipein));
+        $nopipeoutList = array_unique(array_merge($defaultNoPipeout, $nopipeout));
+
+        $urlpath = $defaultRoute ? join('/', [$defaultRoute, $route]) : $route;
         list($urlpath, $params) = self::parse($urlpath);
         if (! $urlpath) {
             return;
@@ -213,37 +227,42 @@ final class RouteManager
 
             if ($alias) {
                 self::$aliases[$alias] = [
-                        'urlpath' => $urlpath,
-                        'verb'    => $verb,
-                    ];
+                    'urlpath' => $urlpath,
+                    'verb'    => $verb,
+                ];
             }
             self::$routes[$urlpath][$verb] = [
-                    'urlpath' => $urlpath,
-                    'suffix'  => [
-                        'allow'   => $suffix,
-                        'current' => null,
-                    ],
-                    'verb'    => $verb,
-                    'alias'   => $alias,
-                    'class'   => $namespace,
-                    'method'  => [
-                        'name'   => $method,
-                        'params' => $ofMethod['parameters'] ?? [],
-                    ],
-                    'pipes'   => $middles,
-                    'params'  => [
-                        'raw'  => $params,    // Route parameter keys from definition
-                        'res'  => [],         // Route parameter values from request uri
-                        'api'  => [],
-                        'kv'   => [],
-                        'pipe' => [],
-                    ],
-                    'mimein'  => $mimein,
-                    'mimeout' => $mimeout,
-                    'wrapin'  => $wrapin,
-                    'wrapout' => $wrapout,
-                    'wraperr' => $wraperr,
-                ];
+                'urlpath' => $urlpath,
+                'suffix'  => [
+                    'allow'   => $suffix,
+                    'current' => null,
+                ],
+                'verb'    => $verb,
+                'alias'   => $alias,
+                'class'   => $namespace,
+                'method'  => [
+                    'name'   => $method,
+                    'params' => $ofMethod['parameters'] ?? [],
+                ],
+                'pipes'   => [
+                    'in'    => $pipeinList,
+                    'out'   => $pipeoutList,
+                    'noin'  => $nopipeinList,
+                    'noout' => $nopipeoutList,
+                ],
+                'params'  => [
+                    'raw'  => $params,    // Route parameter keys from definition
+                    'res'  => [],         // Route parameter values from request uri
+                    'api'  => [],         // Route parameters validated
+                    'kv'   => [],         // Route parameters valideted as K-V format
+                    'pipe' => [],         // Route parameters set by pipes
+                ],
+                'mimein'  => $mimein,
+                'mimeout' => $mimeout,
+                'wrapin'  => $wrapin,
+                'wrapout' => $wrapout,
+                'wraperr' => $wraperr,
+            ];
         }
     }
 
@@ -332,7 +351,22 @@ final class RouteManager
         return [$route, $params];
     }
 
-    public static function __annotationFilterPipe(string $val) : ?string
+    public static function __annotationFilterPipein(string $val) : ?string
+    {
+        return trim($val) ?: null;
+    }
+
+    public static function __annotationFilterNopipein(string $val) : ?string
+    {
+        return trim($val) ?: null;
+    }
+
+    public static function __annotationFilterNopipeout(string $val) : ?string
+    {
+        return trim($val) ?: null;
+    }
+
+    public static function __annotationFilterPipeout(string $val) : ?string
     {
         return trim($val) ?: null;
     }
@@ -354,7 +388,22 @@ final class RouteManager
         return empty($arr) ? '/' : join('/', $arr);
     }
 
-    public static function __annotationMultiplePipe() : bool
+    public static function __annotationMultiplePipeout() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationMultiplePipein() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationMultipleNopipein() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationMultipleNopipeout() : bool
     {
         return true;
     }
