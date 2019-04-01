@@ -178,8 +178,8 @@ class Annotation
                 continue;
             }
             $valueMultiple = false;
+            $suffix = ucfirst(strtolower($key));
             if (! is_null($origin)) {
-                $suffix = ucfirst(strtolower($key));
                 $filterCallback = '__annotationFilter'.$suffix;
                 $_ext = [];
                 if ($ext) {
@@ -205,8 +205,17 @@ class Annotation
             $key = strtoupper($key);
             if ($valueMultiple) {
                 $_val = $res[$key] ?? [];
-                $_val[] = $val;
-                $val  = $_val;
+                $multipleFormatMergeCallback = '__annotationMultipleMerge'.$suffix;
+                if (true
+                    && $origin
+                    && method_exists($origin, $multipleFormatMergeCallback)
+                    && call_user_func_array([$origin, $multipleFormatMergeCallback], [])
+                ) {
+                    $val = array_merge($_val, $val);
+                } else {
+                    $_val[] = $val;
+                    $val = $_val;
+                }
             }
 
             $res[$key] = $val;

@@ -38,6 +38,8 @@ final class EntityManager
                 self::assemble($ofClass, $ofProperties);
             }
         }, __CLASS__);
+
+        pd(self::$entities);
     }
 
     /**
@@ -59,13 +61,19 @@ final class EntityManager
         }
     }
 
-    public static function __annotationFilterAssembler(string $assembler) : string
+    public static function __annotationMultipleMergeParameter() : bool
     {
-        if (! class_exists($assembler)) {
-            exception('AssemblerNotExists', compact('assembler'));
-        }
+        return true;
+    }
 
-        return trim($assembler);
+    public static function __annotationMultipleParameter() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationFilterParameter(string $parameter, array $argvs = []) : array
+    {
+        return [$parameter => $argvs];
     }
 
     public static function __annotationFilterRepository(string $repository) : string
