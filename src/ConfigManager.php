@@ -129,6 +129,21 @@ final class ConfigManager
         return self::getDomainByKey($domain, $key) ?: self::getDomain($key);
     }
 
+    public static function getDomainFinalDatabaseByNamesapce(string $ns, string $key = null)
+    {
+        return self::getDomainFinalByNamespace($ns, "database.{$key}");
+    }
+
+    public static function getDomainFinalDatabaseByFile(string $file, string $key = null)
+    {
+        return self::getDomainFinalByFile($file, "database.{$key}");
+    }
+
+    public static function getDomainFinalDatabaseByKey(string $domain, string $key = null)
+    {
+        return self::getDomainFinalByKey($domain, "database.{$key}");
+    }
+
     public static function getEnv(string $key = null, $default = null)
     {
         return array_get_by_chain_key(self::$default['env'] ?? [], $key) ?: $default;
