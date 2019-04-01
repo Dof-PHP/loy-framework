@@ -7,31 +7,50 @@ namespace Loy\Framework\DDD;
 class Assembler
 {
     /** @var mixed{array|object} */
-    private $origin;
+    protected $origin;
 
     protected $compatibles = [];
-    protected $convert = [];
+    protected $converters  = [];
 
     public function __construct($origin = null)
     {
         $this->origin = $origin;
     }
 
-    public function match(string $name)
+    public function match(string $name, array $params = [])
     {
-        $value = null;
+        $isObject = is_object($this->origin);
+        $isArray  = is_array($this->origin);
+        if ((! $isObject) && (! $isArray)) {
+            return null;
+        }
 
-        if (is_object($result)) {
-            $value = $result->{$name} ?? null;
-            if (is_null($value)) {
-                $name = $this->compatibles[$name] ?? null;
-                if (! $name) {
-                    return null;
-                }
-                $value = $result->{$name} ?? null;
+        $value = null;
+        if ($isObject) {
+            $value = $this->origin->{$name} ?? null;
+        } elseif ($isArray) {
+            $value = $this->origin[$name] ?? null;
+        }
+
+        if (is_null($value)) {
+            $name = $this->compatibles[$name] ?? null;
+            if (! $name) {
+                return null;
             }
-        } elseif (is_array($result)) {
-            $value = $result[$name] ?? null;
+            if ($isObject) {
+                $value = $this->origin->{$name} ?? null;
+            }
+            if ($isArray) {
+                $value = $this->origin[$name] ?? null;
+            }
+        }
+
+        $converter = $this->converters[$name] ?? null;
+        if ($converter) {
+            if (! method_exists($this, $converter)) {
+                exception('FieldConvertNotExists', compact('converter'));
+            }
+            $value = $this->{$converter}($value, $params);
         }
 
         return $value;

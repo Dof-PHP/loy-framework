@@ -32,7 +32,7 @@ class Assembler
         $nulls = 0;
         $nullableLimit = self::getNullableLimit();
         foreach ($selfs as $name => $params) {
-            $value = $assembler ? $assembler->match($name) : self::matchValue($name, $result);
+            $value = $assembler ? $assembler->match($name, $params) : self::matchValue($name, $result);
             if (is_null($value)) {
                 ++$nulls;
                 if ($nulls > $nullableLimit) {

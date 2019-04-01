@@ -562,11 +562,12 @@ if (! function_exists('ospath')) {
     }
 }
 if (! function_exists('fdate')) {
-    function fdate(string $format = null) : string
+    function fdate(int $ts = null, string $format = null) : string
     {
         $format = $format ?: 'Y-m-d H:i:s';
+        $ts = $ts ?: time();
 
-        return date($format);
+        return date($format, $ts);
     }
 }
 if (! function_exists('microftime')) {
