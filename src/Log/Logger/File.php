@@ -20,9 +20,6 @@ class File implements LoggerInterface
     /** @var int: The filesize limit of live log file */
     private $filesize = 4194304;    // 4M (default)
 
-    /** @var string: The name of live log file */
-    private $live = 'current';
-
     /** @var string: The suffix of log file */
     private $suffix = 'log';
 
@@ -53,7 +50,7 @@ class File implements LoggerInterface
     public function save(string $log)
     {
         $path = ospath(Kernel::getRoot(), $this->directory);
-        $file = ospath($path, join('.', [$this->level, PHP_SAPI, $this->live, $this->suffix]));
+        $file = ospath($path, join('.', [$this->level, PHP_SAPI, $this->suffix]));
         if (! is_dir($path)) {
             mkdir($path, $this->permission, true);
         }
@@ -88,21 +85,6 @@ class File implements LoggerInterface
     {
         if ($dir = trim($directory)) {
             $this->directory = $directory;
-        }
-    
-        return $this;
-    }
-
-    /**
-     * Setter for live
-     *
-     * @param string $live
-     * @return File
-     */
-    public function setLive(string $live)
-    {
-        if ($live = trim($live)) {
-            $this->live = $live;
         }
     
         return $this;
