@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Loy\Framework;
 
 use Loy\Framework\Facade\Annotation;
+use Loy\Framework\DDD\Repository;
 
 final class EntityManager
 {
@@ -53,10 +54,30 @@ final class EntityManager
         }
         self::$entities[$namespace]['meta'] = $ofClass['doc'] ?? [];
 
-        $ofProperties = $ofProperties['self'] ?? [];
-        foreach ($ofProperties as $name => $attrs) {
+        foreach ($ofProperties['self'] ?? [] as $name => $attrs) {
             self::$entities[$namespace]['properties'][$name] = $attrs['doc'] ?? [];
         }
+    }
+
+    public static function __annotationFilterAssembler(string $assembler) : string
+    {
+        if (! class_exists($assembler)) {
+            exception('AssemblerNotExists', compact('assembler'));
+        }
+
+        return trim($assembler);
+    }
+
+    public static function __annotationFilterRepository(string $repository) : string
+    {
+        if (! interface_exists($repository)) {
+            exception('RepositoryNotExists', compact('repository'));
+        }
+        if (! is_subclass_of($repository, Repository::class)) {
+            exception('InvalidRepositoryInterface', compact('repository'));
+        }
+
+        return trim($repository);
     }
 
     public static function get(string $namespace)

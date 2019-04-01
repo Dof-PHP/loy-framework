@@ -224,9 +224,9 @@ if (! function_exists('http_delete')) {
     }
 }
 if (! function_exists('singleton')) {
-    function singleton(string $namespace)
+    function singleton(string $namespace, ...$params)
     {
-        return \Loy\Framework\Facade\Singleton::get($namespace);
+        return \Loy\Framework\Facade\Singleton::get($namespace, ...$params);
     }
 }
 if (! function_exists('is_exception')) {

@@ -187,6 +187,7 @@ final class RouteManager
         $defaultWrapin  = $docClass['WRAPIN']  ?? null;
         $defaultWrapout = $docClass['WRAPOUT'] ?? null;
         $defaultWraperr = $docClass['WRAPERR'] ?? null;
+        $defaultAssembler = $docClass['ASSEMBLER'] ?? null;
         $defaultPipein    = $docClass['PIPEIN']    ?? [];
         $defaultPipeout   = $docClass['PIPEOUT']   ?? [];
         $defaultNoPipein  = $docClass['NOPIPEIN']  ?? [];
@@ -199,13 +200,15 @@ final class RouteManager
         $mimein  = ($mimein === '_')  ? null : $mimein;
         $mimeout = $attrs['MIMEOUT'] ?? $defaultMimeout;
         $mimeout = ($mimeout === '_') ? null : $mimeout;
+        $suffix  = $attrs['SUFFIX']  ?? $defaultSuffix;
         $wrapin  = $attrs['WRAPIN']  ?? $defaultWrapin;
         $wrapin  = ($wrapin === '_')  ? null : $wrapin;
         $wrapout = $attrs['WRAPOUT'] ?? $defaultWrapout;
         $wrapout = ($wrapout === '_') ? null : $wrapout;
         $wraperr = $attrs['WRAPERR'] ?? $defaultWraperr;
         $wraperr = ($wraperr === '_') ? null : $wraperr;
-        $suffix  = $attrs['SUFFIX']  ?? $defaultSuffix;
+        $assembler = $attrs['ASSEMBLER'] ?? $defaultAssembler;
+        $assembler = ($assembler === '_') ? null : $assembler;
         $pipein    = $attrs['PIPEIN']    ?? [];
         $pipeout   = $attrs['PIPEOUT']   ?? [];
         $nopipein  = $attrs['NOPIPEIN']  ?? [];
@@ -237,31 +240,32 @@ final class RouteManager
                     'allow'   => $suffix,
                     'current' => null,
                 ],
-                'verb'    => $verb,
-                'alias'   => $alias,
-                'class'   => $namespace,
-                'method'  => [
+                'verb'   => $verb,
+                'alias'  => $alias,
+                'class'  => $namespace,
+                'method' => [
                     'name'   => $method,
                     'params' => $ofMethod['parameters'] ?? [],
                 ],
-                'pipes'   => [
+                'pipes' => [
                     'in'    => $pipeinList,
                     'out'   => $pipeoutList,
                     'noin'  => $nopipeinList,
                     'noout' => $nopipeoutList,
                 ],
-                'params'  => [
+                'params' => [
                     'raw'  => $params,    // Route parameter keys from definition
                     'res'  => [],         // Route parameter values from request uri
                     'api'  => [],         // Route parameters validated
                     'kv'   => [],         // Route parameters valideted as K-V format
                     'pipe' => [],         // Route parameters set by pipes
                 ],
-                'mimein'  => $mimein,
-                'mimeout' => $mimeout,
-                'wrapin'  => $wrapin,
-                'wrapout' => $wrapout,
-                'wraperr' => $wraperr,
+                'mimein'    => $mimein,
+                'mimeout'   => $mimeout,
+                'wrapin'    => $wrapin,
+                'wrapout'   => $wrapout,
+                'wraperr'   => $wraperr,
+                'assembler' => $assembler,
             ];
         }
     }

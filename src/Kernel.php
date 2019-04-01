@@ -77,13 +77,17 @@ final class Kernel
 
         ConfigManager::load(DomainManager::getMetas());
         
-        EntityManager::compile(DomainManager::getDirs());
+        $domains = DomainManager::getDirs();
 
-        RepositoryManager::compile(DomainManager::getDirs());
+        EntityManager::compile($domains);
 
-        CommandManager::compile(DomainManager::getDirs());
+        StorageManager::compile($domains);
 
-        RouteManager::compile(DomainManager::getDirs());
+        RepositoryManager::compile($domains);
+
+        CommandManager::compile($domains);
+
+        RouteManager::compile($domains);
     }
 
     public static function register(string $event, Closure $callback)

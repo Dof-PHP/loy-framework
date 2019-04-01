@@ -6,6 +6,7 @@ namespace Loy\Framework\DDD;
 
 use Throwable;
 use Loy\Framework\StorageManager;
+use Loy\Framework\RepositoryManager;
 
 /**
  * Storage is the persistence layer implementations
@@ -18,12 +19,14 @@ class Storage implements Repository
 
     public function __construct()
     {
-        $this->__storage = StorageManager::get(static::class);
+        $this->__storage = StorageManager::init(static::class);
     }
 
     public function find(int $pk) : ?Entity
     {
-        return $this->__storage->find($pk);
+        $result = $this->__storage->find($pk);
+
+        return RepositoryManager::convert(static::class, $result);
     }
 
     public function add(Entity $entity) : ?int

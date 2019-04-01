@@ -712,9 +712,19 @@ if (! function_exists('getallheaders')) {
         return $headers;
     }
 }
+if (! function_exists('is_function_disabled')) {
+    function is_function_disabled(string $name)
+    {
+        return in_array($name, explode(',', ini_get('disable_functions')));
+    }
+}
 if (! function_exists('chownr')) {
     function chownr($path, string $owner)
     {
+        if (is_function_disabled('chown') || is_function_disabled('lchown')) {
+            return;
+        }
+
         if (is_link($path)) {
             lchown($path, $owner);
         }
@@ -746,6 +756,10 @@ if (! function_exists('chownr')) {
 if (! function_exists('chgrpr')) {
     function chgrpr($path, string $group)
     {
+        if (is_function_disabled('lchgrp') || is_function_disabled('chgrp')) {
+            return;
+        }
+
         if (is_link($path)) {
             lchgrp($path, $mode);
             return;
@@ -778,6 +792,10 @@ if (! function_exists('chgrpr')) {
 if (! function_exists('chmodr')) {
     function chmodr($path, int $mode)
     {
+        if (is_function_disabled('chmod')) {
+            return;
+        }
+
         if (is_file($path)) {
             chmod($path, $mode);
             return;
@@ -799,5 +817,56 @@ if (! function_exists('chmodr')) {
                 }
             }
         });
+    }
+}
+if (! function_exists('instance_of')) {
+    function instance_of(string $child = null, string $parent = null) : bool
+    {
+        if ((! $child) || (! $parent)) {
+            return false;
+        }
+
+        $childIsClass      = class_exists($child);
+        $childIsInterface  = interface_exists($child);
+        $parentIsClass     = class_exists($parent);
+        $parentIsInterface = interface_exists($parent);
+        if ((! $childIsClass) && (! $childIsInterface)) {
+            return false;
+        }
+        if ((! $parentIsClass) && (! $parentIsInterface)) {
+            return false;
+        }
+
+        if ($childIsClass) {
+            if ($parentIsClass) {
+                return is_subclass_of($child, $parent);
+            }
+            if ($parentIsInterface) {
+                return is_subinterface_of($child, $parent);
+            }
+        }
+        if ($childIsInterface) {
+            if ($parentIsClass) {
+                return false;
+            }
+            return is_subinterface_of($child, $parent);
+        }
+
+        return false;
+    }
+}
+if (! function_exists('is_subinterface_of')) {
+    function is_subinterface_of(string $child, string $parent) : bool
+    {
+        if (! interface_exists($child)) {
+            return false;
+        }
+        if (! interface_exists($parent)) {
+            return false;
+        }
+
+        $reflector = new \ReflectionClass($child);
+
+        return $reflector->implementsInterface($parent);
     }
 }

@@ -193,7 +193,10 @@ final class Kernel
             }
 
             try {
-                $_result = call_user_func_array([singleton($pipe), Kernel::PIPEOUT_HANDLER], [$_result, Route::getInstance()]);
+                $_result = call_user_func_array(
+                    [singleton($pipe), Kernel::PIPEOUT_HANDLER],
+                    [$_result, Route::getInstance(), Request::getInstance()]
+                );
             } catch (Throwable $e) {
                 Kernel::throw('PipeOutThroughFailed', compact('pipe'), 500, $e);
             }
