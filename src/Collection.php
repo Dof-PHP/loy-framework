@@ -43,7 +43,7 @@ class Collection implements
         return in_array($key, $this->keys);
     }
 
-    public function get($key)
+    public function get($key, $default = null)
     {
         $val = null;
         if (is_scalar($key)) {
@@ -57,7 +57,7 @@ class Collection implements
                 : $this->origin::__collectionGet($key);
         }
 
-        return $val;
+        return is_null($val) ? $default : $val;
     }
 
     public function set(string $key, $value)
