@@ -38,8 +38,6 @@ final class EntityManager
                 self::assemble($ofClass, $ofProperties);
             }
         }, __CLASS__);
-
-        pd(self::$entities);
     }
 
     /**
