@@ -6,6 +6,11 @@ namespace Loy\Framework;
 
 final class TypeHint
 {
+    const SUPPORTS = [
+        'int'    => true,
+        'string' => true,
+    ];
+
     public static function convert($val, string $type)
     {
         $converter = 'convertTo'.ucfirst(strtolower($type));
@@ -54,5 +59,14 @@ final class TypeHint
         $_val = intval($val);
 
         return $val == $_val;
+    }
+
+    public static function support(string $type = null) : bool
+    {
+        if (! $type) {
+            return false;
+        }
+
+        return self::SUPPORTS[$type] ?? false;
     }
 }
