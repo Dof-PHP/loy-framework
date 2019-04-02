@@ -190,7 +190,13 @@ final class IFRSN
         return $res;
     }
 
-    public static function parseParameterContent(string $content) : ?array
+    /**
+     * Parse parameter content
+     *
+     * @param string $content
+     * @return mixed{array|string|null}
+     */
+    public static function parseParameterContent(string $content)
     {
         $data   = self::parseParameterGrammer($content);
         $braces = $data['braces'] ?? [];
@@ -210,6 +216,7 @@ final class IFRSN
         }
         $contentLeft = join('', $array);
         $params = explode(',', $contentLeft);
+
         foreach ($params as $param) {
             if (! is_string($param)) {
                 continue;
@@ -218,12 +225,23 @@ final class IFRSN
             if (! $param) {
                 continue;
             }
-            $kv = explode(':', $param);
-            if (count($kv) !== 2) {
-                continue;
+            $kvs = explode(':', $param);
+            $cnt = count($kvs);
+            // If field  has only one pure value parameter
+            // return that parameter as value of the field key
+            if ($cnt === 1) {
+                return $param;
             }
-            list($key, $val) = $kv;
-            $result[$key] = $val;
+            if ($cnt === 2) {
+                // If field parameter has extractly 2 parameters
+                // Treat them as a classic KV structure
+                list($key, $val) = $kvs;
+                $result[$key] = $val;
+            } else {
+                // If no key of field parameter
+                // Treat them as pure values list of the field name
+                $result[] = $param;
+            }
         }
 
         return $result;

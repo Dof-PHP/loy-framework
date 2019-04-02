@@ -737,10 +737,10 @@ if (! function_exists('chownr')) {
             return;
         }
 
-        if (is_link($path)) {
+        if (is_link($path) && is_writable($path)) {
             lchown($path, $owner);
         }
-        if (is_file($path)) {
+        if (is_file($path) && is_writable($path)) {
             chown($path, $owner);
             return;
         }
@@ -756,9 +756,9 @@ if (! function_exists('chownr')) {
                 $_path = ospath($path, $file);
                 if (is_dir($_path)) {
                     chownr($_path, $owner);
-                } elseif (is_link($_path)) {
+                } elseif (is_link($_path) && is_writable($path)) {
                     lchown($_path, $owner);
-                } elseif (is_file($_path)) {
+                } elseif (is_file($_path) && is_writable($path)) {
                     chown($_path, $owner);
                 }
             }
@@ -772,11 +772,11 @@ if (! function_exists('chgrpr')) {
             return;
         }
 
-        if (is_link($path)) {
+        if (is_link($path) && is_writable($path)) {
             lchgrp($path, $mode);
             return;
         }
-        if (is_file($path)) {
+        if (is_file($path) && is_writable($path)) {
             chgrp($path, $group);
             return;
         }
@@ -792,9 +792,9 @@ if (! function_exists('chgrpr')) {
                 $_path = ospath($path, $file);
                 if (is_dir($_path)) {
                     chgrpr($_path, $group);
-                } elseif (is_link($_path)) {
+                } elseif (is_link($_path) && is_writable($_path)) {
                     lchgrp($_path, $group);
-                } elseif (is_file($_path)) {
+                } elseif (is_file($_path) && is_writable($_path)) {
                     chown($_path, $group);
                 }
             }
@@ -808,7 +808,7 @@ if (! function_exists('chmodr')) {
             return;
         }
 
-        if (is_file($path)) {
+        if (is_file($path) && is_writable($path)) {
             chmod($path, $mode);
             return;
         }
@@ -824,7 +824,7 @@ if (! function_exists('chmodr')) {
                 $_path = ospath($path, $file);
                 if (is_dir($_path)) {
                     chmodr($_path, $mode);
-                } elseif (is_file($_path)) {
+                } elseif (is_file($_path) && is_writable($_path)) {
                     chmod($_path, $mode);
                 }
             }

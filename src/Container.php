@@ -18,13 +18,13 @@ final class Container
     /**
      * Dependency injection for injectable class or interface
      *
-     * @param string $ns: expected namespace of expected class|interface
+     * @param string $namespace: expected namespace of expected class|interface
      */
     public static function di(string $namespace)
     {
         $class = self::get($namespace);
         if (! ($ns = $class['namespace'] ?? false)) {
-            exception('ClassNamespaceMissing', ['namespace' => $namespace, 'class' => $class]);
+            exception('ClassNamespaceMissing', compact('namespace', 'class'));
         }
 
         // Get class constructor definition
@@ -76,6 +76,16 @@ final class Container
         }
 
         return new $ns(...$_params);
+    }
+
+    /**
+     * Complete method/function actual require parameters from target parameters according do definition
+     *
+     * @return array: Final parameters method/funciton required
+     */
+    public static function complete()
+    {
+        // TODO
     }
 
     /**

@@ -8,15 +8,29 @@ use Loy\Framework\Container;
 
 abstract class ApplicationService
 {
-    protected $__code = 200;
+    /** @var int: Service executed result code */
+    protected $__code = 0;
+
+    /** @var string: Service executed result message */
     protected $__info;
+
+    /** @var mixed: Service executed result data */
     protected $__data;
+
+    /** @var array: Service executed result meta data */
     protected $__meta;
+
+    /** @var array: Service executed result extra data */
     protected $__extra;
+
+    /** @var bool: Whether this service's execute() method been called yet */
+    protected $__executed = false;
 
     public function exec()
     {
         $this->__data = $this->execute();
+
+        $this->__executed = true;
 
         return $this;
     }
@@ -75,9 +89,14 @@ abstract class ApplicationService
         return $this->__code;
     }
 
+    public function isExecuted() : bool
+    {
+        return $this->__executed;
+    }
+
     public function isSuccess(int $success = null) : bool
     {
-        $code = $success ?: 200;
+        $code = $success ?: 0;
 
         return $this->__code === $code;
     }

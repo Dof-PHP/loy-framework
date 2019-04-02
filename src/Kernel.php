@@ -6,6 +6,8 @@ namespace Loy\Framework;
 
 use Closure;
 use Loy\Framework\Facade\Log;
+use Loy\Framework\Web\Kernel as WebKernel;
+use Loy\Framework\Cli\Kernel as CliKernel;
 
 /**
  * Loy Framework Core Kernel
@@ -19,6 +21,9 @@ final class Kernel
 
     /** @var float: Kernel boot time */
     private static $uptime;
+
+    /** @var int: Kernel memory usage at beginning */
+    private static $upmemory;
 
     /** @var array: Callbacks registered on kernel */
     private static $callbacks = [
@@ -36,7 +41,8 @@ final class Kernel
      */
     public static function boot(string $root)
     {
-        self::$uptime = microtime(true);
+        self::$uptime   = microtime(true);
+        self::$upmemory = memory_get_usage();
 
         if (! is_dir(self::$root = $root)) {
             exception('InvalidProjectRoot', ['root' => $root]);
@@ -62,15 +68,22 @@ final class Kernel
 
         // Record every uncatched exceptions
         set_exception_handler(function ($throwable) {
-            Log::log('exception', $throwable->getMessage(), explode(PHP_EOL, $throwable->getTraceAsString()));
+            $context = [
+                'trace' => explode(PHP_EOL, $throwable->getTraceAsString()),
+                'sapi'  => Kernel::getSapiContext(),
+            ];
+
+            Log::log('exception', $throwable->getMessage(), $context);
         });
         // Record every uncatched error regardless to the setting of the error_reporting setting
         set_error_handler(function ($errno, $errstr, $errfile, $errline) {
-            Log::log('error', $errstr, [
+            $context = [
                 'file' => $errfile,
                 'line' => $errline,
-                'code' => $errno,
-            ]);
+                'sapi' => Kernel::getSapiContext(),
+            ];
+
+            Log::log('error', $errstr, $context);
         });
 
         DomainManager::compile(self::$root);
@@ -99,6 +112,11 @@ final class Kernel
         }
     }
 
+    public static function getUpmemory()
+    {
+        return self::$upmemory;
+    }
+
     public static function getUptime()
     {
         return self::$uptime;
@@ -107,5 +125,12 @@ final class Kernel
     public static function getRoot()
     {
         return self::$root;
+    }
+
+    public static function getSapiContext() : ?array
+    {
+        return WebKernel::isBooted() ? WebKernel::getContext() : (
+            CliKernel::isBooted() ? CliKernel::getContext() : null
+        );
     }
 }

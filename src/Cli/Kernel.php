@@ -10,17 +10,35 @@ use Loy\Framework\ConfigManager;
 use Loy\Framework\CommandManager;
 use Loy\Framework\DSL\CLIA;
 use Loy\Framework\Facade\Console;
+use Loy\Framework\Facade\Log;
 
 final class Kernel
 {
+    private static $booted = false;
+
+    private static $argvs;
+
     public static function handle(string $root, array $argvs)
     {
         if (PHP_SAPI !== 'cli') {
             exit('RunCmdKernelInNonCli');
         }
 
+        self::$booted = true;
+        self::$argvs  = $argvs;
+
         try {
             Core::register('shutdown', function () {
+                // Logging
+                $duration = microtime(true) - Core::getUptime();
+                $memcost  = memory_get_usage() - Core::getUpmemory();
+                Log::log('cli', enjson([
+                    $duration,
+                    $memcost,
+                    memory_get_peak_usage(),
+                    count(get_included_files()),
+                ]), Kernel::$argvs);
+
                 // Reset file/directory permission
                 $runtime = ospath(Core::getRoot(), Core::RUNTIME_DIR);
                 if (is_dir($runtime)) {
@@ -79,5 +97,15 @@ final class Kernel
     public static function throw(string $name, array $context = [], Throwable $previous = null)
     {
         Console::exception($name, parse_throwable($previous, $context));
+    }
+
+    public static function isBooted() : bool
+    {
+        return self::$booted;
+    }
+
+    public static function getContext() : ?array
+    {
+        return self::$argvs;
     }
 }

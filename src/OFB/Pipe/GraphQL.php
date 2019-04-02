@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Loy\Framework\OFB\Pipe;
 
+use Loy\Framework\DDD\ApplicationService;
 use Loy\Framework\Paginator;
 use Loy\Framework\DSL\IFRSN;
 use Loy\Framework\Facade\Assembler;
@@ -12,7 +13,7 @@ class GraphQL
 {
     public function pipein($request, $response, $route)
     {
-        $this->getFeilds($request, $route, true);
+        $this->findAndSetFeilds($request, $route, true);
 
         return true;
     }
@@ -23,9 +24,8 @@ class GraphQL
             $this->findAndSetFeilds($request, $route, false);
         }
 
-        $params = $route->params->pipe->get(__CLASS__);
-        $fields = $params['fields'] ?? false;
-        if (false === $fields) {
+        $fields = $route->params->pipe->get(__CLASS__);
+        if (! $fields) {
             return null;
         }
 
@@ -33,6 +33,12 @@ class GraphQL
         if ($assembler) {
             if (! class_exists($assembler)) {
                 exception('AssemblerNoExists', compact('assembler'));
+            }
+        }
+
+        if ($result instanceof ApplicationService) {
+            if (! $result->isExecuted()) {
+                $result = $result->execute();
             }
         }
 
@@ -55,9 +61,7 @@ class GraphQL
             return $exception ? exception('InvalidGraphQLFields', compact('fields')) : null;
         }
 
-        $route->params->pipe->set(__CLASS__, [
-            'fields' => $_fields['graphql'] ?? null,
-        ]);
+        $route->params->pipe->set(__CLASS__, ($_fields['graphql'] ?? null));
     }
 
     private function getFieldsParameterName() : string

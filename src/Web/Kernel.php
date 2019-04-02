@@ -25,6 +25,8 @@ final class Kernel
     const WRAPOUT_HANDLER = 'wrapout';
     const WRAPERR_HANDLER = 'wraperr';
 
+    private static $booted = false;
+
     /**
      * Web kernel handler - The entry of HTTP world
      *
@@ -39,14 +41,19 @@ final class Kernel
             exit('RunWebKernelInNonCGI');
         }
 
+        self::$booted = true;
+
         try {
             Core::register('shutdown', function () {
                 $uptime   = $_SERVER['REQUEST_TIME_FLOAT'] ?? Core::getUptime();
                 $duration = microtime(true) - $uptime;
-                Log::log('http', $duration, [
-                    'in'  => Request::getContext(),
-                    'out' => Response::getContext(),
-                ]);
+                $memcost  = memory_get_usage() - Core::getUpmemory();
+                Log::log('http', enjson([
+                    $duration,
+                    $memcost,
+                    memory_get_peak_usage(),
+                    count(get_included_files()),
+                ]), Kernel::getContext());
             });
 
             Core::boot($root);
@@ -326,10 +333,12 @@ final class Kernel
         foreach ($paramsMethod as $idx => $paramMethod) {
             $name = $paramMethod['name'] ?? null;
             $type = $paramMethod['type']['type'] ?? null;
-            $port = compact('class', 'method', 'name', 'type');
+
             $builtin    = $paramMethod['type']['builtin'] ?? false;
             $optional   = $paramMethod['optional'] ?? false;
             $hasDefault = $paramMethod['default']['status'] ?? false;
+
+            $port = compact('class', 'method', 'name', 'type');
 
             $paramExistsInRouteByName = array_key_exists($name, ($paramsRoute['raw'] ?? []));
             $paramExistsInRouteByIdx  = isset($paramsRoute['res'][$idx]);
@@ -355,10 +364,12 @@ final class Kernel
                 $params[] = $val;
                 continue;
             }
+
             // Ignore optional parameters check
             if ($optional && (($idx + 1) !== $count)) {
                 break;
             }
+
             try {
                 $params[] = Container::di($type);
             } catch (Throwable $e) {
@@ -388,5 +399,18 @@ final class Kernel
         Throwable $previous = null
     ) {
         Response::exception($status, $name, parse_throwable($previous, $context));
+    }
+
+    public static function isBooted() : bool
+    {
+        return self::$booted;
+    }
+
+    public static function getContext() : array
+    {
+        return [
+            'in'  => Request::getContext(),
+            'out' => Response::getContext(),
+        ];
     }
 }

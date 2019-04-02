@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Loy\Framework\Facade;
 
 use Loy\Framework\DDD\Assembler as AssembleObject;
+use Loy\Framework\DDD\ApplicationService;
 use Loy\Framework\Paginator;
 
 class Assembler
@@ -20,6 +21,12 @@ class Assembler
     {
         if ((! $result) || (! $fields)) {
             return null;
+        }
+
+        if ($result instanceof ApplicationService) {
+            if (! $result->isExecuted()) {
+                $result = $result->execute();
+            }
         }
 
         if ($result instanceof Paginator) {
