@@ -5,14 +5,33 @@ declare(strict_types=1);
 namespace Loy\Framework\Facade;
 
 use Loy\Framework\DDD\Assembler as AssembleObject;
+use Loy\Framework\Paginator;
 
 class Assembler
 {
+    /**
+     * Assemble a single result target to satisfy given fields and specific assembler
+     *
+     * @param mixed{array|object} $result
+     * @param array $fields
+     * @param mixed{string|object} $assembler
+     */
     public static function assemble($result, array $fields, $assembler = null)
     {
         if ((! $result) || (! $fields)) {
             return null;
         }
+
+        if ($result instanceof Paginator) {
+            $data = [];
+            $list = $result->getList();
+            foreach ($list as $item) {
+                $data[] = Assembler::assemble($item, $fields, $assembler);
+            }
+
+            return $data;
+        }
+
         if ($assembler) {
             if (is_string($assembler)) {
                 if (! class_exists($assembler)) {

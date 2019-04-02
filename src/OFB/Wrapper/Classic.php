@@ -13,6 +13,6 @@ class Classic
 
     public function wrapout()
     {
-        return ['data', 'status' => 200, 'message' => 'ok'];
+        return ['__DATA__' => 'data', 'status' => 200, 'message' => 'ok', 'extra'];
     }
 }

@@ -27,6 +27,10 @@ final class TypeHint
             return (string) $val;
         }
 
+        if (is_null($val)) {
+            return '';
+        }
+
         exception('TypeHintConvertFailed', [
             'error' => 'Unable to convert to string',
             'value' => string_literal($val)

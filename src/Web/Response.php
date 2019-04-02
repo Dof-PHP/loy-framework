@@ -8,11 +8,26 @@ class Response
 {
     use HttpTrait;
 
+    /** @var bool: user defined response error status */
     private $error  = null;
+
+    /** @var int: HTTP response status code */
     private $status = 200;
+
+    /** @var string: HTTP response status message */
     private $info  = 'ok';
+
+    /** @var string: HTTP response body content */
     private $body  = '';
+
+    /** @var string|enum: HTTP response content-type short name */
     private $mime  = 'text/html';
+
+    /** @var array: Response body structure elements (KV) */
+    private $wrappers = [
+        'out' => [],
+        'err' => [],
+    ];
 
     public function text($body, int $status = 200, array $headers = [])
     {
@@ -230,6 +245,50 @@ class Response
             return $this->status === $success;
         }
         return (100 <= $this->status) && ($this->status < 400);
+    }
+
+    public function getWrapouts()
+    {
+        return $this->wrappers['out'] ?? [];
+    }
+
+    public function getWraperrs()
+    {
+        return $this->wrappers['err'] ?? [];
+    }
+
+    public function getWraperr(string $key)
+    {
+        return $this->wrappers['err'][$key] ?? null;
+    }
+
+    public function addWraperr(string $key, $value)
+    {
+        $this->wrappers['err'][$key] = $value;
+
+        return $this;
+    }
+
+    public function getWrapout(string $key)
+    {
+        return $this->wrappers['out'][$key] ?? null;
+    }
+
+    public function addWrapout(string $key, $value)
+    {
+        $this->wrappers['out'][$key] = $value;
+
+        return $this;
+    }
+
+    public function getWrapper(string $key, string $type)
+    {
+        $tyep = strtolower($type);
+        if (! in_array($type, ['err', 'out'])) {
+            return null;
+        }
+
+        return $this->wrappers[$type][$key] ?? null;
     }
 
     public function __descruct()

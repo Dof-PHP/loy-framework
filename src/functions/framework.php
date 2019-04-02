@@ -246,3 +246,9 @@ if (! function_exists('is_exception')) {
         return ci_equal(objectname($e), $name);
     }
 }
+if (! function_exists('paginator')) {
+    function paginator(array $list, array $params = [])
+    {
+        return new \Loy\Framework\Paginator($list, $params);
+    }
+}

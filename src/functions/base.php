@@ -35,9 +35,13 @@ if (! function_exists('zombie_object')) {
 if (! function_exists('pt')) {
     function pt(...$vars)
     {
-        foreach ($vars as $var) {
-            print_r($var);
-            echo PHP_EOL;
+        try {
+            throw new \Exception;
+        } catch (\Exception $e) {
+            $printer = $e->getTrace()[1] ?? false;
+            if ($printer) {
+                print_r($printer);
+            }
         }
 
         return bomb_object();
@@ -78,7 +82,14 @@ if (! function_exists('ee')) {
 if (! function_exists('pp')) {
     function pp(...$vars)
     {
-        var_dump(...$vars);
+        try {
+            throw new \Exception;
+        } catch (\Exception $e) {
+            $printer = $e->getTrace()[1] ?? false;
+            if ($printer) {
+                var_dump($printer);
+            }
+        }
 
         return bomb_object();
     }

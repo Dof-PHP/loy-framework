@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Loy\Framework\OFB\Pipe;
 
+use Loy\Framework\Paginator;
 use Loy\Framework\DSL\IFRSN;
 use Loy\Framework\Facade\Assembler;
 
@@ -16,7 +17,7 @@ class GraphQL
         return true;
     }
 
-    public function pipeout($result, $route, $request)
+    public function pipeout($result, $route, $request, $response)
     {
         if (! $route->params->pipe->has(__CLASS__)) {
             $this->findAndSetFeilds($request, $route, false);
@@ -28,11 +29,16 @@ class GraphQL
             return null;
         }
 
-        if ($route->has('assembler')) {
-            $assembler = $route->get('assembler');
+        $assembler = $route->get('assembler');
+        if ($assembler) {
             if (! class_exists($assembler)) {
                 exception('AssemblerNoExists', compact('assembler'));
             }
+        }
+
+        if ($result instanceof Paginator) {
+            $meta = $result->getMeta();
+            $response->addWrapout('paginator', $meta);
         }
 
         return Assembler::assemble($result, $fields, $assembler);

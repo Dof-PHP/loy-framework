@@ -8,6 +8,7 @@ use Closure;
 use Throwable;
 use Loy\Framework\Facade;
 use Loy\Framework\DDD\ApplicationService;
+use Loy\Framework\Paginator;
 use Loy\Framework\Web\Response as Instance;
 use Loy\Framework\Web\Route;
 
@@ -28,8 +29,18 @@ class Response extends Facade
                 return $result->__getData();
             }
 
-            self::getInstance()->setStatus($result->__getCode());
+            self::getInstance()
+                ->setStatus($result->__getCode())
+                ->setInfo($result->__getInfo());
+
             return array_values($result->__toArray());
+        }
+
+        if ($result instanceof Paginator) {
+            $meta = $result->getMeta();
+            self::getInstance()->addWrapout('paginator', $meta);
+
+            return $result->getList;
         }
 
         return $result;
@@ -44,12 +55,8 @@ class Response extends Facade
     {
         Log::log('exception', $message, $context);
 
-        $response = Response::new();
-        self::setInstance($response);
-
-        $response
+        self::setInstance(Response::new())
             ->setStatus($status)
-            // ->setError(true)
             ->setInfo($message)
             ->setMimeAlias('json')
             ->send([$status, $message, $context]);
@@ -58,16 +65,20 @@ class Response extends Facade
     /**
      * Send a result response with dynamic format
      *
-     * @param mixed $result: the response data origin
+     * @param mixed{array|scalar|null} $result: the response data origin
      * @param bool|null $error: application logic level error
      */
-    public static function send($result, ?bool $error = null)
+    public static function send($result = null, ?bool $error = null)
     {
         $result   = self::support($result);
         $response = self::getInstance();
         if (is_null($error)) {
             $error = $response->getError();
             $error = is_null($error) ? $response->isFailed() : $error;
+        }
+
+        if ($error) {
+            $response->setError(true);
         }
 
         $wrapper = $error ? 'err' : 'out';
@@ -96,7 +107,7 @@ class Response extends Facade
     public static function package($result, string $type, $wrapper = null, bool $final = false)
     {
         if (is_null($result)) {
-            return '';
+            $result = '';
         }
 
         $wrapper = $final ? $wrapper : wrapper($wrapper, $type);
@@ -105,42 +116,23 @@ class Response extends Facade
         }
 
         $data = [];
-        $idx  = -1;
         foreach ($wrapper as $key => $default) {
+            if ($key === '__DATA__') {
+                $data[$default] = $result;
+                continue;
+            }
+            if ($key === '__PAGINATOR__') {
+                $data[$default] = self::getInstance()->getWrapout('paginator');
+                continue;
+            }
+
             $_key = is_int($key)    ? $default : $key;
             $_val = is_string($key) ? $default : null;
-            ++$idx;
-            $val = null;
-            if (is_object($result)) {
-                if (method_exists($result, '__toArray')) {
-                    $val = $result->__toArray();
-                } elseif (method_exists($result, 'toArray')) {
-                    $val = $result->toArray();
-                } else {
-                    $getter = 'get'.ucfirst(strtolower($_key));
-                    if (method_exists($result, $getter)) {
-                        $val = $result->{$getter}();
-                    }
-                }
-            } elseif (is_scalar($result)) {
-                if (0 === $idx) {
-                    $val = $result;
-                } else {
-                    $val = $_val;
-                }
-            } elseif (is_array($result)) {
-                $val = $result[$_key] ?? ($result[$idx] ?? $_val);
+            if (is_null($_val)) {
+                $_val = self::getInstance()->getWrapper($_key, $type);
             }
 
-            if (is_object($val)) {
-                if (method_exists($val, '__toArray')) {
-                    $val = $val->__toArray();
-                } elseif (method_exists($val, 'toArray')) {
-                    $val = $val->toArray();
-                }
-            }
-
-            $data[$_key] = $val;
+            $data[$_key] = $_val;
         }
 
         return $data;

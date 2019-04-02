@@ -38,7 +38,7 @@ abstract class Facade
 
     public static function setInstance($instance)
     {
-        self::$__pool[static::class] = $instance;
+        return self::$__pool[static::class] = $instance;
     }
 
     public static function getInstance()
