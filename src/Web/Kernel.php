@@ -409,8 +409,10 @@ final class Kernel
     public static function getContext() : array
     {
         return [
-            'in'  => Request::getContext(),
-            'out' => Response::getContext(),
+            'web' => [
+                Request::getContext(),
+                Response::getContext(),
+            ],
         ];
     }
 }

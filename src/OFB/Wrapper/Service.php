@@ -8,6 +8,6 @@ class Service
 {
     public function wrapout()
     {
-        return ['status' => 200, 'message' => 'ok', 'data', 'meta', 'extra'];
+        return ['code' => 0, 'info' => 'ok', '__DATA__' => 'data', 'meta', 'more'];
     }
 }

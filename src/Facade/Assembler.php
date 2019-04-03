@@ -58,6 +58,7 @@ class Assembler
         $nulls = 0;
         $nullableLimit = self::getNullableLimit();
         foreach ($selfs as $name => $params) {
+            $name  = (string) $name;
             $value = $assembler ? $assembler->match($name, $params) : self::matchValue($name, $result);
             if (is_null($value)) {
                 ++$nulls;
@@ -83,17 +84,17 @@ class Assembler
         return $data;
     }
 
-    private static function matchValue(string $key, $result)
+    public static function matchValue(string $key, $result)
     {
-        $value = null;
+        $val = null;
 
         if (is_object($result)) {
-            $value = $result->{$name} ?? null;
+            $val = $result->{$key} ?? null;
         } elseif (is_array($result)) {
-            $value = $result[$name] ?? null;
+            $val = $result[$key] ?? null;
         }
 
-        return $value;
+        return $val;
     }
 
     private static function getNullableLimit() : int

@@ -10,6 +10,8 @@ class Paginate
 {
     public function pipein($request, $response, $route)
     {
+        $size = $this->getPaginateDefaultSize();
+        $page = 1;
         $paginate = $request->get('__paginate');
         if ($paginate) {
             $paginate = sprintf('paginate(%s)', $paginate);
@@ -21,14 +23,21 @@ class Paginate
                 $page = intval($paginate['page'] ?? 1);
                 $page = $page < 1 ? 1 : $page;
             }
-        } else {
-            $paginate = [
-                'size' => $this->getPaginateDefaultSize(),
-                'page' => 1,
-            ];
         }
 
-        $route->params->pipe->set(__CLASS__, collect($paginate));
+        $paginateSize = $request->get('__paginate_size', null, 'uint');
+        if ($paginateSize && ($paginateSize > 0)) {
+            $size = $paginateSize;
+        }
+        $paginatePage = $request->get('__paginate_page', null, 'unit');
+        if ($paginatePage && ($paginatePage > 0)) {
+            $page = $paginatePage;
+        }
+
+        $route->params->pipe->set(__CLASS__, collect([
+            'size' => $size,
+            'page' => $page,
+        ]));
 
         return true;
     }

@@ -43,7 +43,7 @@ if (! function_exists('pt')) {
             if ($last) {
                 print_r([
                     'dumper' => sprintf('%s#%s:%s', $file, $line, $function),
-                    'detail' => $args[0] ?? null,
+                    'detail' => $args,
                 ]);
             }
         }
@@ -94,7 +94,7 @@ if (! function_exists('pp')) {
             if ($last) {
                 var_dump([
                     'dumper' => sprintf('%s#%s:%s', $file, $line, $function),
-                    'detail' => $args[0] ?? null,
+                    'detail' => $args,
                 ]);
             }
         }

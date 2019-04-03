@@ -106,6 +106,6 @@ final class Kernel
 
     public static function getContext() : ?array
     {
-        return self::$argvs;
+        return ['cli' => self::$argvs];
     }
 }

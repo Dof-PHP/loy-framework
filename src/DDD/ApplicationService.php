@@ -21,7 +21,7 @@ abstract class ApplicationService
     protected $__meta;
 
     /** @var array: Service executed result extra data */
-    protected $__extra;
+    protected $__more;
 
     /** @var bool: Whether this service's execute() method been called yet */
     protected $__executed = false;

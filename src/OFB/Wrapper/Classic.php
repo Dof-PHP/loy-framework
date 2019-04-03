@@ -8,11 +8,11 @@ class Classic
 {
     public function wraperr()
     {
-        return ['code', 'info', 'extra'];
+        return ['code', 'info', 'more'];
     }
 
     public function wrapout()
     {
-        return ['__DATA__' => 'data', 'status' => 200, 'message' => 'ok', 'extra'];
+        return ['__DATA__' => 'data', 'code' => 0, 'info' => 'ok', 'more', 'meta'];
     }
 }

@@ -8,6 +8,11 @@ class Simple
 {
     public function wraperr()
     {
-        return ['code', 'info'];
+        return ['code' => 600, 'info' => 'UNKNOWN_ERROR'];
+    }
+
+    public function wrapout()
+    {
+        return ['__DATA__' => 'data', 'code' => 0, 'info' => 'ok'];
     }
 }

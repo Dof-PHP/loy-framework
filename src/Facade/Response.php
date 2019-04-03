@@ -55,6 +55,7 @@ class Response extends Facade
     {
         $context['__request'] = Request::getContext();
         Log::log('exception', $message, $context);
+        unset($context['__request']);
 
         self::setInstance(Response::new())
             ->setStatus($status)
