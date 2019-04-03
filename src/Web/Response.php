@@ -23,7 +23,7 @@ class Response
     /** @var string|enum: HTTP response content-type short name */
     private $mime  = 'text/html';
 
-    /** @var array: Response body structure elements (KV) */
+    /** @var array: Response body structure elements candidates (KV) */
     private $wrappers = [
         'out' => [],
         'err' => [],

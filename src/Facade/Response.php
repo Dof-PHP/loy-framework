@@ -107,7 +107,7 @@ class Response extends Facade
      */
     public static function package($result, string $type, $wrapper = null, bool $final = false)
     {
-        if (is_null($result)) {
+        if (is_null($result) && (! $wrapper)) {
             $result = '';
         }
 

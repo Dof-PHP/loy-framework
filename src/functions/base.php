@@ -38,9 +38,13 @@ if (! function_exists('pt')) {
         try {
             throw new \Exception;
         } catch (\Exception $e) {
-            $printer = $e->getTrace()[1] ?? false;
-            if ($printer) {
-                print_r($printer);
+            $last = $e->getTrace()[1] ?? false;
+            extract($last);
+            if ($last) {
+                print_r([
+                    'dumper' => sprintf('%s#%s:%s', $file, $line, $function),
+                    'detail' => $args[0] ?? null,
+                ]);
             }
         }
 
@@ -85,9 +89,13 @@ if (! function_exists('pp')) {
         try {
             throw new \Exception;
         } catch (\Exception $e) {
-            $printer = $e->getTrace()[1] ?? false;
-            if ($printer) {
-                var_dump($printer);
+            $last = $e->getTrace()[1] ?? false;
+            extract($last);
+            if ($last) {
+                var_dump([
+                    'dumper' => sprintf('%s#%s:%s', $file, $line, $function),
+                    'detail' => $args[0] ?? null,
+                ]);
             }
         }
 
