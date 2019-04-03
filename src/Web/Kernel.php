@@ -24,6 +24,7 @@ final class Kernel
     const WRAPIN_HANDLER  = 'wrapin';
     const WRAPOUT_HANDLER = 'wrapout';
     const WRAPERR_HANDLER = 'wraperr';
+    const HALT_FLAG = '.LOCK.WEB.LOY';
 
     private static $booted = false;
 
@@ -59,6 +60,10 @@ final class Kernel
             Core::boot($root);
         } catch (Throwable $e) {
             Kernel::throw('KernelBootFailed', ['root' => $root], 500, $e);
+        }
+
+        if (is_file($flag = ospath($root, Kernel::HALT_FLAG))) {
+            Kernel::throw('ApplicationClosed', dejson(file_get_contents($flag)), 503);
         }
 
         self::routing();

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Loy\Framework\Cli;
 
+use Loy\Framework\Collection;
+
 class Console
 {
     /** @var string: Entry of command */
@@ -26,6 +28,11 @@ class Console
     public function exception(string $message, array $context = [])
     {
         exit($context ? enjson([$message, $context]) : $message);
+    }
+
+    public function getOption(string $name)
+    {
+        return $this->options->get($name);
     }
 
     /**
@@ -79,7 +86,7 @@ class Console
      *
      * @return array
      */
-    public function getOptions(): array
+    public function getOptions(): Collection
     {
         return $this->options;
     }
