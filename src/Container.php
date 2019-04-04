@@ -19,6 +19,7 @@ final class Container
      * Dependency injection for injectable class or interface
      *
      * @param string $namespace: expected namespace of expected class|interface
+     * @return object
      */
     public static function di(string $namespace)
     {
@@ -79,18 +80,43 @@ final class Container
     }
 
     /**
+     * Build method parameters of class with possible values
+     *
+     * @param string $class: Namespace of class
+     * @param string $method: Name of class method
+     * @param iterable $values: Possible values of Methods/Functions parameters
+     */
+    public static function build(string $class, string $method, $values = null)
+    {
+        if (! class_exists($class)) {
+            exception('ClassToBuildMethodParameterNotExists', compact('class'));
+        }
+        if (! method_exists($class, $method)) {
+            exception('ClassMethodToBuildParameterNotExists', compact('class', 'method'));
+        }
+        if ($values && (! is_iterable($values))) {
+            exception('UnIterableParametersValuesToBuild', compact('values'));
+        }
+
+        $parameters = Reflector::getClassMethod($class, $method);
+        $parameters = $parameters['self']['parameters'] ?? ($parameters['parent']['parameters'] ?? []);
+
+        return self::complete($parameters, $values);
+    }
+
+    /**
      * Complete method/function actual require parameters from target values according do definition
      *
-     * @param array $methods: Methods/Function parameters definition list from annotation reflection results
-     * @param array $values: Possible values of Methods/Functions parameters
+     * @param iterable $methods: Methods/Function parameters definition list from annotation reflection results
+     * @param iterable $values: Possible values of Methods/Functions parameters
      * @return array: Final parameters method/funciton required
      */
-    public static function complete($parameters, $values)
+    public static function complete($parameters, $values = null)
     {
         if (! is_iterable($parameters)) {
             exception('UnIterableMethodParametersToComplete', compact('parameters'));
         }
-        if (! is_iterable($values)) {
+        if ($values && (! is_iterable($values))) {
             exception('UnIterableParametersValuesToComplete', compact('values'));
         }
 
@@ -121,9 +147,12 @@ final class Container
                 $params[] = $val;
                 continue;
             } elseif ((! $optional) && $builtin && (! $default)) {
-                exception('MissingMethodParametersToComplete', compact('parameter'));
+                exception('MissingMethodParametersToComplete', compact('parameter', 'name', 'type'));
             } elseif ($optional && (($idx + 1) !== $count)) {
                 break;    // Ignore optional parameters check
+            } elseif ($builtin && $default) {
+                $params[] = $parameter['default']['value'] ?? null;
+                continue;
             }
 
             try {
@@ -137,9 +166,11 @@ final class Container
     }
 
     /**
-     * Build container by namespaces
+     * Compile classes or interfaces in domain's paths
+     *
+     * @param array $dirs: Domain root list
      */
-    public static function build(array $dirs)
+    public static function compile(array $dirs)
     {
         foreach ($dirs as $domain) {
             self::load($domain, $domain);

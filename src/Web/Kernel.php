@@ -63,7 +63,7 @@ final class Kernel
         }
 
         if (is_file($flag = ospath($root, Kernel::HALT_FLAG))) {
-            Kernel::throw('ApplicationClosed', dejson(file_get_contents($flag)), 503);
+            Kernel::throw('ServerClosed', dejson(file_get_contents($flag)), 503);
         }
 
         self::routing();

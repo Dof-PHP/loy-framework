@@ -11,7 +11,22 @@ class Assembler
     /** @var mixed{array|object} */
     protected $origin;
 
+    /**
+     * Compatibles are fields name which will be used to check when requested field not directly exists in origin
+     * All key in $compatibles are case insensitive
+     *
+     * @var array
+     */
     protected $compatibles = [];
+
+    /**
+     * Converters are value converters which will be used when found field in origin or compatible mappings
+     *
+     * Key of a converter map item is the field name exists exactly in origin
+     * Value of a converter map item is the method name of current assembler class, and that method will accept field value and options as method parameters
+     *
+     * @var array
+     */
     protected $converters  = [];
 
     public function __construct($origin = null)

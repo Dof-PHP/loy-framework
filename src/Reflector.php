@@ -13,16 +13,17 @@ use ReflectionException;
 
 final class Reflector
 {
-    public static function getClassConstructor(string $namespace) : array
+    public static function getClassMethod(string $class, string $method) : array
     {
-        if (! class_exists($namespace)) {
+        if ((! class_exists($class)) || (! method_exists($class, $method))) {
             return [];
         }
-        try {
-            $reflector   = new ReflectionClass($namespace);
-            $constructor = $reflector->getMethod('__construct');
 
-            list($type, $res) = self::formatClassMethod($constructor, $namespace);
+        try {
+            $_class = new ReflectionClass($class);
+            $method = $_class->getMethod($method);
+
+            list($type, $res) = self::formatClassMethod($method, $class);
             if ($res === false) {
                 return [];
             }
@@ -33,9 +34,14 @@ final class Reflector
         }
     }
 
+    public static function getClassConstructor(string $namespace) : array
+    {
+        return self::getClassMethod($namespace, '__construct');
+    }
+
     public static function formatClassProperty(ReflectionProperty $property, string $namespace) : array
     {
-        $type = ($namespace === $property->getDeclaringClass()->name) ? 'self': 'parent';
+        $type = ($namespace === $property->getDeclaringClass()->name) ? 'self' : 'parent';
         if ($type === 'parent') {
             return [$type, false];
         }
@@ -49,10 +55,10 @@ final class Reflector
 
     public static function formatClassMethod(ReflectionMethod $method, string $namespace) : array
     {
-        $type = ($namespace === $method->getDeclaringClass()->name) ? 'self': 'parent';
-        if (($type === 'parent') && ($method !== '__construct')) {
-            return [$type, false];
-        }
+        $type = ($namespace === $method->getDeclaringClass()->name) ? 'self' : 'parent';
+        // if (($type === 'parent') && ($method->getName() !== '__construct')) {
+        // return [$type, false];
+        // }
 
         $res = [];
         $res['doc'] = $method->getDocComment();
