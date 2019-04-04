@@ -37,7 +37,7 @@ final class Kernel
                     $memcost,
                     memory_get_peak_usage(),
                     count(get_included_files()),
-                ]), Kernel::$argvs);
+                ]), self::getContext(false));
 
                 // Reset file/directory permission
                 $runtime = ospath(Core::getRoot(), Core::RUNTIME_DIR);
@@ -104,8 +104,11 @@ final class Kernel
         return self::$booted;
     }
 
-    public static function getContext() : ?array
+    public static function getContext(bool $sapi = true) : ?array
     {
-        return ['cli' => self::$argvs];
+        $context  = self::$argvs;
+        array_unshift($context, get_current_user());
+
+        return $sapi ? ['cli' => $context] : $context;
     }
 }
