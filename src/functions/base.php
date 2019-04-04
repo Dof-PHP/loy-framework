@@ -42,8 +42,8 @@ if (! function_exists('pt')) {
             extract($last);
             if ($last) {
                 print_r([
-                    'dumper' => sprintf('%s#%s:%s', $file, $line, $function),
-                    'detail' => $args,
+                    sprintf('%s#%s:%s', $file, $line, $function),
+                    $args,
                 ]);
             }
         }
@@ -93,8 +93,8 @@ if (! function_exists('pp')) {
             extract($last);
             if ($last) {
                 var_dump([
-                    'dumper' => sprintf('%s#%s:%s', $file, $line, $function),
-                    'detail' => $args,
+                    sprintf('%s#%s:%s', $file, $line, $function),
+                    $args,
                 ]);
             }
         }

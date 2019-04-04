@@ -326,67 +326,24 @@ final class Kernel
     private static function build() : array
     {
         $paramsMethod = Route::get('method.params');
-        $paramsRoute  = Route::get('params');
-        if ((! $paramsMethod) && (! $paramsRoute)) {
+        $paramsRoute  = Route::get('params.kv');
+        if (($paramsMethod->count() < 1) && ($paramsRoute->count() < 1)) {
             return [];
         }
 
-        $class  = Route::get('class');
-        $method = Route::get('method.name');
-        $params = [];
-        $count  = count($paramsMethod);
-        foreach ($paramsMethod as $idx => $paramMethod) {
-            $name = $paramMethod['name'] ?? null;
-            $type = $paramMethod['type']['type'] ?? null;
-
-            $builtin    = $paramMethod['type']['builtin'] ?? false;
-            $optional   = $paramMethod['optional'] ?? false;
-            $hasDefault = $paramMethod['default']['status'] ?? false;
-
-            $port = compact('class', 'method', 'name', 'type');
-
-            $paramExistsInRouteByName = array_key_exists($name, ($paramsRoute['raw'] ?? []));
-            $paramExistsInRouteByIdx  = isset($paramsRoute['res'][$idx]);
-            if ($paramExistsInRouteByName || $paramExistsInRouteByIdx) {
-                $val = $paramExistsInRouteByName
-                ? ($paramsRoute['kv'][$name] ?? null)
-                : ($paramsRoute['res'][$idx] ?? null);
-
-                if (is_null($val) && (! $optional)) {
-                    Kernel::throw('MissingPortMethodParameter', $port);
-                }
-                try {
-                    $val = TypeHint::convert($val, $type);
-                } catch (Throwable $e) {
-                    $name = 'TypeHintFailed';
-                    $code = 500;
-                    if (is_exception($e, 'TypeHintConvertFailed')) {
-                        $name = 'InvalidRouteParameter';
-                        $code = 400;
-                    }
-                    Kernel::throw($name, compact('val', 'type'), $code, $e);
-                }
-                $params[] = $val;
-                continue;
+        try {
+            return Container::complete($paramsMethod, $paramsRoute);
+        } catch (Throwable $e) {
+            $class  = Route::get('class');
+            $method = Route::get('method.name');
+            $name = 'BuildPortParametersFailed';
+            $code = 500;
+            if (is_exception($e, 'TypeHintConvertFailed')) {
+                $name = 'InvalidRouteParameter';
+                $code = 400;
             }
-
-            // Ignore optional parameters check
-            if ($optional && (($idx + 1) !== $count)) {
-                break;
-            }
-
-            try {
-                $params[] = Container::di($type);
-            } catch (Throwable $e) {
-                $error = ($builtin || (! $optional) || (! $hasDefault))
-                ? 'MissingHttpPortParameters'
-                : 'BrokenHttpPortDefinition';
-
-                Kernel::throw($error, $port, 500, $e);
-            }
+            Kernel::throw($name, compact('class', 'method'), $code, $e);
         }
-
-        return $params;
     }
 
     /**
@@ -411,13 +368,13 @@ final class Kernel
         return self::$booted;
     }
 
-    public static function getContext() : array
+    public static function getContext(bool $sapi = true) : array
     {
-        return [
-            'web' => [
-                Request::getContext(),
-                Response::getContext(),
-            ],
+        $context = [
+            Request::getContext(),
+            Response::getContext(),
         ];
+
+        return $sapi ? ['web' => $context] : $context;
     }
 }

@@ -79,13 +79,61 @@ final class Container
     }
 
     /**
-     * Complete method/function actual require parameters from target parameters according do definition
+     * Complete method/function actual require parameters from target values according do definition
      *
+     * @param array $methods: Methods/Function parameters definition list from annotation reflection results
+     * @param array $values: Possible values of Methods/Functions parameters
      * @return array: Final parameters method/funciton required
      */
-    public static function complete()
+    public static function complete($parameters, $values)
     {
-        // TODO
+        if (! is_iterable($parameters)) {
+            exception('UnIterableMethodParametersToComplete', compact('parameters'));
+        }
+        if (! is_iterable($values)) {
+            exception('UnIterableParametersValuesToComplete', compact('values'));
+        }
+
+        $params = [];
+        $count  = count($parameters);
+        foreach ($parameters as $idx => $parameter) {
+            $name = $parameter['name'] ?? null;
+            $type = $parameter['type']['type'] ?? null;
+            $builtin  = $parameter['type']['builtin'] ?? false;
+            $optional = $parameter['optional'] ?? false;
+            $default  = $parameter['default']['status'] ?? false;
+
+            $paramNameExists = is_collection($values) ? $values->has($name) : (
+                is_array($values) ? array_key_exists($name, $values) : false
+            );
+            $paramIdxExists  = isset($values[$idx]);
+            if ($paramNameExists || $paramIdxExists) {
+                $val = $paramNameExists ? ($values[$name] ?? null) : ($values[$idx] ?? null);
+                if (is_null($val) && (! $optional)) {
+                    exception('MissingMethodParameter', compact('parameter'));
+                }
+
+                try {
+                    $val = TypeHint::convert($val, $type);
+                } catch (Throwable $e) {
+                    exception('TypeHintFailedWhenCompleteParameters', compact('parameter', 'val'), $e);
+                }
+                $params[] = $val;
+                continue;
+            } elseif ((! $optional) && $builtin && (! $default)) {
+                exception('MissingMethodParametersToComplete', compact('parameter'));
+            } elseif ($optional && (($idx + 1) !== $count)) {
+                break;    // Ignore optional parameters check
+            }
+
+            try {
+                $params[] = Container::di($type);
+            } catch (Throwable $e) {
+                exception('BrokenMethodDefinitionForCompleting', compact('parameter'), $e);
+            }
+        }
+
+        return $params;
     }
 
     /**

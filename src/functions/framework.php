@@ -7,11 +7,27 @@ if (! function_exists('collect')) {
     {
         foreach ($data as $key => $value) {
             if (is_array($value)) {
-                $data[$key] = collect($value, $origin);
+                $data[$key] = collect($value, null);
             }
         }
 
         return \Loy\Framework\Facade\Collection::new($data, $origin);
+    }
+}
+if (! function_exists('uncollect')) {
+    function uncollect(\Loy\Framework\Collection $collection) : array
+    {
+        $data = [];
+        foreach ($collection->toArray() as $key => $item) {
+            if (is_collection($item)) {
+                $data[$key] = uncollect($item);
+                continue;
+            }
+
+            $data[$key] = $item;
+        }
+
+        return $data;
     }
 }
 if (! function_exists('domain')) {
@@ -227,6 +243,12 @@ if (! function_exists('singleton')) {
     function singleton(string $namespace, ...$params)
     {
         return \Loy\Framework\Facade\Singleton::get($namespace, ...$params);
+    }
+}
+if (! function_exists('is_collection')) {
+    function is_collection($var)
+    {
+        return is_object($var) && ($var instanceof \Loy\Framework\Collection);
     }
 }
 if (! function_exists('is_exception')) {

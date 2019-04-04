@@ -181,6 +181,16 @@ class MySQL implements StorageInterface
         return $this;
     }
 
+    public function showSeesionId()
+    {
+        return $this->get('SELECT CONNECTION_ID()');
+    }
+
+    public function showTableLocks()
+    {
+        return $this->get('SHOW OPEN TABLES WHERE IN_USE >= 1');
+    }
+
     public function __cleanup()
     {
         // Unlock tables of current session
