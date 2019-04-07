@@ -50,7 +50,7 @@ class File implements LoggerInterface
     public function save(string $log)
     {
         $path = ospath(Kernel::getRoot(), $this->directory);
-        $file = ospath($path, join('.', [$this->level, PHP_SAPI, $this->suffix]));
+        $file = ospath($path, join('.', [$this->level, PHP_SAPI, get_php_user(), $this->suffix]));
         if (! is_dir($path)) {
             mkdir($path, $this->permission, true);
         }
@@ -61,7 +61,7 @@ class File implements LoggerInterface
                 mkdir($archive, $this->permission, true);
             }
 
-            $_archive = join('.', [PHP_SAPI, microftime('Ymd-His', '-'), $this->suffix]);
+            $_archive = join('.', [PHP_SAPI, microftime('Ymd-His', '-'), get_php_user(), $this->suffix]);
             $_archive = ospath($archive, $_archive);
 
             rename($file, $_archive);

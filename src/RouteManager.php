@@ -195,7 +195,6 @@ final class RouteManager
 
         $route   = $attrs['ROUTE']   ?? null;
         $alias   = $attrs['ALIAS']   ?? null;
-        $verbs   = $attrs['VERB']    ?? $defaultVerbs;
         $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
         $mimein  = ($mimein === '_')  ? null : $mimein;
         $mimeout = $attrs['MIMEOUT'] ?? $defaultMimeout;
@@ -214,17 +213,18 @@ final class RouteManager
         $nopipein  = $attrs['NOPIPEIN']  ?? [];
         $nopipeout = $attrs['NOPIPEOUT'] ?? [];
 
-        $pipeinList    = array_unique(array_merge($defaultPipein, $pipein));
-        $pipeoutList   = array_unique(array_merge($defaultPipeout, $pipeout));
-        $nopipeinList  = array_unique(array_merge($defaultNoPipein, $nopipein));
-        $nopipeoutList = array_unique(array_merge($defaultNoPipeout, $nopipeout));
-
         $urlpath = $defaultRoute ? join('/', [$defaultRoute, $route]) : $route;
         list($urlpath, $params) = self::parse($urlpath);
         if (! $urlpath) {
             return;
         }
 
+        $pipeinList    = array_unique(array_merge($defaultPipein, $pipein));
+        $pipeoutList   = array_unique(array_merge($defaultPipeout, $pipeout));
+        $nopipeinList  = array_unique(array_merge($defaultNoPipein, $nopipein));
+        $nopipeoutList = array_unique(array_merge($defaultNoPipeout, $nopipeout));
+
+        $verbs = array_unique(array_merge(($attrs['VERB'] ?? []), $defaultVerbs));
         foreach ($verbs as $verb) {
             self::deduplicate($urlpath, $verb, $alias, $namespace, $method, true);
 
@@ -295,7 +295,7 @@ final class RouteManager
                     'class'  => $_classns,
                     'method' => $_method,
                 ],
-                'previous' => [
+                'current' => [
                     'class'  => $classns,
                     'method' => $method,
                 ],
@@ -390,6 +390,16 @@ final class RouteManager
         $arr = array_trim(explode('/', trim($val)));
 
         return empty($arr) ? '/' : join('/', $arr);
+    }
+
+    public static function __annotationMultipleVerb() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationMultipleMergeVerb() : bool
+    {
+        return true;
     }
 
     public static function __annotationMultiplePipeout() : bool

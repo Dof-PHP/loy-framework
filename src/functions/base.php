@@ -890,3 +890,17 @@ if (! function_exists('is_subinterface_of')) {
         return $reflector->implementsInterface($parent);
     }
 }
+if (! function_exists('get_php_user')) {
+    function get_php_user() : string
+    {
+        $user = get_current_user();
+        if ($user) {
+            return $user;
+        }
+        if (! extension_loaded('posix')) {
+            return 'nobody';
+        }
+
+        return posix_getpwuid(posix_geteuid())['name'] ?? 'nobody';
+    }
+}
