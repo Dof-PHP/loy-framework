@@ -23,12 +23,7 @@ final class Reflector
             $_class = new ReflectionClass($class);
             $method = $_class->getMethod($method);
 
-            list($type, $res) = self::formatClassMethod($method, $class);
-            if ($res === false) {
-                return [];
-            }
-
-            return [$type => $res];
+            return self::formatClassMethod($method, $class);
         } catch (ReflectionException $e) {
             return [];
         }
@@ -41,35 +36,29 @@ final class Reflector
 
     public static function formatClassProperty(ReflectionProperty $property, string $namespace) : array
     {
-        $type = ($namespace === $property->getDeclaringClass()->name) ? 'self' : 'parent';
-        if ($type === 'parent') {
-            return [$type, false];
-        }
-
-        $res = [];
-        $res['doc'] = $property->getDocComment();
-        $res['modifiers'] = Reflection::getModifierNames($property->getModifiers());
-
-        return [$type, $res];
+        return [
+            'declar'  => $namespace,
+            'reflect' => $property->getDeclaringClass()->name,
+            'doc' => $property->getDocComment(),
+            'modifiers' => Reflection::getModifierNames($property->getModifiers()),
+        ];
     }
 
     public static function formatClassMethod(ReflectionMethod $method, string $namespace) : array
     {
-        $type = ($namespace === $method->getDeclaringClass()->name) ? 'self' : 'parent';
-        // if (($type === 'parent') && ($method->getName() !== '__construct')) {
-        // return [$type, false];
-        // }
+        $res = [
+            'declar'  => $namespace,
+            'reflect' => $method->getDeclaringClass()->name,
+            'doc' => $method->getDocComment(),
+            'modifiers' => Reflection::getModifierNames($method->getModifiers()),
+        ];
 
-        $res = [];
-        $res['doc'] = $method->getDocComment();
-        $res['modifiers']  = Reflection::getModifierNames($method->getModifiers());
-        $res['parameters'] = [];
         $parameters = $method->getParameters();
         foreach ($parameters as $parameter) {
             $res['parameters'][] = self::formatClassMethodParameter($parameter);
         }
 
-        return [$type, $res];
+        return $res;
     }
 
     public static function formatClassMethodParameter(ReflectionParameter $parameter) : array
@@ -81,10 +70,8 @@ final class Reflector
 
         return [
             'name' => $parameter->getName(),
-            'type' => [
-                'type'    => $type,
-                'builtin' => $builtin,
-            ],
+            'type' => $type,
+            'builtin'  => $builtin,
             'nullable' => $parameter->allowsNull(),
             'optional' => $parameter->isOptional(),
             'default'  => [

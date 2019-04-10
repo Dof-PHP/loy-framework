@@ -8,124 +8,72 @@ use Throwable;
 
 class Validator
 {
+    /** @var array: A List of Collection object for failed validations (outer) */
+    protected $fails;
+
+    /** @var array: The validated result */
+    protected $result;
+
+    /** @var array: The data origin to be validated */
     protected $data = [];
-    protected $rule = [];
 
-    public function __construct(array $data = [], array $rule = [])
-    {
-        $this->data = $data;
-        $this->rule = $rule;
-    }
+    /** @var array: The rules used to validate given data */
+    protected $rules = [];
 
-    public function validate(array $data = null, array $rule = null, array &$result = null)
+    public function execute()
     {
-        $data   = is_null($data) ? $this->data : $data;
-        $rule   = is_null($rule) ? $this->rule : $rule;
-        $result = $data;
-        foreach ($rule as $key => $rules) {
-            if (! is_string($key)) {
-                exception('BadValidatorRule', [
-                    '__error' => 'Non-string key',
-                    'key' => stringify($key),
-                ]);
-            }
-            if (is_closure($rules)) {
-                $val = array_key_exists($key, $data) ? $data[$key] : [];
-                if (! is_array($val)) {
-                    exception('BadValidatorRule', [
-                        '__error' => 'Non-array Value',
-                        'key' => stringify($key),
-                    ]);
-                }
-                $_rules = $rules();
-                if (! is_array($_rules)) {
-                    exception('BadValidatorRule', [
-                        '__error' => 'Non-array rules',
-                        'key' => stringify($key)
-                    ]);
-                }
-                $res = [];
-                Validator::execute($val, $_rules, $res);
-                $result[$key] = $res;
-                continue;
-            }
+        foreach ($this->rules as $key => $rules) {
             if (! is_array($rules)) {
                 if (! is_string($rules)) {
-                    exception('BadValidatorRule', [
-                        'error' => 'Non-arrayable value',
-                        'key' => stringify($key)
+                    exception('BadValidatorRules', [
+                        'error' => 'Non-arrayable rules value',
+                        'key'   => stringify($key)
                     ]);
                 }
 
-                $rules = array_trim(explode('|', $rules));
+                $rules = array_trim_from_string($rules, '|');
             }
-            if ((! in_array('need', $rules)) && (! array_key_exists($key, $data))) {
-                if (array_key_exists('default', $rules)) {
-                    $result[$key] = $rules['default'] ?? null;
-                }
-                continue;
-            }
-            $val = $data[$key] ?? null;
+
+            $val = $this->data[$key] ?? null;
             foreach ($rules as $_key => $_rule) {
                 $rule  = is_int($_key)    ? $_rule : $_key;
-                $error = is_string($_key) ? $_rule : null;
-                $error = $error ?: $_rule;
-                $arr   = array_trim(explode(':', $rule));
-                $rule  = trim($arr[0] ?? '');
+                $error = is_string($_key) ? $_rule : 'ValidationFailed';
+                $rarr  = array_trim_from_string($rule, ':');
+                $rule  = trim($rarr[0] ?? '');
                 if (! $rule) {
                     continue;
                 }
                 $validator = 'validate'.ucfirst(strtolower($rule));
                 if (! method_exists($this, $validator)) {
-                    exception('ValidatorNotFound', ['rule' => $rule]);
+                    exception('ValidatorNotFound', compact('validator'));
                 }
-                $params = ($rule === 'default') ? [$_rule] : array_trim(explode(',', $arr[1] ?? ''));
-                try {
-                    $res = $this->{$validator}($val, $data, $key, $params);
-                } catch (Throwable $e) {
-                    exception('ValidatorInnerError', [
-                        'validator' => $validator,
-                        'error' => $error,
-                        'key'   => $key
-                    ], $e);
-                }
-
-                $result[$key] = $val;
-                $_val = string_literal($val);
-                if (is_null($res)) {
+                $params = ci_equal($rule, 'default') ? [$_rule] : array_trim_from_string($rarr[1] ?? '', ',');
+                $result = $this->{$validator}($val, $key, ...$params);
+                if (is_null($result)) {
                     break;
                 }
-                if (is_string($res)) {
-                    exception('BadValidatorRule', [
-                        'rule' => $_rule,
-                        'res'  => $res,
-                        'val'  => $_val,
-                    ]);
-                }
-                if (false === $res) {
-                    exception('ValidationFailure', [
-                        'error' => $error,
-                        'key'   => $key,
-                        'val'   => $_val
-                    ]);
-                }
-                if (true === $res) {
+                if (true !== $result) {
+                    $this->addFail((string) $error, [$key => $val, 'rule' => $rule]);
                     continue;
                 }
             }
         }
 
-        return true;
+        return $this;
     }
 
-    public function validateMax()
+    private function validateValidator($value, string $key, string $validator)
     {
-        $max = ($params[0] ?? false);
-        if (false === $max) {
-            return 'Missing Max Value';
-        }
+        $validator = 'validate'.ucfirst(strtolower($validator));
+        pd($value, $key, $validator);
+
+        // TODO
+    }
+
+    private function validateMax($value, string $key, $max)
+    {
         if (! TypeHint::isInt($max)) {
-            return 'Bad Max Value';
+            exception('MaxValueIsNotInteger', compact('max'));
         }
         $max = TypeHint::convertToInt($max);
         if (is_int($value)) {
@@ -139,14 +87,10 @@ class Validator
         return false;
     }
 
-    public function validateMin(&$value, array $data, string $key, array $params = [])
+    private function validateMin($value, string $key, $min)
     {
-        $min = ($params[0] ?? false);
-        if (false === $min) {
-            return 'Missing Min Value';
-        }
         if (! TypeHint::isInt($min)) {
-            return 'Bad Min Value';
+            exception('MinValueIsNotInteger', compact('min'));
         }
         $min = TypeHint::convertToInt($min);
         if (is_int($value)) {
@@ -160,79 +104,72 @@ class Validator
         return false;
     }
 
-    public function validateArray(&$value, array $data, string $key, array $params = [])
+    private function validateArray($value)
     {
         return is_array($value);
     }
 
-    public function validateInt(&$value, array $data, string $key, array $params = [])
+    private function validateUint($value) : bool
+    {
+        return TypeHint::isInt($value) && ($value > 0);
+    }
+
+    private function validateInt($value, string $key)
     {
         if (TypeHint::isInt($value)) {
-            $value = TypeHint::convertToInt($value);
+            $this->result[$key] = TypeHint::convertToInt($value);
             return true;
         }
 
         return false;
     }
 
-    public function validateNamespace(&$value, array $data, string $key, array $params = [])
+    private function validateString($value, string $key)
+    {
+        if (TypeHint::isString($value)) {
+            $this->result[$key] = TypeHint::convertToString($value);
+            return true;
+        }
+
+        return false;
+    }
+
+    private function validateNamespace($value)
     {
         return is_string($value) && class_exists($value);
     }
 
-    public function validateString(&$value, array $data, string $key, array $params = [])
+    private function validateNeedifhas($value, string $key, string $has)
     {
-        if (TypeHint::isString($value)) {
-            $value = TypeHint::convertToString($value);
-            return true;
+        if (is_null($this->data[$has] ?? null)) {
+            return null;
         }
 
-        return false;
+        return !is_null($value);
     }
 
-    public function validateNeedifhas(&$value, array $data, string $key, array $params = [])
+    private function validateNeedifno($value, string $key, string $no)
     {
-        if (! $params) {
-            return 'Missing Comparators';
-        }
-
-        foreach ($params as $key) {
-            if ($data[$key] ?? false) {
-                return true;
-            }
+        if (is_null($this->data[$no] ?? null)) {
+            return !is_null($value);
         }
 
         return null;
     }
 
-    public function validateNeedifno(&$value, array $data, string $key, array $params = [])
+    private function validateNeed($value)
     {
-        if (! $params) {
-            return 'Missing Comparators';
-        }
+        return !is_null($value);
+    }
 
-        foreach ($params as $key) {
-            if ($data[$key] ?? false) {
-                return null;
-            }
-        }
+    private function validateDefault($value, string $key, $default)
+    {
+        $this->result[$key] = is_null($value) ? $default : $value;
 
         return true;
     }
 
-    public function validateNeed(&$value, array $data, string $key, array $params = [])
-    {
-        return array_key_exists($key, $data);
-    }
-
-    public function validateDefault(&$value, array $data, string $key, array $params = [])
-    {
-        $value = $params[0] ?? null;
-
-        return true;
-    }
-
-    public function validateHost(&$value, array $data, string $key, array $params = [])
+    private function validateHost($value)
     {
         return (false
             || (false !== filter_var($value, FILTER_VALIDATE_DOMAIN))
@@ -240,23 +177,72 @@ class Validator
         );
     }
 
-    public function validateIp(&$value, array $data, string $key, array $params = [])
+    private function validateIp($value)
     {
         return false !== filter_var($value, FILTER_VALIDATE_IP);
     }
 
-    public function validateEmail(&$value, array $data, string $key, array $params = [])
+    private function validateEmail($value)
     {
         return false !== filter_var($value, FILTER_VALIDATE_EMAIL);
     }
 
-    public static function __callStatic(string $method, array $params)
+    private function addFail(string $fail, array $context = [])
     {
-        return call_user_func_array([(new static), $method], $params);
+        if ($this->fails) {
+            $this->fails[] = [$fail => $context];
+        } else {
+            $this->fails = collect([$fail => $context]);
+        }
+
+        return $this;
     }
 
-    public static function execute(array $data = [], array $rule = [], array &$result = [])
+    /**
+     * Setter for data
+     *
+     * @param array $data
+     * @return Validator
+     */
+    public function setData(array $data)
     {
-        return (new static)->validate($data, $rule, $result);
+        $this->data = $this->result = $data;
+        $this->errors = $this->fails = null;
+    
+        return $this;
+    }
+
+    /**
+     * Setter for rules
+     *
+     * @param array $rules
+     * @return Validator
+     */
+    public function setRules(array $rules)
+    {
+        $this->rules = $rules;
+        $this->errors = $this->fails = null;
+    
+        return $this;
+    }
+
+    /**
+         * Getter for fails
+         *
+         * @return Loy\Framework\Collection|null
+         */
+    public function getFails()
+    {
+        return $this->fails;
+    }
+
+    /**
+     * Getter for result
+     *
+     * @return array|null
+     */
+    public function getResult(): ?array
+    {
+        return $this->result;
     }
 }

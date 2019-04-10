@@ -21,6 +21,26 @@ class Request
         return $key ? null : $input;
     }
 
+    /**
+     * Match a list of field and return if found the first one
+     *
+     * @param array $keys: Fields list to match aginst
+     * @param string $_key: The first matched field name
+     * @return mixed|null
+     */
+    public function match(array $keys = [], string &$_key = null)
+    {
+        foreach ($keys as $key) {
+            $val = $this->all($key);
+            if (! is_null($val)) {
+                $_key = $key;
+                return $val;
+            }
+        }
+
+        return null;
+    }
+
     public function all(string $key = null)
     {
         $all = $this->getOrSet('all', function () {

@@ -31,6 +31,7 @@ class GraphQL
 
         $assembler = $route->get('assembler');
         if ($assembler) {
+            $assembler = get_annotation_ns($assembler, $route->get('class'));
             if (! class_exists($assembler)) {
                 exception('AssemblerNoExists', compact('assembler'));
             }

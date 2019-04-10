@@ -38,13 +38,14 @@ if (! function_exists('pt')) {
         try {
             throw new \Exception;
         } catch (\Exception $e) {
-            $last = $e->getTrace()[1] ?? false;
+            $trace = $e->getTrace();
+            $last  = (__FILE__ === ($trace[0]['file'] ?? null))
+                ? ($trace[1] ?? [])
+                : ($trace[0] ?? []);
+
             extract($last);
             if ($last) {
-                print_r([
-                    sprintf('%s#%s:%s', $file, $line, $function),
-                    $args,
-                ]);
+                print_r([sprintf('%s#%s:%s', $file, $line, $function), unsplat($vars)]);
             }
         }
 
@@ -89,12 +90,16 @@ if (! function_exists('pp')) {
         try {
             throw new \Exception;
         } catch (\Exception $e) {
-            $last = $e->getTrace()[1] ?? false;
+            $trace = $e->getTrace();
+            $last  = (__FILE__ === ($trace[0]['file'] ?? null))
+                ? ($trace[1] ?? [])
+                : ($trace[0] ?? []);
+
             extract($last);
             if ($last) {
                 var_dump([
                     sprintf('%s#%s:%s', $file, $line, $function),
-                    $args,
+                    unsplat(...$vars),
                 ]);
             }
         }
@@ -549,7 +554,7 @@ if (! function_exists('is_xml')) {
 if (! function_exists('ci_equal')) {
     function ci_equal(string $a, string $b) : bool
     {
-        return strtolower($b) === strtolower($b);
+        return strtolower($b) === strtolower($a);
     }
 }
 if (! function_exists('objectname')) {
@@ -902,5 +907,11 @@ if (! function_exists('get_php_user')) {
         }
 
         return posix_getpwuid(posix_geteuid())['name'] ?? 'nobody';
+    }
+}
+if (! function_exists('unsplat')) {
+    function unsplat($params)
+    {
+        return $params;
     }
 }

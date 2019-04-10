@@ -61,7 +61,7 @@ final class CommandManager
         $commentGroup = $ofClass['doc']['COMMENT'] ?? null;
         $optionGroup  = $ofClass['doc']['OPTION']  ?? [];
 
-        foreach (($ofMethods['self'] ?? []) as $method => $data) {
+        foreach (($ofMethods ?? []) as $method => $data) {
             $docMethod = $data['doc'] ?? [];
             $cmd = $docMethod['CMD'] ?? null;
             if ((! $docMethod) || (! $cmd)) {
@@ -93,15 +93,13 @@ final class CommandManager
         }
     }
 
-    public static function __annotationFilterOption(string $option, array $params = []) : ?array
+    public static function __annotationParameterFilterOption(array $params = []) : ?array
     {
         $params = array_change_key_case($params, CASE_UPPER);
 
         if (strtolower($params['DEFAULT'] ?? '') === '__null__') {
             $params['DEFAULT'] = null;
         }
-
-        $params['NAME'] = $option;
 
         return $params;
     }

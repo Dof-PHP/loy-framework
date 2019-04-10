@@ -125,14 +125,10 @@ class Annotation
 
         $res = [];
         foreach ($properties as $property) {
-            list($type, $_res) = Reflector::formatClassProperty($property, $namespace);
-            if ($_res === false) {
-                continue;
-            }
-            $comment = (string) ($_res['doc'] ?? '');
-            $_res['doc'] = $this->parseComment($comment, $origin);
+            $_res = Reflector::formatClassProperty($property, $namespace);
+            $_res['doc'] = $this->parseComment((string) ($_res['doc'] ?? ''), $origin);
 
-            $res[$type][$property->name] = $_res;
+            $res[$property->name] = $_res;
         }
 
         return $res;
@@ -146,13 +142,9 @@ class Annotation
 
         $res = [];
         foreach ($methods as $method) {
-            list($type, $_res) = Reflector::formatClassMethod($method, $namespace);
-            if ($_res === false) {
-                continue;
-            }
-            $comment = (string) ($_res['doc'] ?? '');
-            $_res['doc'] = $this->parseComment($comment, $origin);
-            $res[$type][$method->name] = $_res;
+            $_res = Reflector::formatClassMethod($method, $namespace);
+            $_res['doc'] = $this->parseComment((string) ($_res['doc'] ?? ''), $origin);
+            $res[$method->name] = $_res;
         }
 
         return $res;
@@ -177,22 +169,20 @@ class Annotation
             if ((! $key) || (is_null($val))) {
                 continue;
             }
+            $_ext = [];
+            if ($ext) {
+                parse_str($ext, $_ext);
+            }
             $valueMultiple = false;
             $suffix = ucfirst(strtolower($key));
             if (! is_null($origin)) {
                 $filterCallback = '__annotationFilter'.$suffix;
-                $_ext = [];
-                if ($ext) {
-                    parse_str($ext, $_ext);
-                }
                 if (method_exists($origin, $filterCallback)) {
-                    // $val = call_user_func_array([$origin, $filterCallback], [$val]);
-                    $val = is_object($origin)
-                        ? $origin->{$filterCallback}($val, $_ext)
-                        : $origin::$filterCallback($val, $_ext);
-                    if (is_null($val)) {
-                        continue;
-                    }
+                    $val = call_user_func_array([$origin, $filterCallback], [$val, $_ext]);
+                }
+                $parameterCallback = '__annotationParameterFilter'.$suffix;
+                if (method_exists($origin, $parameterCallback)) {
+                    $_ext = call_user_func_array([$origin, $parameterCallback], [$_ext]);
                 }
                 $multipleCallback = '__annotationMultiple'.$suffix;
                 $valueMultiple = (
@@ -204,18 +194,35 @@ class Annotation
 
             $key = strtoupper($key);
             if ($valueMultiple) {
+                if (is_array($val)) {
+                    foreach ($val as $v) {
+                        if (is_string($v)) {
+                            $res['__ext__'][$key][$v] = $_ext;    // The only lowercase key in annotation
+                        }
+                    }
+                } elseif (is_string($val)) {
+                    $res['__ext__'][$key][$val] = $_ext;
+                }
+
                 $_val = $res[$key] ?? [];
                 $multipleFormatMergeCallback = '__annotationMultipleMerge'.$suffix;
                 if (true
                     && $origin
+                    && is_array($val)
                     && method_exists($origin, $multipleFormatMergeCallback)
-                    && call_user_func_array([$origin, $multipleFormatMergeCallback], [])
+                    && ($merge = call_user_func_array([$origin, $multipleFormatMergeCallback], []))
                 ) {
+                    if (is_string($merge) && ci_equal($merge, 'kv')) {
+                        $val = array_flip($val);
+                    }
+
                     $val = array_merge($_val, $val);
                 } else {
                     $_val[] = $val;
                     $val = $_val;
                 }
+            } else {
+                $res['__ext__'][$key] = $_ext;
             }
 
             $res[$key] = $val;

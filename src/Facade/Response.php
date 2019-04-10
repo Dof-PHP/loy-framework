@@ -70,7 +70,7 @@ class Response extends Facade
      * @param mixed{array|scalar|null} $result: the response data origin
      * @param bool|null $error: application logic level error
      */
-    public static function send($result = null, ?bool $error = null)
+    public static function send($result = null, ?bool $error = null, ?int $code = 200)
     {
         $result   = self::support($result);
         $response = self::getInstance();
@@ -82,13 +82,12 @@ class Response extends Facade
         if ($error) {
             $response->setError(true);
         }
-
         $wrapper = $error ? 'err' : 'out';
         $result  = self::package($result, $wrapper, Route::get("wrap{$wrapper}"), false);
 
         try {
             $mimeout = Route::get('suffix.current') ?: Route::get('mimeout');
-            $response->setMimeAlias($mimeout)->send($result);
+            $response->setMimeAlias($mimeout)->setStatus($code)->send($result);
         } catch (Throwable $e) {
             Response::exception(
                 500,
@@ -128,8 +127,25 @@ class Response extends Facade
                 continue;
             }
 
-            $_key = is_int($key)    ? $default : $key;
-            $_val = is_string($key) ? $default : null;
+            $_key = is_int($key) ? $default : $key;
+            $_val = null;
+            if (is_object($result)) {
+                $_val = ($result->{$default} ?? null) ?: ($result->{$key} ?? null);
+                if (is_null($_val) && method_exists($result, 'toArray')) {
+                    $_res = $result->toArray();
+                    if (is_array($_res)) {
+                        $_val = ($_res[$default] ?? null) ?: ($_res[$key] ?? null);
+                    }
+                } elseif (is_null($_val) && method_exists($result, '__toArray')) {
+                    $_res = $result->__toArray();
+                    if (is_array($_res)) {
+                        $_val = ($_res[$default] ?? null) ?: ($_res[$key] ?? null);
+                    }
+                }
+            } elseif (is_array($result)) {
+                $_val = ($result[$default] ?? null) ?: ($result[$key] ?? null);
+            }
+
             if (is_null($_val)) {
                 $_val = self::getInstance()->getWrapper($_key, $type);
             }

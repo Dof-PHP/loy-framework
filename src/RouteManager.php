@@ -141,7 +141,7 @@ final class RouteManager
         $autonomy  = $ofClass['doc']['AUTONOMY'] ?? false;
         $docClass  = $ofClass['doc'] ?? [];
         if ($autonomy) {
-            $handler = $ofMethods['self'][self::AUTONOMY_HANLDER] ?? false;
+            $handler = $ofMethods[self::AUTONOMY_HANLDER] ?? false;
             if (! $handler) {
                 exception('AutonomyHandlerNotExists', [
                     'class'   => $namespace,
@@ -152,7 +152,7 @@ final class RouteManager
             return;
         }
 
-        $ofMethods = $ofMethods['self'] ?? [];
+        $ofMethods = $ofMethods ?? [];
         foreach ($ofMethods as $method => $ofMethod) {
             self::add($namespace, $method, $docClass, $ofMethod);
         }
@@ -192,6 +192,7 @@ final class RouteManager
         $defaultPipeout   = $docClass['PIPEOUT']   ?? [];
         $defaultNoPipein  = $docClass['NOPIPEIN']  ?? [];
         $defaultNoPipeout = $docClass['NOPIPEOUT'] ?? [];
+        $defaultArguments = $docClass['ARGUMENT']  ?? [];
 
         $route   = $attrs['ROUTE']   ?? null;
         $alias   = $attrs['ALIAS']   ?? null;
@@ -212,6 +213,7 @@ final class RouteManager
         $pipeout   = $attrs['PIPEOUT']   ?? [];
         $nopipein  = $attrs['NOPIPEIN']  ?? [];
         $nopipeout = $attrs['NOPIPEOUT'] ?? [];
+        $arguments = $attrs['ARGUMENT']  ?? [];
 
         $urlpath = $defaultRoute ? join('/', [$defaultRoute, $route]) : $route;
         list($urlpath, $params) = self::parse($urlpath);
@@ -223,6 +225,7 @@ final class RouteManager
         $pipeoutList   = array_unique(array_merge($defaultPipeout, $pipeout));
         $nopipeinList  = array_unique(array_merge($defaultNoPipein, $nopipein));
         $nopipeoutList = array_unique(array_merge($defaultNoPipeout, $nopipeout));
+        $argumentList  = array_merge($defaultArguments, $arguments);
 
         $verbs = array_unique(array_merge(($attrs['VERB'] ?? []), $defaultVerbs));
         foreach ($verbs as $verb) {
@@ -266,6 +269,7 @@ final class RouteManager
                 'wrapout'   => $wrapout,
                 'wraperr'   => $wraperr,
                 'assembler' => $assembler,
+                'arguments' => $argumentList,
             ];
         }
     }
@@ -355,6 +359,27 @@ final class RouteManager
         return [$route, $params];
     }
 
+    public static function __annotationFilterArgument(string $val, array $params = []) : array
+    {
+        $argvs = array_trim_from_string($val, ',');
+        $data  = [];
+        foreach ($argvs as $name) {
+            $data[$name] = $params;
+        }
+
+        return $data;
+    }
+
+    public static function __annotationMultipleArgument() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationMultipleMergeArgument() : bool
+    {
+        return true;
+    }
+
     public static function __annotationFilterPipein(string $val) : ?string
     {
         return trim($val) ?: null;
@@ -377,12 +402,12 @@ final class RouteManager
 
     public static function __annotationFilterSuffix(string $val) : array
     {
-        return array_trim(explode(',', strtolower(trim($val))));
+        return array_trim_from_string(strtolower(trim($val)), ',');
     }
 
     public static function __annotationFilterVerb(string $val) : array
     {
-        return array_trim(explode(',', strtoupper(trim($val))));
+        return array_trim_from_string(strtoupper(trim($val)), ',');
     }
 
     public static function __annotationFilterRoute(string $val)

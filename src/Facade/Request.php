@@ -11,4 +11,12 @@ class Request extends Facade
 {
     public static $singleton = true;
     protected static $namespace = Instance::class;
+
+    /**
+     * Proxy match method of instance for variable reference passing
+     */
+    public function match(array $keys = [], string &$_key = null)
+    {
+        return self::getInstance()->match($keys, $_key);
+    }
 }

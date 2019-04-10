@@ -29,14 +29,11 @@ final class Container
         }
 
         // Get class constructor definition
-        $constructor = $class['constructor']['self'] ?? false;
+        // If class constructor not defined(simpliest)
+        // Then just initialize that class and return
+        $constructor = $class['constructor'] ?? false;
         if (! $constructor) {
-            $constructor = $class['constructor']['parent'] ?? false;
-            // If class constructor not defined(simpliest)
-            // Then just initialize that class and return
-            if (! $constructor) {
-                return new $ns;
-            }
+            return new $ns;
         }
 
         // Do not initialize non-public constructor
@@ -52,14 +49,14 @@ final class Container
         $_params = [];    // Final parameters that $class constructor need
         foreach ($params as $param) {
             $name = $param['name'] ?? false;
-            $type = $param['type']['type'] ?? false;
+            $type = $param['type'] ?? false;
             if ((! $name) || (! $type)) {
                 continue;
             }
             if ($param['optional'] ?? false) {
                 break;
             }
-            if ($param['type']['builtin'] ?? false) {
+            if ($param['builtin'] ?? false) {
                 if ($param['nullable'] ?? false) {
                     $_params[] = null;
                     continue;
@@ -99,7 +96,7 @@ final class Container
         }
 
         $parameters = Reflector::getClassMethod($class, $method);
-        $parameters = $parameters['self']['parameters'] ?? ($parameters['parent']['parameters'] ?? []);
+        $parameters = $parameters['parameters'] ?? [];
 
         return self::complete($parameters, $values);
     }
@@ -124,8 +121,8 @@ final class Container
         $count  = count($parameters);
         foreach ($parameters as $idx => $parameter) {
             $name = $parameter['name'] ?? null;
-            $type = $parameter['type']['type'] ?? null;
-            $builtin  = $parameter['type']['builtin'] ?? false;
+            $type = $parameter['type'] ?? null;
+            $builtin  = $parameter['builtin']  ?? false;
             $optional = $parameter['optional'] ?? false;
             $default  = $parameter['default']['status'] ?? false;
 

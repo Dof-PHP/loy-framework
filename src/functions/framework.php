@@ -15,19 +15,26 @@ if (! function_exists('collect')) {
     }
 }
 if (! function_exists('uncollect')) {
-    function uncollect(\Loy\Framework\Collection $collection) : array
+    function uncollect($value)
     {
-        $data = [];
-        foreach ($collection->toArray() as $key => $item) {
+        $data = $value;
+        if ($value instanceof \Loy\Framework\Collection) {
+            $data = $value->toArray();
+        } elseif (is_array($value)) {
+        } else {
+            return $value;
+        }
+        $result = [];
+        foreach ($data as $key => $item) {
             if (is_collection($item)) {
-                $data[$key] = uncollect($item);
+                $result[$key] = uncollect($item);
                 continue;
             }
 
-            $data[$key] = $item;
+            $result[$key] = $item;
         }
 
-        return $data;
+        return $result;
     }
 }
 if (! function_exists('domain')) {
@@ -85,9 +92,9 @@ if (! function_exists('assemble')) {
     }
 }
 if (! function_exists('annotation')) {
-    function annotation(string $target, bool $file = false) : array
+    function annotation(string $target, string $origin = null, bool $file = false, bool $cache = true) : array
     {
-        return \Loy\Framework\Facade\Annotation::get($target, $file);
+        return \Loy\Framework\Facade\Annotation::get($target, $origin, $file, $cache);
     }
 }
 if (! function_exists('config')) {
@@ -97,9 +104,9 @@ if (! function_exists('config')) {
     }
 }
 if (! function_exists('validate')) {
-    function validate(array $data, array $rule = [], array $message = [])
+    function validate(array $data, array $rules = [])
     {
-        return \Loy\Framework\Validator::execute($data, $rule, $message);
+        return \Loy\Framework\Facade\Validator::setData($data)->setRules($rules)->execute();
     }
 }
 if (! function_exists('request')) {

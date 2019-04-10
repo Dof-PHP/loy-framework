@@ -54,24 +54,24 @@ final class EntityManager
         }
         self::$entities[$namespace]['meta'] = $ofClass['doc'] ?? [];
 
-        foreach ($ofProperties['self'] ?? [] as $name => $attrs) {
+        foreach ($ofProperties as $name => $attrs) {
             self::$entities[$namespace]['properties'][$name] = $attrs['doc'] ?? [];
         }
     }
 
-    public static function __annotationMultipleMergeParameter() : bool
+    public static function __annotationMultipleMergeArgument()
+    {
+        return 'kv';
+    }
+
+    public static function __annotationMultipleArgument() : bool
     {
         return true;
     }
 
-    public static function __annotationMultipleParameter() : bool
+    public static function __annotationFilterArgument(string $arguments, array $argvs) : array
     {
-        return true;
-    }
-
-    public static function __annotationFilterParameter(string $parameter, array $argvs = []) : array
-    {
-        return [$parameter => $argvs];
+        return array_trim_from_string($arguments, ',');
     }
 
     public static function __annotationFilterRepository(string $repository) : string

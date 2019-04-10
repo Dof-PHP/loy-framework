@@ -69,7 +69,7 @@ final class StorageManager
         }
 
         self::$orms[$namespace]['meta'] = $ofClass['doc'] ?? [];
-        foreach ($ofProperties['self'] ?? [] as $property => $attr) {
+        foreach ($ofProperties as $property => $attr) {
             $_column = $attr['doc'] ?? [];
             $column  = $_column['COLUMN'] ?? false;
             if (! $column) {
@@ -140,9 +140,8 @@ final class StorageManager
         $instance = singleton($storage, $config);
 
         if (method_exists($instance, 'setQuery')) {
-            $properties  = $ofProperties['self'] ?? [];
             $columns = [];
-            foreach ($properties as $property) {
+            foreach ($ofProperties as $property) {
                 $column = $property['doc']['COLUMN'] ?? false;
                 if (! $column) {
                     continue;

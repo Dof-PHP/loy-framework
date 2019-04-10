@@ -22,28 +22,35 @@ class Annotation extends Facade
      * Get annotations of class or interface by namespace
      *
      * @param string $filepath
+     * @param string $origin
+     * @param bool $cache
      * @return array
      */
-    public static function getByFilepath(string $filepath) : array
+    public static function getByFilepath(string $filepath, string $origin = null, bool $cache = true) : array
     {
         $namespace = self::$filenskv[$filepath] ?? false;
         if (! $namespace) {
             $namespace = get_namespace_of_file($filepath, true);
         }
 
-        return self::getByNamespace($namespace);
+        return self::getByNamespace($namespace, $origin, $cache);
     }
 
     /**
      * Get annotations of class or interface by namespace
      *
      * @param string $namespace
+     * @param string $origin
+     * @param bool $cache
      * @return array
      */
-    public static function getByNamespace(string $namespace) : array
+    public static function getByNamespace(string $namespace, string $origin = null, bool $cache = true) : array
     {
         if (! $namespace) {
             return [];
+        }
+        if (! $cache) {
+            return self::getInstance()->parseNamespace($namespace, $origin);
         }
 
         $result = self::$results[$namespace] ?? false;
@@ -56,11 +63,11 @@ class Annotation extends Facade
             self::$filenskv[$filepath] = $namespace;
         }
 
-        return self::$results[$namespace] = self::getInstance()->parseNamespace($namespace);
+        return self::$results[$namespace] = self::getInstance()->parseNamespace($namespace, $origin);
     }
 
-    public static function get(string $target, bool $file = false) : array
+    public static function get(string $target, string $origin = null, bool $file = false, bool $cache = true) : array
     {
-        return $file ? self::getByFilepath($target) : self::getByNamespace($target);
+        return $file ? self::getByFilepath($target, $origin, $cache) : self::getByNamespace($target, $origin, $cache);
     }
 }

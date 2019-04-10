@@ -60,13 +60,19 @@ class Collection implements
         return is_null($val) ? $default : $val;
     }
 
-    public function set(string $key, $value)
+    public function set(string $key = null, $value)
     {
+        if (! $key) {
+            return $this;
+        }
+
         if ($key && is_string($key)) {
             $this->data[$key] = $value;
         } else {
             $this->data[] = $value;
         }
+
+        return $this;
     }
 
     public function getOrigin()
@@ -99,7 +105,7 @@ class Collection implements
     {
         $key = $this->keys[0] ?? false;
 
-        return $key ? $this->get($key) : null;
+        return $key ? new Collection(['key' => $key, 'value' => $this->get($key)]) : null;
     }
 
     public function current()

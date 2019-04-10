@@ -21,7 +21,6 @@ final class Kernel
 {
     const PIPEIN_HANDLER  = 'pipein';
     const PIPEOUT_HANDLER = 'pipeout';
-    const WRAPIN_HANDLER  = 'wrapin';
     const WRAPOUT_HANDLER = 'wrapout';
     const WRAPERR_HANDLER = 'wraperr';
     const HALT_FLAG = '.LOCK.WEB.LOY';
@@ -286,38 +285,40 @@ final class Kernel
     }
 
     /**
-     * Validate request body parameters against route wrapperin definitions
+     * Validate request body parameters against route definitions
+     * - either: wrapin check
+     * - or: argument annotations check
      */
     private static function validate()
     {
         $wrapin = Route::get('wrapin');
-        if (! $wrapin) {
+        $arguments = Route::get('arguments');
+        if ((! $wrapin) && (! $arguments)) {
             return;
         }
-        if (! class_exists($wrapin)) {
-            Kernel::throw('WrapperInNotExists', compact('wrapin'));
-        }
 
-        if (! method_exists($wrapin, self::WRAPIN_HANDLER)) {
-            Kernel::throw('WrapperInHandlerNotExists', [
-                'wrapin'  => $wrapin,
-                'handler' => self::WRAPIN_HANDLER,
-            ]);
-        }
-
-        try {
-            $rules = call_user_func_array([singleton($wrapin), self::WRAPIN_HANDLER], []);
-            if (! is_array($rules)) {
-                Kernel::throw('InvalidWrapperinReturn', compact('wrapin', 'method', 'return'));
+        // Check wrapin setting on route annotation first
+        if ($wrapin) {
+            if (! class_exists($wrapin)) {
+                Kernel::throw('WrapperInNotExists', compact('wrapin'));
             }
-            $params = array_keys($rules);
-            $result = [];
-            Validator::execute(Request::only($params), $rules, $result);
 
-            Route::getInstance()->params->api = $result;
-        } catch (Throwable $e) {
-            Kernel::throw('ReqeustParameterValidationFailed', [], 500, $e);
+            try {
+                $validator = Wrapin::apply($wrapin);
+                if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
+                    $context = $fail->value->toArray();
+                    $context['wrapin'] = $wrapin;
+                    Response::send([400, $fail->key, $context], true, 400);
+                }
+                Route::getInstance()->params->api = $validator->getResult();
+            } catch (Throwable $e) {
+                Kernel::throw('ReqeustParameterValidationError', compact('wrapin'), 500, $e);
+            }
+            return;
         }
+
+        // Check arguments annotations from route method and port properties
+        // TODO
     }
 
     /**
