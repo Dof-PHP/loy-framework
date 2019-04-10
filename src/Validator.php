@@ -37,23 +37,23 @@ class Validator
             $val = $this->data[$key] ?? null;
             foreach ($rules as $_key => $_rule) {
                 $rule  = is_int($_key)    ? $_rule : $_key;
-                $error = is_string($_key) ? $_rule : 'ValidationFailed';
+                $error = is_string($_key) ? $_rule : null;
                 $rarr  = array_trim_from_string($rule, ':');
                 $rule  = trim($rarr[0] ?? '');
-                if (! $rule) {
-                    continue;
-                }
-                $validator = 'validate'.ucfirst(strtolower($rule));
-                if (! method_exists($this, $validator)) {
-                    exception('ValidatorNotFound', compact('validator'));
-                }
                 $params = ci_equal($rule, 'default') ? [$_rule] : array_trim_from_string($rarr[1] ?? '', ',');
-                $result = $this->{$validator}($val, $key, ...$params);
+                $result = $this->validate($rule, $val, $key, $params);
                 if (is_null($result)) {
                     break;
                 }
                 if (true !== $result) {
-                    $this->addFail((string) $error, [$key => $val, 'rule' => $rule]);
+                    $error = $error ?: 'ValidationFailed';
+                    $this->addFail((string) $error, [
+                        'key'    => $key,
+                        'value'  => $val,     // Origin value from $this->data
+                        '_value' => ($this->result[$key] ?? null),    // Final value from $this->result
+                        'rule'   => $rule,
+                        'params' => $params,
+                    ]);
                     continue;
                 }
             }
@@ -62,12 +62,22 @@ class Validator
         return $this;
     }
 
-    private function validateValidator($value, string $key, string $validator)
+    private function validate(string $rule, $value, string $key, $params)
     {
-        $validator = 'validate'.ucfirst(strtolower($validator));
-        pd($value, $key, $validator);
+        if (! $rule) {
+            exception('EmptyValidatorRule', compact('key', 'value', 'rule'));
+        }
+        $validator = 'validate'.ucfirst(strtolower($rule));
+        if (! method_exists($this, $validator)) {
+            exception('ValidatorNotFound', compact('validator'));
+        }
 
-        // TODO
+        return $this->{$validator}($value, $key, ...$params);
+    }
+
+    private function validateValidator($value, string $key, string $validator, array $params = [])
+    {
+        return $this->validate($validator, $value, $key, $params);
     }
 
     private function validateMax($value, string $key, $max)
@@ -98,6 +108,7 @@ class Validator
         }
         if (TypeHint::isString($value)) {
             $value = TypeHint::convertToString($value);
+
             return mb_strlen($value) >= $min;
         }
 
@@ -145,13 +156,13 @@ class Validator
             return null;
         }
 
-        return !is_null($value);
+        return (!is_null($value)) && ($value !== '');
     }
 
     private function validateNeedifno($value, string $key, string $no)
     {
         if (is_null($this->data[$no] ?? null)) {
-            return !is_null($value);
+            return (!is_null($value)) && ($value !== '');
         }
 
         return null;
@@ -160,6 +171,26 @@ class Validator
     private function validateNeed($value)
     {
         return !is_null($value);
+    }
+
+    private function validateCiin($value, string $key, ...$list)
+    {
+        if (! is_scalar($value)) {
+            return false;
+        }
+
+        $value = strtolower((string) $value);
+
+        return in_array($value, array_map(function ($item) {
+            return strtolower((string) $item);
+        }, $list));
+    }
+
+    private function validateIn($value, string $key, ...$list)
+    {
+        $value = $value ?: ($this->result[$key] ?? null);
+
+        return in_array($value, $list);
     }
 
     private function validateDefault($value, string $key, $default)

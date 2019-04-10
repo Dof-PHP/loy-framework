@@ -15,7 +15,7 @@ class Request extends Facade
     /**
      * Proxy match method of instance for variable reference passing
      */
-    public function match(array $keys = [], string &$_key = null)
+    public static function match(array $keys = [], string &$_key = null)
     {
         return self::getInstance()->match($keys, $_key);
     }

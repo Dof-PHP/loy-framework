@@ -45,23 +45,28 @@ final class Wrapin
                 $data[$key] = $val;
             }
 
-            $ext  = $argument['__ext__'] ?? [];
+            $ext = $argument['__ext__'] ?? [];
             unset($argument['__ext__']);
             foreach ($argument as $annotation => $value) {
                 if (self::RESERVE_KEYS[$annotation] ?? false) {
                     continue;
                 }
+                $rule = $annotation;
                 if ($annotation === 'DEFAULT') {
-                    $rules[$key]['DEFAULT'] = $value;
+                    $rules[$key][$annotation] = $value;
                     continue;
+                }
+                if ($annotation === 'VALIDATOR') {
+                    $rule = $value;
+                    $value = $ext[$annotation]['ext'] ?? null;
                 }
 
                 $errmsg = $ext[$annotation]['err'] ?? (array_keys($ext[$annotation] ?? [])[0] ?? null);
                 if (is_null($errmsg)) {
-                    $rules[$key][] = sprintf('%s:%s', $annotation, $value);
+                    $rules[$key][] = sprintf('%s:%s', $rule, $value);
                 } else {
-                    $errmsg = sprintf($errmsg, (($argument['TITLE'] ?? $_key) ?? ''));
-                    $rules[$key][sprintf('%s:%s', $annotation, $value)] = $errmsg;
+                    $errmsg = sprintf($errmsg, (($argument['TITLE'] ?? $_key) ?? ''), $value);
+                    $rules[$key][sprintf('%s:%s', $rule, $value)] = $errmsg;
                 }
             }
         }

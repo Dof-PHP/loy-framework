@@ -99,7 +99,7 @@ if (! function_exists('pp')) {
             if ($last) {
                 var_dump([
                     sprintf('%s#%s:%s', $file, $line, $function),
-                    unsplat(...$vars),
+                    unsplat($vars),
                 ]);
             }
         }
