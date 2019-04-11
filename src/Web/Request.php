@@ -31,6 +31,10 @@ class Request
     public function match(array $keys = [], string &$_key = null)
     {
         foreach ($keys as $key) {
+            if (! is_scalar($key)) {
+                continue;
+            }
+            $key = (string) $key;
             $val = $this->all($key);
             if (! is_null($val)) {
                 $_key = $key;

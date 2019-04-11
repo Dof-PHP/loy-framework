@@ -47,7 +47,6 @@ final class RouteManager
             if ($suffix === $_alias) {
                 $hasSuffix = $alias;
                 $uri   = mb_substr($uri, 0, ($_length - $length));
-                $uri   = join('/', array_filter(explode('/', $uri)));
                 $route = self::$routes[$uri][$method] ?? false;
                 if (! $route) {
                     break;
@@ -123,7 +122,7 @@ final class RouteManager
         Annotation::parseClassDirs(self::$dirs, function ($annotations) {
             if ($annotations) {
                 list($ofClass, $ofProperties, $ofMethods) = $annotations;
-                self::assemble($ofClass, $ofMethods);
+                self::assemble($ofClass, $ofProperties, $ofMethods);
             }
         }, __CLASS__);
     }
@@ -132,10 +131,11 @@ final class RouteManager
      * Assemble routes definitions from class annotations
      *
      * @param array $ofClass: Annotations of class
+     * @param array $ofProperties: Annotations of class properties
      * @param array $ofMethod: Annotations of methods
      * @return null
      */
-    public static function assemble(array $ofClass, array $ofMethods)
+    public static function assemble(array $ofClass, array $ofProperties, array $ofMethods)
     {
         $namespace = $ofClass['namespace'] ?? null;
         $autonomy  = $ofClass['doc']['AUTONOMY'] ?? false;
@@ -154,25 +154,31 @@ final class RouteManager
 
         $ofMethods = $ofMethods ?? [];
         foreach ($ofMethods as $method => $ofMethod) {
-            self::add($namespace, $method, $docClass, $ofMethod);
+            self::add($namespace, $method, $docClass, $ofMethod, $ofProperties);
         }
     }
 
     /**
      * Add one single route
      *
-     * @param string $namespace: the route port class namespace
+     * @param string $class: the route port class namespace
      * @param string $method: the route port class method
      * @param array $docClass: the annotations from class doc comments
-     * @param array $docMethod: the annotations from class method doc comments
+     * @param array $ofMethod: the annotations of a class method
+     * @param array $ofProperties: the annotations of class properties
      */
-    public static function add(string $namespace, string $method, array $docClass = [], array $ofMethod = [])
-    {
-        if (! class_exists($namespace)) {
-            exception('PortClassNotExists', compact('namespace'));
+    public static function add(
+        string $class,
+        string $method,
+        array $docClass = [],
+        array $ofMethod = [],
+        array $ofProperties = []
+    ) {
+        if (! class_exists($class)) {
+            exception('PortClassNotExists', compact('class'));
         }
-        if (! method_exists($namespace, $method)) {
-            exception('PortMethodNotExists', compact('namespace', 'method'));
+        if (! method_exists($class, $method)) {
+            exception('PortMethodNotExists', compact('class', 'method'));
         }
         $attrs = $ofMethod['doc'] ?? [];
         if (($attrs['NOTROUTE'] ?? false) || ($docClass['NOTROUTE'] ?? false)) {
@@ -227,9 +233,23 @@ final class RouteManager
         $nopipeoutList = array_unique(array_merge($defaultNoPipeout, $nopipeout));
         $argumentList  = array_merge($defaultArguments, $arguments);
 
+        // Arguments existence check
+        $properties = [];
+        foreach ($argumentList as $argument => $rules) {
+            $property = $ofProperties[$argument] ?? false;
+            if (false === $property) {
+                exception('PortMethodArgumentNotDefined', compact('argument', 'class', 'method'));
+            }
+
+            $doc = $property['doc'] ?? [];
+            $doc = array_merge($doc, $rules);
+            $property['doc'] = $doc;
+            $properties[$argument] = $property;
+        }
+
         $verbs = array_unique(array_merge(($attrs['VERB'] ?? []), $defaultVerbs));
         foreach ($verbs as $verb) {
-            self::deduplicate($urlpath, $verb, $alias, $namespace, $method, true);
+            self::deduplicate($urlpath, $verb, $alias, $class, $method, true);
 
             if ($alias) {
                 self::$aliases[$alias] = [
@@ -245,7 +265,7 @@ final class RouteManager
                 ],
                 'verb'   => $verb,
                 'alias'  => $alias,
-                'class'  => $namespace,
+                'class'  => $class,
                 'method' => [
                     'name'   => $method,
                     'params' => $ofMethod['parameters'] ?? [],
@@ -269,7 +289,7 @@ final class RouteManager
                 'wrapout'   => $wrapout,
                 'wraperr'   => $wraperr,
                 'assembler' => $assembler,
-                'arguments' => $argumentList,
+                'arguments' => $properties,
             ];
         }
     }
@@ -359,6 +379,21 @@ final class RouteManager
         return [$route, $params];
     }
 
+    public static function __annotationFilterCompatible(string $val) : array
+    {
+        return array_trim_from_string($val, ',');
+    }
+
+    public static function __annotationMultipleMergeCompatible()
+    {
+        return 'kv';
+    }
+
+    public static function __annotationMultipleCompatible() : bool
+    {
+        return true;
+    }
+
     public static function __annotationFilterArgument(string $val, array $params = []) : array
     {
         $argvs = array_trim_from_string($val, ',');
@@ -398,6 +433,16 @@ final class RouteManager
     public static function __annotationFilterPipeout(string $val) : ?string
     {
         return trim($val) ?: null;
+    }
+
+    public static function __annotationMultipleMergeSuffix() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationMultipleSuffix() : bool
+    {
+        return true;
     }
 
     public static function __annotationFilterSuffix(string $val) : array

@@ -40,7 +40,7 @@ class Response extends Facade
             $meta = $result->getMeta();
             self::getInstance()->addWrapout('paginator', $meta);
 
-            return $result->getList;
+            return $result->getList();
         }
 
         return $result;
@@ -117,6 +117,36 @@ class Response extends Facade
         }
 
         $data = [];
+        if (ci_equal($type, 'err')) {
+            foreach ($wrapper as $key => $default) {
+                $_key = is_int($key) ? $default : $key;
+                $_val = null;
+                if (is_object($result)) {
+                    $_val = ($result->{$default} ?? null) ?: ($result->{$key} ?? null);
+                    if (is_null($_val) && method_exists($result, 'toArray')) {
+                        $_res = $result->toArray();
+                        if (is_array($_res)) {
+                            $_val = ($_res[$default] ?? null) ?: ($_res[$key] ?? null);
+                        }
+                    } elseif (is_null($_val) && method_exists($result, '__toArray')) {
+                        $_res = $result->__toArray();
+                        if (is_array($_res)) {
+                            $_val = ($_res[$default] ?? null) ?: ($_res[$key] ?? null);
+                        }
+                    }
+                } elseif (is_array($result)) {
+                    $_val = ($result[$default] ?? null) ?: ($result[$key] ?? null);
+                }
+
+                if (is_null($_val)) {
+                    $_val = self::getInstance()->getWraperr($_key);
+                }
+
+                $data[$_key] = $_val;
+            }
+            return $data;
+        }
+
         foreach ($wrapper as $key => $default) {
             if ($key === '__DATA__') {
                 $data[$default] = $result;
@@ -128,31 +158,10 @@ class Response extends Facade
             }
 
             $_key = is_int($key) ? $default : $key;
-            $_val = null;
-            if (is_object($result)) {
-                $_val = ($result->{$default} ?? null) ?: ($result->{$key} ?? null);
-                if (is_null($_val) && method_exists($result, 'toArray')) {
-                    $_res = $result->toArray();
-                    if (is_array($_res)) {
-                        $_val = ($_res[$default] ?? null) ?: ($_res[$key] ?? null);
-                    }
-                } elseif (is_null($_val) && method_exists($result, '__toArray')) {
-                    $_res = $result->__toArray();
-                    if (is_array($_res)) {
-                        $_val = ($_res[$default] ?? null) ?: ($_res[$key] ?? null);
-                    }
-                }
-            } elseif (is_array($result)) {
-                $_val = ($result[$default] ?? null) ?: ($result[$key] ?? null);
-            }
-
-            if (is_null($_val)) {
-                $_val = self::getInstance()->getWrapper($_key, $type);
-            }
-
+            $_val = self::getInstance()->getWrapout($_key);
+            $_val = is_null($_val) ? (is_int($key) ? null : $default) : $val;
             $data[$_key] = $_val;
         }
-
         return $data;
     }
 }

@@ -8,6 +8,12 @@ use Throwable;
 
 class Validator
 {
+    const REQUIRE_RULES = [
+        'need' => 1,
+        'needifno'  => 1,
+        'needifhas' => 1,
+    ];
+
     /** @var array: A List of Collection object for failed validations (outer) */
     protected $fails;
 
@@ -20,41 +26,25 @@ class Validator
     /** @var array: The rules used to validate given data */
     protected $rules = [];
 
+    /** @var bool: Whether abort validation process when first rule run fails */
+    protected $abortOnFail = true;
+
     public function execute()
     {
         foreach ($this->rules as $key => $rules) {
-            if (! is_array($rules)) {
-                if (! is_string($rules)) {
-                    exception('BadValidatorRules', [
-                        'error' => 'Non-arrayable rules value',
-                        'key'   => stringify($key)
-                    ]);
-                }
-
-                $rules = array_trim_from_string($rules, '|');
-            }
-
-            $val = $this->data[$key] ?? null;
-            foreach ($rules as $_key => $_rule) {
-                $rule  = is_int($_key)    ? $_rule : $_key;
-                $error = is_string($_key) ? $_rule : null;
-                $rarr  = array_trim_from_string($rule, ':');
-                $rule  = trim($rarr[0] ?? '');
-                $params = ci_equal($rule, 'default') ? [$_rule] : array_trim_from_string($rarr[1] ?? '', ',');
-                $result = $this->validate($rule, $val, $key, $params);
-                if (is_null($result)) {
+            foreach ($rules as $rule => list($msg, $ext)) {
+                $ext = ci_equal($rule, 'default') ? [$msg] : array_trim_from_string($ext, ',');
+                $res = $this->validate($rule, $key, $ext);
+                if (is_null($res)) {
                     break;
                 }
-                if (true !== $result) {
-                    $error = $error ?: 'ValidationFailed';
-                    $this->addFail((string) $error, [
-                        'key'    => $key,
-                        'value'  => $val,     // Origin value from $this->data
-                        '_value' => ($this->result[$key] ?? null),    // Final value from $this->result
-                        'rule'   => $rule,
-                        'params' => $params,
-                    ]);
-                    continue;
+                if (true !== $res) {
+                    $val = $this->data[$key] ?? null;
+                    $msg = sprintf($msg, $key, $val, ...$ext);
+                    $this->addFail($msg, compact('key', 'val', 'ext'));
+                    if ($this->abortOnFail) {
+                        return $this;
+                    }
                 }
             }
         }
@@ -62,26 +52,28 @@ class Validator
         return $this;
     }
 
-    private function validate(string $rule, $value, string $key, $params)
+    private function validate(string $rule, string $key, array $ext)
     {
         if (! $rule) {
-            exception('EmptyValidatorRule', compact('key', 'value', 'rule'));
+            exception('EmptyValidatorRule', compact('key', 'rule'));
         }
         $validator = 'validate'.ucfirst(strtolower($rule));
         if (! method_exists($this, $validator)) {
             exception('ValidatorNotFound', compact('validator'));
         }
 
-        return $this->{$validator}($value, $key, ...$params);
+        return $this->{$validator}($key, ...$ext);
     }
 
-    private function validateValidator($value, string $key, string $validator, array $params = [])
+    private function validateValidator(string $key, string $rule, array $ext = [])
     {
-        return $this->validate($validator, $value, $key, $params);
+        return $this->validate($rule, $key, $ext);
     }
 
-    private function validateMax($value, string $key, $max)
+    private function validateMax(string $key, $max)
     {
+        $value = $this->data[$key] ?? null;
+
         if (! TypeHint::isInt($max)) {
             exception('MaxValueIsNotInteger', compact('max'));
         }
@@ -97,17 +89,21 @@ class Validator
         return false;
     }
 
-    private function validateMin($value, string $key, $min)
+    private function validateMin(string $key, $min)
     {
+        $value = $this->data[$key] ?? null;
+
         if (! TypeHint::isInt($min)) {
             exception('MinValueIsNotInteger', compact('min'));
         }
         $min = TypeHint::convertToInt($min);
-        if (is_int($value)) {
+        if (TypeHint::isInt($value)) {
+            $this->result[$key] = $value = TypeHint::convertToInt($value);
+
             return $value >= $min;
         }
         if (TypeHint::isString($value)) {
-            $value = TypeHint::convertToString($value);
+            $this->result[$key] = $value = TypeHint::convertToString($value);
 
             return mb_strlen($value) >= $min;
         }
@@ -115,18 +111,28 @@ class Validator
         return false;
     }
 
-    private function validateArray($value)
+    private function validateArray($key)
     {
-        return is_array($value);
+        return is_array($this->data[$key] ?? null);
     }
 
-    private function validateUint($value) : bool
+    private function validateUint(string $key) : bool
     {
-        return TypeHint::isInt($value) && ($value > 0);
+        $value = $this->data[$key] ?? null;
+
+        if (! TypeHint::isInt($value)) {
+            return false;
+        }
+
+        $this->result[$key] = $value = TypeHint::convertToInt($value);
+
+        return $value > 0;
     }
 
-    private function validateInt($value, string $key)
+    private function validateInt(string $key)
     {
+        $value = $this->data[$key] ?? null;
+
         if (TypeHint::isInt($value)) {
             $this->result[$key] = TypeHint::convertToInt($value);
             return true;
@@ -135,8 +141,10 @@ class Validator
         return false;
     }
 
-    private function validateString($value, string $key)
+    private function validateString(string $key)
     {
+        $value = $this->data[$key] ?? null;
+
         if (TypeHint::isString($value)) {
             $this->result[$key] = TypeHint::convertToString($value);
             return true;
@@ -145,13 +153,17 @@ class Validator
         return false;
     }
 
-    private function validateNamespace($value)
+    private function validateNamespace($key)
     {
+        $value = $this->data[$key] ?? null;
+
         return is_string($value) && class_exists($value);
     }
 
-    private function validateNeedifhas($value, string $key, string $has)
+    private function validateNeedifhas(string $key, string $has)
     {
+        $value = $this->data[$key] ?? null;
+
         if (is_null($this->data[$has] ?? null)) {
             return null;
         }
@@ -159,8 +171,10 @@ class Validator
         return (!is_null($value)) && ($value !== '');
     }
 
-    private function validateNeedifno($value, string $key, string $no)
+    private function validateNeedifno(string $key, string $no)
     {
+        $value = $this->data[$key] ?? null;
+
         if (is_null($this->data[$no] ?? null)) {
             return (!is_null($value)) && ($value !== '');
         }
@@ -168,13 +182,17 @@ class Validator
         return null;
     }
 
-    private function validateNeed($value)
+    private function validateNeed($key)
     {
-        return !is_null($value);
+        $value = $this->data[$key] ?? null;
+
+        return !is_null($value) && ($value !== '');
     }
 
-    private function validateCiin($value, string $key, ...$list)
+    private function validateCiin(string $key, ...$list)
     {
+        $value = $this->data[$key] ?? null;
+
         if (! is_scalar($value)) {
             return false;
         }
@@ -186,47 +204,157 @@ class Validator
         }, $list));
     }
 
-    private function validateIn($value, string $key, ...$list)
+    private function validateIn(string $key, ...$list)
     {
-        $value = $value ?: ($this->result[$key] ?? null);
+        $value = $this->data[$key] ?? null;
 
         return in_array($value, $list);
     }
 
-    private function validateDefault($value, string $key, $default)
+    private function validateDefault(string $key, $default)
     {
-        $this->result[$key] = is_null($value) ? $default : $value;
+        $value = $this->data[$key] ?? null;
 
+        $this->data[$key] = $this->result[$key] = (
+            (is_null($value) || ('' === $value)) ? $default : $value
+        );
+        
         return true;
     }
 
-    private function validateHost($value)
+    private function validateHost(string $key)
     {
+        $value = $this->data[$key] ?? null;
+
         return (false
             || (false !== filter_var($value, FILTER_VALIDATE_DOMAIN))
             || (false !== filter_var($value, FILTER_VALIDATE_IP))
         );
     }
 
-    private function validateIp($value)
+    private function validateIp(string $key)
     {
+        $value = $this->data[$key] ?? null;
+
         return false !== filter_var($value, FILTER_VALIDATE_IP);
     }
 
-    private function validateEmail($value)
+    private function validateMobile(string $key, string $flag = 'cn')
     {
+        $value = $this->data[$key] ?? null;
+
+        if ((! $value) || (! is_scalar($value))) {
+            return false;
+        }
+
+        $value = (string) $value;
+
+        switch ($flag) {
+            case 'cn':
+            default:
+                return 1 === preg_match('#^(\+86[\-\ ])?1\d{10}$#', $value);
+        }
+
+        return true;    // FIXME
+    }
+
+    private function validateEmail(string $key)
+    {
+        $value = $this->data[$key] ?? null;
+
         return false !== filter_var($value, FILTER_VALIDATE_EMAIL);
     }
 
     private function addFail(string $fail, array $context = [])
     {
         if ($this->fails) {
-            $this->fails[] = [$fail => $context];
+            $this->fails->set($fail, $context);
         } else {
-            $this->fails = collect([$fail => $context]);
+            $this->fails = collect([$fail => $context], null, false);
+        }
+    }
+
+    private function check(array $rules)
+    {
+        $result = [];
+        foreach ($rules as $key => $_rules) {
+            $__rules = [];
+            if (! is_array($_rules)) {
+                if (! is_string($_rules)) {
+                    exception('InvalidValidatorRules', compact('key', 'rules'));
+                }
+
+                parse_str($_rules, $__rules);
+            } else {
+                $__rules = $_rules;
+            }
+
+            $hasRequireRule = $hasDefaultRule = false;
+            foreach ($__rules as $rule => $msg) {
+                if ((! is_scalar($rule)) || (! is_scalar($msg))) {
+                    exception('InvalidValidatorRule', compact('rule', 'msg'));
+                }
+
+                if (is_int($rule)) {
+                    $rule = $msg;
+                    $msg  = null;
+                }
+
+                $rarr = array_trim_from_string($rule, ':');
+                $rule = $rarr[0] ?? null;
+                if (! $rule) {
+                    continue;
+                }
+                $ext  = $rarr[1] ?? '';
+                $msg  = $msg ?: $this->getDefaultRuleMessage($rule, $key);
+
+                if (Validator::REQUIRE_RULES[strtolower($rule)] ?? false) {
+                    if ($hasRequireRule) {
+                        exception('MultipleRequireRulesInSingleKey', [
+                            'previous' => $hasRequireRule,
+                            'conflict' => $rule,
+                            'key' => $key,
+                        ]);
+                    }
+
+                    $hasRequireRule = $rule;
+                }
+                if (ci_equal($rule, 'default')) {
+                    $hasDefaultRule = $rule;
+                }
+
+                $result[$key][$rule] = [$msg, $ext];
+            }
+
+            if ($hasRequireRule) {
+                $requireRule = $result[$key][$hasRequireRule];
+                unset($result[$key][$hasRequireRule]);
+                $result[$key] = array_merge([$hasRequireRule => $requireRule], $result[$key]);
+            }
+            if ($hasDefaultRule) {
+                $defaultRule = $result[$key][$hasDefaultRule];
+                unset($result[$key][$hasDefaultRule]);
+                $result[$key] = array_merge([$hasDefaultRule => $defaultRule], $result[$key]);
+            }
         }
 
-        return $this;
+        return $result;
+    }
+
+    public function getDefaultRuleMessage(string $rule) : string
+    {
+        $map = [
+            'need' => 'RequireParameter:%s',
+            'needifhas' => 'RequireParameterIfExists:%s',
+            'needifno' => 'RequireParameterIfMissing:%s',
+            'in' => 'ParameterNotIn:%s',
+            'ciin' => 'ParameterNotCiin:%s',
+        ];
+
+        $rule  = strtolower($rule);
+        $_rule = ucfirst($rule);
+
+        return $map[$rule] ?? "Invalid{$_rule}:%s";
     }
 
     /**
@@ -251,17 +379,43 @@ class Validator
      */
     public function setRules(array $rules)
     {
-        $this->rules = $rules;
+        $this->rules  = $this->check($rules);
         $this->errors = $this->fails = null;
     
         return $this;
     }
 
     /**
-         * Getter for fails
-         *
-         * @return Loy\Framework\Collection|null
-         */
+     * Setter for abortOnFail
+     *
+     * @param bool $abortOnF
+     * @return Validator
+     */
+    public function setAbortOnF(bool $abortOnFail)
+    {
+        $this->abortOnFail = $abortOnFail;
+    
+        return $this;
+    }
+
+    /**
+     * Setter for fails
+     *
+     * @param Loy\Framework\Collection $fails
+     * @return Validator
+     */
+    public function setFails($fails)
+    {
+        $this->fails = $fails;
+    
+        return $this;
+    }
+
+    /**
+     * Getter for fails
+     *
+     * @return Loy\Framework\Collection|null
+     */
     public function getFails()
     {
         return $this->fails;

@@ -8,6 +8,12 @@ class Pagination
 {
     public function wrapout()
     {
-        return ['__DATA__' => 'data', 'code' => 0, 'info' => 'ok', '__PAGINATOR__' => 'page', 'more'];
+        return [
+            'code' => 0,
+            'info' => 'ok',
+            '__DATA__' => 'data',
+            '__PAGINATOR__' => 'page',
+            'more'
+        ];
     }
 }

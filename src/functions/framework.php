@@ -3,15 +3,19 @@
 declare(strict_types=1);
 
 if (! function_exists('collect')) {
-    function collect(array $data, $origin = null)
+    function collect(array $data, $origin = null, bool $recursive = true)
     {
+        if (! $recursive) {
+            return \Loy\Framework\Facade\Collection::new($data, $origin, false);
+        }
+
         foreach ($data as $key => $value) {
             if (is_array($value)) {
-                $data[$key] = collect($value, null);
+                $data[$key] = collect($value, null, true);
             }
         }
 
-        return \Loy\Framework\Facade\Collection::new($data, $origin);
+        return \Loy\Framework\Facade\Collection::new($data, $origin, $recursive);
     }
 }
 if (! function_exists('uncollect')) {
@@ -163,6 +167,14 @@ if (! function_exists('get_annotation_ns')) {
                     return $ns;
                 }
             }
+        }
+
+        // Last try from same namespace of origin
+        $_origin = array_trim_from_string($origin, '\\');
+        $_origin[count($_origin) - 1] = $annotation;
+        $samens  = join('\\', $_origin);
+        if (class_exists($samens)) {
+            return $samens;
         }
 
         return false;

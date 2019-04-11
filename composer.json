@@ -20,5 +20,8 @@
 		"exclude-from-classmap": [
        ]
     },
+    "autoload-dev": {
+        "psr-4": { "Loy\\Framework\\Tests\\": "./tests/" }
+    },
     "require": {}
 }

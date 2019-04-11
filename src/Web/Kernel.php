@@ -111,10 +111,7 @@ final class Kernel
         $mimes = Request::getMimeAliases();
         $route = RouteManager::find($uri, $verb, $mimes);
         if ($route === false) {
-            Kernel::throw('RouteNotExists', [
-                'method' => $verb,
-                'uri'    => $uri
-            ], 404);
+            Kernel::throw('RouteNotExists', compact('verb', 'uri'), 404);
         }
         Route::setData($route);
         Request::setRoute(Route::getInstance());
@@ -297,28 +294,19 @@ final class Kernel
             return;
         }
 
-        // Check wrapin setting on route annotation first
-        if ($wrapin) {
-            if (! class_exists($wrapin)) {
-                Kernel::throw('WrapperInNotExists', compact('wrapin'));
+        // 1. Check wrapin setting on route annotation first
+        // 2. Check arguments annotations from route method and port properties
+        try {
+            $validator = $wrapin ? Wrapin::apply($wrapin) : Wrapin::execute($arguments, Route::get('class'));
+            if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
+                $context = (array) $fail->value;
+                $context['wrapins'][] = $wrapin;
+                Response::send([400, $fail->key, $context], true, 400);
             }
-
-            try {
-                $validator = Wrapin::apply($wrapin);
-                if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
-                    $context = $fail->value->toArray();
-                    $context['wrapin'] = $wrapin;
-                    Response::send([400, $fail->key, $context], true, 400);
-                }
-                Route::getInstance()->params->api = $validator->getResult();
-            } catch (Throwable $e) {
-                Kernel::throw('ReqeustParameterValidationError', compact('wrapin'), 500, $e);
-            }
-            return;
+            Route::getInstance()->params->api = $validator->getResult();
+        } catch (Throwable $e) {
+            Kernel::throw('ReqeustParameterValidationError', compact('wrapin'), 500, $e);
         }
-
-        // Check arguments annotations from route method and port properties
-        // TODO
     }
 
     /**
