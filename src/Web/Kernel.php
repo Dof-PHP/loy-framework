@@ -300,7 +300,9 @@ final class Kernel
             $validator = $wrapin ? Wrapin::apply($wrapin) : Wrapin::execute($arguments, Route::get('class'));
             if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
                 $context = (array) $fail->value;
-                $context['wrapins'][] = $wrapin;
+                if ($wrapin) {
+                    $context['wrapins'][] = $wrapin;
+                }
                 Response::send([400, $fail->key, $context], true, 400);
             }
             Route::getInstance()->params->api = $validator->getResult();

@@ -32,12 +32,28 @@ class Validator
     public function execute()
     {
         foreach ($this->rules as $key => $rules) {
+            // check if we need validate current parameters aginst rules first
+            $_rules = array_keys($rules);
+            $need   = !is_null($this->data[$key] ?? null);
+            if (! $need) {
+                foreach ($_rules as $_rule) {
+                    if (Validator::REQUIRE_RULES[strtolower($_rule)] ?? false) {
+                        $need = true;
+                        break;
+                    }
+                }
+            }
+            if (! $need) {
+                continue;
+            }
+
             foreach ($rules as $rule => list($msg, $ext)) {
                 $ext = ci_equal($rule, 'default') ? [$msg] : array_trim_from_string($ext, ',');
                 $res = $this->validate($rule, $key, $ext);
                 if (is_null($res)) {
                     break;
                 }
+
                 if (true !== $res) {
                     $val = $this->data[$key] ?? null;
                     $msg = sprintf($msg, $key, $val, ...$ext);
