@@ -47,4 +47,14 @@ class Entity
             }
         }
     }
+
+    public function __toArray()
+    {
+        return (array) get_object_vars($this);
+    }
+
+    public function toArray()
+    {
+        return $this->__toArray();
+    }
 }

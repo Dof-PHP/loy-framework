@@ -7,8 +7,6 @@ namespace Loy\Framework\Facade;
 use Closure;
 use Throwable;
 use Loy\Framework\Facade;
-use Loy\Framework\DDD\ApplicationService;
-use Loy\Framework\Paginator;
 use Loy\Framework\Web\Response as Instance;
 use Loy\Framework\Web\Route;
 
@@ -16,35 +14,6 @@ class Response extends Facade
 {
     protected static $singleton = true;
     protected static $namespace = Instance::class;
-
-    /**
-     * Recognize supported result types and set particular attributes to properties of current response
-     *
-     * @param mixed $result: Respond result
-     */
-    public static function support($result)
-    {
-        if ($result instanceof ApplicationService) {
-            if ($result->isSuccess()) {
-                return $result->__getData();
-            }
-
-            self::getInstance()
-                ->setStatus($result->__getCode())
-                ->setInfo($result->__getInfo());
-
-            return array_values($result->__toArray());
-        }
-
-        if ($result instanceof Paginator) {
-            $meta = $result->getMeta();
-            self::getInstance()->addWrapout('paginator', $meta);
-
-            return $result->getList();
-        }
-
-        return $result;
-    }
 
     /**
      * Send a format-fixed exception response
@@ -72,7 +41,6 @@ class Response extends Facade
      */
     public static function send($result = null, ?bool $error = null, ?int $code = 200)
     {
-        $result   = self::support($result);
         $response = self::getInstance();
         if (is_null($error)) {
             $error = $response->getError();

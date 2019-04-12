@@ -93,7 +93,7 @@ final class ConfigManager
         return array_get_by_chain_key(self::$default, $key, '.');
     }
 
-    public static function getDomainByKey(string $domain = null, string $key = null)
+    public static function getDomainByKey(string $domain = null, string $key = null, $default = null)
     {
         if (! $domain) {
             return null;
@@ -101,47 +101,72 @@ final class ConfigManager
 
         $config = self::$domains[$domain] ?? null;
 
-        return is_null($key) ? $config : array_get_by_chain_key($config, $key, '.');
+        if (is_null($key)) {
+            return $config;
+        }
+
+        return array_get_by_chain_key($config, $key, '.') ?: $default;
     }
 
-    public static function getDomainByFile(string $file, string $key = null)
+    public static function getDomainByFile(string $file, string $key = null, $default = null)
     {
-        return self::getDomainByKey(DomainManager::getKeyByFile($file), $key);
+        return self::getDomainByKey(DomainManager::getKeyByFile($file), $key, $default);
     }
 
-    public static function getDomainByNamespace(string $ns, string $key = null)
+    public static function getDomainByNamespace(string $ns, string $key = null, $default = null)
     {
-        return self::getDomainByKey(DomainManager::getKeyByNamesapce($ns), $key);
+        return self::getDomainByKey(DomainManager::getKeyByNamespace($ns), $key, $default);
     }
 
-    public static function getDomainFinalByNamespace(string $ns, string $key = null)
+    public static function getDomainFinalByNamespace(string $ns, string $key = null, $default = null)
     {
-        return self::getDomainByNamesapce($ns) ?: self::getDomain($key);
+        return self::getDomainByNamespace($ns, $key, $default) ?: self::getDefault($key, $default);
     }
 
-    public static function getDomainFinalByFile(string $file, string $key = null)
+    public static function getDomainFinalByFile(string $file, string $key = null, $default = null)
     {
-        return self::getDomainByFile($file, $key) ?: self::getDomain($key);
+        return self::getDomainByFile($file, $key, $default) ?: self::getDefault($key, $default);
     }
 
-    public static function getDomainFinalByKey(string $domain, string $key = null)
+    public static function getDomainFinalByKey(string $domain, string $key = null, $default = null)
     {
-        return self::getDomainByKey($domain, $key) ?: self::getDomain($key);
+        return self::getDomainByKey($domain, $key, $default) ?: self::getDefault($key, $default);
     }
 
-    public static function getDomainFinalDatabaseByNamesapce(string $ns, string $key = null)
+    public static function getDomainFinalDomainByNamespace(string $ns, string $key = null, $default = null)
     {
-        return self::getDomainFinalByNamespace($ns, "database.{$key}");
+        $key = 'domain.'.$key;
+
+        return self::getDomainFinalByNamespace($ns, $key, $default);
     }
 
-    public static function getDomainFinalDatabaseByFile(string $file, string $key = null)
+    public static function getDomainFinalDomainByFile(string $file, string $key = null, $default = null)
     {
-        return self::getDomainFinalByFile($file, "database.{$key}");
+        $key = 'domain.'.$key;
+
+        return self::getDomainFinalByFile($file, $key, $default);
     }
 
-    public static function getDomainFinalDatabaseByKey(string $domain, string $key = null)
+    public static function getDomainFinalDomainByKey(string $domain, string $key = null, $default = null)
     {
-        return self::getDomainFinalByKey($domain, "database.{$key}");
+        $key = 'domain.'.$key;
+
+        return self::getDomainFinalByKey($domain, $key, $default);
+    }
+
+    public static function getDomainFinalDatabaseByNamesapce(string $ns, string $key = null, $default)
+    {
+        return self::getDomainFinalByNamespace($ns, "database.{$key}", $default);
+    }
+
+    public static function getDomainFinalDatabaseByFile(string $file, string $key = null, $default = null)
+    {
+        return self::getDomainFinalByFile($file, "database.{$key}", $default);
+    }
+
+    public static function getDomainFinalDatabaseByKey(string $domain, string $key = null, $default = null)
+    {
+        return self::getDomainFinalByKey($domain, "database.{$key}", $default);
     }
 
     public static function getEnv(string $key = null, $default = null)
@@ -154,6 +179,12 @@ final class ConfigManager
         return array_get_by_chain_key(self::$default['framework'] ?? [], $key) ?: $default;
     }
 
+    /**
+     * Get gobal domain config
+     *
+     * @param string $key: Config key
+     * @param mixed $default: Default value when config item not found
+     */
     public static function getDomain(string $key = null, $default = null)
     {
         return array_get_by_chain_key(self::$default['domain'] ?? [], $key) ?: $default;
@@ -164,8 +195,8 @@ final class ConfigManager
         return self::$domains;
     }
 
-    public static function getDefault()
+    public static function getDefault(string $key = null, $default = null)
     {
-        return self::$default;
+        return $key ? (array_get_by_chain_key(self::$default, $key) ?: $default) : self::$default;
     }
 }

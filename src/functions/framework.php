@@ -69,7 +69,7 @@ if (! function_exists('domain')) {
     }
 }
 if (! function_exists('service')) {
-    function service($service, array $params = [], bool $execute = true)
+    function service($service, array $params = [])
     {
         $object = $service;
         if (! is_object($service)) {
@@ -86,7 +86,7 @@ if (! function_exists('service')) {
             }
         }
 
-        return $execute ? $object->execute() : $object;
+        return $object;
     }
 }
 if (! function_exists('assemble')) {
@@ -141,8 +141,12 @@ if (! function_exists('route')) {
     }
 }
 if (! function_exists('get_annotation_ns')) {
-    function get_annotation_ns(string $annotation, string $origin)
+    function get_annotation_ns($annotation, string $origin)
     {
+        if (! is_string($annotation)) {
+            $type = gettype($annotation);
+            exception('NonStringAnnotatinForNamespace', compact('annotation', 'type'));
+        }
         if (class_exists($annotation)) {
             return $annotation;
         }
@@ -291,5 +295,42 @@ if (! function_exists('paginator')) {
     function paginator(array $list, array $params = [])
     {
         return new \Loy\Framework\Paginator($list, $params);
+    }
+}
+if (! function_exists('GWT')) {
+    function GWT(string $title, $given, $when, $then)
+    {
+        $last = debug_backtrace()[0] ?? [];
+        $file = $last['file'] ?? 'unknown';
+        $line = $last['line'] ?? 'unknown';
+
+        $success = false;
+        try {
+            $success = \Loy\Framework\GWT::execute($given, $when, $then, $result);
+        } catch (Throwable $e) {
+            $success = null;
+            $result  = $e->getTrace()[0] ?? [];
+            $result['__EXCEPTION_IN_TESING__'] = true;
+        }
+
+        \Loy\Framework\GWT::append($title, $file, $line, $result, $success);
+    }
+}
+if (! function_exists('run_framework_tests')) {
+    function run_framework_tests(string $dir, array $excludes = [])
+    {
+        walk_dir($dir, function ($path) {
+            if ($path->isDir()) {
+                run_framework_tests($path->getRealpath());
+                return;
+            }
+            if ($path->isFile() && ci_equal($path->getExtension(), 'php')) {
+                $case = $path->getRealpath();
+                if ($excludes[$case] ?? false) {
+                    return;
+                }
+                include_once $case;
+            }
+        });
     }
 }

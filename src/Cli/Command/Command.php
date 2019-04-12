@@ -61,7 +61,7 @@ class Command
     }
 
     /**
-     * @cmd(list)
+     * @cmd(cmd.list)
      * @comment(List commands)
      */
     public function list($console)

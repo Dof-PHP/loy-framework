@@ -19,16 +19,13 @@ class Assembler
      */
     public static function assemble($result, array $fields, $assembler = null)
     {
-        if ((! $result) || (! $fields)) {
+        if (! $fields) {
             return null;
         }
 
         if ($result instanceof ApplicationService) {
-            if (! $result->isExecuted()) {
-                $result = $result->execute();
-            }
+            $result = $result->__isExecuted() ? $result->__getData() : $result->execute();
         }
-
         if ($result instanceof Paginator) {
             $data = [];
             $list = $result->getList();
@@ -37,6 +34,10 @@ class Assembler
             }
 
             return $data;
+        }
+
+        if (! $result) {
+            return null;
         }
 
         if ($assembler) {
@@ -63,7 +64,7 @@ class Assembler
             if (is_null($value)) {
                 ++$nulls;
                 if ($nulls > $nullableLimit) {
-                    continue;
+                    break;
                 }
             }
 

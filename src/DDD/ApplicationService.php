@@ -12,7 +12,7 @@ abstract class ApplicationService
     protected $__code = 0;
 
     /** @var string: Service executed result message */
-    protected $__info;
+    protected $__info = 'ok';
 
     /** @var mixed: Service executed result data */
     protected $__data;
@@ -37,6 +37,11 @@ abstract class ApplicationService
 
     abstract public function execute();
 
+    public static function init()
+    {
+        return Container::di(static::class);
+    }
+
     public function toArray() : array
     {
         return $this->__toArray();
@@ -45,11 +50,11 @@ abstract class ApplicationService
     public function __toArray() : array
     {
         return [
-            'code'  => $this->__code,
-            'info'  => $this->__info,
-            'data'  => $this->__data,
-            'meta'  => $this->__meta,
-            'extra' => $this->__extra,
+            'code' => $this->__code,
+            'info' => $this->__info,
+            'data' => $this->__data,
+            'meta' => $this->__meta,
+            'more' => $this->__more,
         ];
     }
 
@@ -89,27 +94,25 @@ abstract class ApplicationService
         return $this->__code;
     }
 
-    public function isExecuted() : bool
+    public function __isExecuted() : bool
     {
         return $this->__executed;
     }
 
-    public function isSuccess(int $success = null) : bool
+    public function __isFail(int $success = null) : bool
+    {
+        return !$this->__isSuccess($success);
+    }
+
+    public function __isSuccess(int $success = null) : bool
     {
         $code = $success ?: 0;
 
         return $this->__code === $code;
     }
 
-    public static function init()
-    {
-        return Container::di(static::class);
-    }
-
     public static function __callStatic(string $method, array $argvs = [])
     {
-        $service = Container::di(static::class);
-
-        return call_user_func_array([$service, $method], $argvs);
+        return call_user_func_array([self::init(), $method], $argvs);
     }
 }

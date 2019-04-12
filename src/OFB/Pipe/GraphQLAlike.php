@@ -9,7 +9,7 @@ use Loy\Framework\Paginator;
 use Loy\Framework\DSL\IFRSN;
 use Loy\Framework\Facade\Assembler;
 
-class GraphQL
+class GraphQLAlike
 {
     public function pipein($request, $response, $route)
     {
@@ -35,17 +35,6 @@ class GraphQL
             if (! class_exists($assembler)) {
                 exception('AssemblerNoExists', compact('assembler'));
             }
-        }
-
-        if ($result instanceof ApplicationService) {
-            if (! $result->isExecuted()) {
-                $result = $result->execute();
-            }
-        }
-
-        if ($result instanceof Paginator) {
-            $meta = $result->getMeta();
-            $response->addWrapout('paginator', $meta);
         }
 
         return Assembler::assemble($result, $fields, $assembler);

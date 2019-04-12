@@ -148,7 +148,8 @@ final class RouteManager
                     'handler' => self::AUTONOMY_HANLDER,
                 ]);
             }
-            self::add($namespace, self::AUTONOMY_HANLDER, $docClass, $handler);
+            $handler['doc']['WRAPIN'] = $namespace;
+            self::add($namespace, self::AUTONOMY_HANLDER, $docClass, $handler, $ofProperties);
             return;
         }
 
@@ -185,14 +186,21 @@ final class RouteManager
             return;
         }
 
+        $globalRoute   = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.route', '');
+        $globalPipein  = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.pipein', []);
+        $globalPipeout = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.pipeout', []);
+        $globalWrapin  = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wrapin', null);
+        $globalWrapout = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wrapout', null);
+        $globalWraperr = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wraperr', null);
+
         $defaultRoute   = $docClass['ROUTE']   ?? null;
         $defaultVerbs   = $docClass['VERB']    ?? [];
         $defaultSuffix  = $docClass['SUFFIX']  ?? [];
         $defaultMimein  = $docClass['MIMEIN']  ?? null;
         $defaultMimeout = $docClass['MIMEOUT'] ?? null;
-        $defaultWrapin  = $docClass['WRAPIN']  ?? null;
-        $defaultWrapout = $docClass['WRAPOUT'] ?? null;
-        $defaultWraperr = $docClass['WRAPERR'] ?? null;
+        $defaultWrapin  = $docClass['WRAPIN']  ?? $globalWrapin;
+        $defaultWrapout = $docClass['WRAPOUT'] ?? $globalWrapout;
+        $defaultWraperr = $docClass['WRAPERR'] ?? $globalWraperr;
         $defaultAssembler = $docClass['ASSEMBLER'] ?? null;
         $defaultPipein    = $docClass['PIPEIN']    ?? [];
         $defaultPipeout   = $docClass['PIPEOUT']   ?? [];
@@ -221,14 +229,14 @@ final class RouteManager
         $nopipeout = $attrs['NOPIPEOUT'] ?? [];
         $arguments = $attrs['ARGUMENT']  ?? [];
 
-        $urlpath = $defaultRoute ? join('/', [$defaultRoute, $route]) : $route;
+        $urlpath = join('/', [$globalRoute, $defaultRoute, $route]);
         list($urlpath, $params) = self::parse($urlpath);
         if (! $urlpath) {
             return;
         }
 
-        $pipeinList    = array_unique(array_merge($defaultPipein, $pipein));
-        $pipeoutList   = array_unique(array_merge($defaultPipeout, $pipeout));
+        $pipeinList    = array_unique(array_merge($globalPipein, $defaultPipein, $pipein));
+        $pipeoutList   = array_unique(array_merge($globalPipeout, $defaultPipeout, $pipeout));
         $nopipeinList  = array_unique(array_merge($defaultNoPipein, $nopipein));
         $nopipeoutList = array_unique(array_merge($defaultNoPipeout, $nopipeout));
         $argumentList  = array_merge($defaultArguments, $arguments);

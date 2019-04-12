@@ -29,12 +29,12 @@ class Assembler
      */
     protected $converters  = [];
 
-    public function __construct($origin = null)
+    final public function __construct($origin = null)
     {
         $this->origin = $origin;
     }
 
-    public function match(string $name, array $params = [])
+    final public function match(string $name, array $params = [])
     {
         if ((! is_object($this->origin)) && (! is_array($this->origin))) {
             return null;
@@ -83,10 +83,40 @@ class Assembler
      * @param mixed $origin
      * @return Assembler
      */
-    public function setOrigin($origin)
+    final public function setOrigin($origin)
     {
         $this->origin = $origin;
     
         return $this;
+    }
+
+    /**
+     * Getter for origin
+     *
+     * @return mixed
+     */
+    final public function getOrigin()
+    {
+        return $this->origin;
+    }
+
+    /**
+     * Getter for compatibles
+     *
+     * @return array
+     */
+    final public function getCompatibles(): array
+    {
+        return $this->compatibles;
+    }
+
+    /**
+     * Getter for converters
+     *
+     * @return array
+     */
+    final public function getConverters(): array
+    {
+        return $this->converters;
     }
 }

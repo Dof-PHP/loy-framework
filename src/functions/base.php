@@ -35,18 +35,9 @@ if (! function_exists('zombie_object')) {
 if (! function_exists('pt')) {
     function pt(...$vars)
     {
-        try {
-            throw new \Exception;
-        } catch (\Exception $e) {
-            $trace = $e->getTrace();
-            $last  = (__FILE__ === ($trace[0]['file'] ?? null))
-                ? ($trace[1] ?? [])
-                : ($trace[0] ?? []);
-
+        if ($last = debug_backtrace()[0] ?? null) {
             extract($last);
-            if ($last) {
-                print_r([sprintf('%s#%s:%s', $file, $line, $function), unsplat($vars)]);
-            }
+            print_r([sprintf('%s#%s:%s', $file, $line, $function), unsplat($vars)]);
         }
 
         return bomb_object();
@@ -87,21 +78,12 @@ if (! function_exists('ee')) {
 if (! function_exists('pp')) {
     function pp(...$vars)
     {
-        try {
-            throw new \Exception;
-        } catch (\Exception $e) {
-            $trace = $e->getTrace();
-            $last  = (__FILE__ === ($trace[0]['file'] ?? null))
-                ? ($trace[1] ?? [])
-                : ($trace[0] ?? []);
-
+        if ($last = debug_backtrace()[0] ?? null) {
             extract($last);
-            if ($last) {
-                var_dump([
-                    sprintf('%s#%s:%s', $file, $line, $function),
-                    unsplat($vars),
-                ]);
-            }
+            var_dump([
+                sprintf('%s#%s:%s', $file, $line, $function),
+                unsplat($vars),
+            ]);
         }
 
         return bomb_object();
@@ -629,30 +611,40 @@ if (! function_exists('is_closure')) {
     }
 }
 if (! function_exists('array_get_by_chain_key')) {
-    function array_get_by_chain_key($haystack, string $key = null, string $explode = '.')
-    {
+    function array_get_by_chain_key(
+        $haystack,
+        string $key = null,
+        string $explode = '.',
+        $default = null
+    ) {
         if ((! $haystack) || (! $key) || ((! is_array($haystack)) && (! is_object($haystack)))) {
-            return null;
+            return $default;
         }
         if (is_object($haystack)) {
             if (method_exists($haystack, 'toArray')) {
-                $haystack->toArray();
+                $haystack = $haystack->toArray();
             } elseif (method_exists($haystack, '__toArray')) {
+                $haystack = $haystack->__toArray();
             } else {
-                return null;
+                return $default;
             }
         }
         if (array_key_exists($key, $haystack)) {
-            return $haystack[$key] ?? null;
+            return $haystack[$key] ?? $default;
         }
-        $chain  = array_trim_from_string($key, $explode);
+        $chain  = $_chain = array_trim_from_string($key, $explode);
         $query  = null;
         $tmparr = $haystack;
-        foreach ($chain as $k) {
+        foreach ($chain as $idx => $k) {
             $query = ($tmparr = ($tmparr[$k] ?? null));
+            if ($query) {
+                unset($_chain[$idx]);
+                $key = join($explode, $_chain);
+                return array_get_by_chain_key($query, $key, $explode, $default);
+            }
         }
 
-        return $query;
+        return is_null($query) ? $default : $query;
     }
 }
 if (! function_exists('is_throwable')) {
@@ -913,5 +905,35 @@ if (! function_exists('unsplat')) {
     function unsplat($params)
     {
         return $params;
+    }
+}
+if (! function_exists('to_array')) {
+    function to_array($value) : array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+        if (is_scalar($value)) {
+            return [$value];
+        }
+        if (is_object($value)) {
+            if (method_exists($value, 'toArray')) {
+                return to_array($value->toArray());
+            }
+            if (method_exists($value, '__toArray')) {
+                return to_array($value->__toArray());
+            }
+
+            return [$value];
+        }
+    }
+}
+if (! function_exists('format_bytes')) {
+    function format_bytes(int $bytes) : string
+    {
+        $s = array('B', 'Kb', 'MB', 'GB', 'TB', 'PB');
+        $e = floor(log($bytes)/log(1024));
+      
+        return sprintf('%.6f '.$s[$e], ($bytes/pow(1024, floor($e))));
     }
 }

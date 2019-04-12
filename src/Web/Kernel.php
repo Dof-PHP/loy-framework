@@ -65,7 +65,11 @@ final class Kernel
             Kernel::throw('ServerClosed', dejson(file_get_contents($flag)), 503);
         }
 
-        self::routing();
+        try {
+            self::routing();
+        } catch (Throwable $e) {
+            Kernel::throw('RoutingError', [], 500, $e);
+        }
 
         $class  = Route::get('class');
         $method = Route::get('method.name');
@@ -76,11 +80,23 @@ final class Kernel
             Kernel::throw('PortMethodNotExist', compact('class', 'method'));
         }
 
-        self::validate();
+        try {
+            self::validate();
+        } catch (Throwable $e) {
+            Kernel::throw('RequestValidateExeception', [], 500, $e);
+        }
 
-        self::pipingin();
+        try {
+            self::pipingin();
+        } catch (Throwable $e) {
+            Kernel::throw('PipinginError', [], 500, $e);
+        }
 
-        $params = self::build();
+        try {
+            $params = self::build();
+        } catch (Throwable $e) {
+            Kernel::throw('BuildPortParametersError', [], 500, $e);
+        }
 
         try {
             $result = (new $class)->{$method}(...$params);
@@ -89,7 +105,11 @@ final class Kernel
             Kernel::throw('ResultingResponseFailed', compact('class', 'method'), 500, $e);
         }
 
-        $result = self::pipingout($result);
+        try {
+            $result = self::pipingout($result);
+        } catch (Throwable $e) {
+            Kernel::throw('PipingoutError', [], 500, $e);
+        }
 
         try {
             Response::send($result);
@@ -305,7 +325,7 @@ final class Kernel
                 }
                 Response::send([400, $fail->key, $context], true, 400);
             }
-            Route::getInstance()->params->api = $validator->getResult();
+            Route::getInstance()->params->api = collect($validator->getResult());
         } catch (Throwable $e) {
             Kernel::throw('ReqeustParameterValidationError', compact('wrapin'), 500, $e);
         }
