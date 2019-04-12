@@ -28,4 +28,4 @@ config/
 !/**/*.sample.xml
 !/**/*.sample.json
 !/**/*.sample.ini
-php_errors
+/**/php_errors
