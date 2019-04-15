@@ -37,7 +37,12 @@ if (! function_exists('pt')) {
     {
         if ($last = debug_backtrace()[0] ?? null) {
             extract($last);
-            print_r([sprintf('%s#%s:%s', $file, $line, $function), unsplat($vars)]);
+            if ($file === __FILE__) {
+                if ($last = debug_backtrace()[1] ?? null) {
+                    extract($last);
+                    print_r([sprintf('%s#%s:%s', $file, $line, $function), unsplat($vars)]);
+                }
+            }
         }
 
         return bomb_object();
@@ -80,10 +85,15 @@ if (! function_exists('pp')) {
     {
         if ($last = debug_backtrace()[0] ?? null) {
             extract($last);
-            var_dump([
-                sprintf('%s#%s:%s', $file, $line, $function),
-                unsplat($vars),
-            ]);
+            if ($file === __FILE__) {
+                if ($last = debug_backtrace()[1] ?? null) {
+                    extract($last);
+                    var_dump([
+                        sprintf('%s#%s:%s', $file, $line, $function),
+                        unsplat($vars),
+                    ]);
+                }
+            }
         }
 
         return bomb_object();
@@ -743,10 +753,10 @@ if (! function_exists('chownr')) {
         }
 
         if (is_link($path) && is_writable($path)) {
-            lchown($path, $owner);
+            @lchown($path, $owner);
         }
         if (is_file($path) && is_writable($path)) {
-            chown($path, $owner);
+            @chown($path, $owner);
             return;
         }
         if (! is_dir($path)) {
@@ -762,9 +772,9 @@ if (! function_exists('chownr')) {
                 if (is_dir($_path)) {
                     chownr($_path, $owner);
                 } elseif (is_link($_path) && is_writable($path)) {
-                    lchown($_path, $owner);
+                    @lchown($_path, $owner);
                 } elseif (is_file($_path) && is_writable($path)) {
-                    chown($_path, $owner);
+                    @chown($_path, $owner);
                 }
             }
         });
@@ -778,11 +788,11 @@ if (! function_exists('chgrpr')) {
         }
 
         if (is_link($path) && is_writable($path)) {
-            lchgrp($path, $mode);
+            @lchgrp($path, $mode);
             return;
         }
         if (is_file($path) && is_writable($path)) {
-            chgrp($path, $group);
+            @chgrp($path, $group);
             return;
         }
         if (! is_dir($path)) {
@@ -798,9 +808,9 @@ if (! function_exists('chgrpr')) {
                 if (is_dir($_path)) {
                     chgrpr($_path, $group);
                 } elseif (is_link($_path) && is_writable($_path)) {
-                    lchgrp($_path, $group);
+                    @lchgrp($_path, $group);
                 } elseif (is_file($_path) && is_writable($_path)) {
-                    chown($_path, $group);
+                    @chown($_path, $group);
                 }
             }
         });
@@ -814,7 +824,7 @@ if (! function_exists('chmodr')) {
         }
 
         if (is_file($path) && is_writable($path)) {
-            chmod($path, $mode);
+            @chmod($path, $mode);
             return;
         }
         if (! is_dir($path)) {
@@ -830,7 +840,7 @@ if (! function_exists('chmodr')) {
                 if (is_dir($_path)) {
                     chmodr($_path, $mode);
                 } elseif (is_file($_path) && is_writable($_path)) {
-                    chmod($_path, $mode);
+                    @chmod($_path, $mode);
                 }
             }
         });

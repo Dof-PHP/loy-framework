@@ -13,6 +13,29 @@ final class GWT
     private static $failure = [];
     private static $exception = [];
 
+    /**
+     * Run GWT test cases by directory and exclude for some files
+     *
+     * @param string $dir: The directory stores tests cases
+     * @param array $excludes: The realpath of files to exclude
+     */
+    public static function run(string $dir, array $excludes = [])
+    {
+        walk_dir($dir, function ($path) {
+            if ($path->isDir()) {
+                run_gwt_tests($path->getRealpath());
+                return;
+            }
+            if ($path->isFile() && ci_equal($path->getExtension(), 'php')) {
+                $case = $path->getRealpath();
+                if ($excludes[$case] ?? false) {
+                    return;
+                }
+                include_once $case;
+            }
+        });
+    }
+
     public static function execute($given, $when, $then, &$result) : bool
     {
         // See: <https://stackoverflow.com/questions/7067536/how-to-call-a-closure-that-is-a-class-variable>

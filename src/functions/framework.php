@@ -305,32 +305,27 @@ if (! function_exists('GWT')) {
         $line = $last['line'] ?? 'unknown';
 
         $success = false;
+        $result  = null;
         try {
             $success = \Loy\Framework\GWT::execute($given, $when, $then, $result);
         } catch (Throwable $e) {
             $success = null;
-            $result  = $e->getTrace()[0] ?? [];
-            $result['__EXCEPTION_IN_TESING__'] = true;
+            $trace = $e->getTrace()[0] ?? [];
+
+            $result = [
+                $trace['file'],
+                $trace['line'],
+                $trace['args'],
+                '__TESING_EXCEPTION__' => true,
+            ];
         }
 
         \Loy\Framework\GWT::append($title, $file, $line, $result, $success);
     }
 }
-if (! function_exists('run_framework_tests')) {
-    function run_framework_tests(string $dir, array $excludes = [])
+if (! function_exists('run_gwt_tests')) {
+    function run_gwt_tests(string $dir, array $excludes = [])
     {
-        walk_dir($dir, function ($path) {
-            if ($path->isDir()) {
-                run_framework_tests($path->getRealpath());
-                return;
-            }
-            if ($path->isFile() && ci_equal($path->getExtension(), 'php')) {
-                $case = $path->getRealpath();
-                if ($excludes[$case] ?? false) {
-                    return;
-                }
-                include_once $case;
-            }
-        });
+        \Loy\Framework\GWT::run($dir, $excludes);
     }
 }

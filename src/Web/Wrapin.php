@@ -78,7 +78,15 @@ final class Wrapin
                     continue;
                 }
                 if ($annotation === 'WRAPIN') {
-                    $wrapins[$value] = $val;
+                    if ($ext['WRAPIN']['list'] ?? false) {
+                        if (is_iterable($val)) {
+                            foreach ($val as $item) {
+                                $wrapins[] = [$value => $item];
+                            }
+                        }
+                    } else {
+                        $wrapins[] = [$value => $val];
+                    }
                     continue;
                 }
 
@@ -109,22 +117,24 @@ final class Wrapin
 
         // Execute another wrappins from annotations
         if ($wrapins) {
-            foreach ($wrapins as $wrapin => $_data) {
-                $_wrapin = get_annotation_ns($wrapin, $origin);
-                if (false === $_wrapin) {
-                    exception('InvalidWrapinAnnotation', compact('wrapin'));
-                }
+            foreach ($wrapins as $__wrapin) {
+                foreach ($__wrapin as $wrapin => $_data) {
+                    $_wrapin = get_annotation_ns($wrapin, $origin);
+                    if (false === $_wrapin) {
+                        exception('InvalidWrapinAnnotation', compact('wrapin'));
+                    }
 
-                $validator = self::apply($_wrapin, $_data);
-                if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
-                    $fails   = $fails->toArray();
-                    $context = $fail->value;
-                    $context['wrapins'][] = $_wrapin;
-                    $fails[$fail->key] = $context;
+                    $validator = self::apply($_wrapin, $_data);
+                    if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
+                        $fails   = $fails->toArray();
+                        $context = $fail->value;
+                        $context['wrapins'][] = $_wrapin;
+                        $fails[$fail->key] = $context;
 
-                    $validator->setFails(collect($fails, null, false));
+                        $validator->setFails(collect($fails, null, false));
 
-                    return $validator;
+                        return $validator;
+                    }
                 }
             }
         }

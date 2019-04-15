@@ -14,9 +14,6 @@ class Response
     /** @var int: HTTP response status code */
     private $status = 200;
 
-    /** @var string: HTTP response status message */
-    private $info  = 'ok';
-
     /** @var string: HTTP response body content */
     private $body  = '';
 
@@ -205,18 +202,6 @@ class Response
         return $this;
     }
 
-    public function getInfo()
-    {
-        return $this->info;
-    }
-
-    public function setInfo(string $info)
-    {
-        $this->info = $info;
-
-        return $this;
-    }
-
     public function setError(bool $error)
     {
         $this->error = $error;
@@ -300,7 +285,6 @@ class Response
     {
         return [
             $this->getStatus(),
-            $this->getInfo(),
             $this->getMimeAlias(),
             $this->getError(),
         ];

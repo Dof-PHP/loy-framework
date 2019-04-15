@@ -28,7 +28,6 @@ class Response extends Facade
 
         self::setInstance(Response::new())
             ->setStatus($status)
-            ->setInfo($message)
             ->setMimeAlias('json')
             ->send([$status, $message, $context]);
     }
