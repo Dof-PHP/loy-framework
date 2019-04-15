@@ -1,5 +1,5 @@
 {
-    "name": "dof/framework",
+    "name": "dof-php/framework",
     "description": "Dof Framework Core",
     "type": "library",
     "license": "MIT",
