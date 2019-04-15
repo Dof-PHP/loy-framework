@@ -21,9 +21,9 @@ final class GWT
      */
     public static function run(string $dir, array $excludes = [])
     {
-        walk_dir($dir, function ($path) {
+        walk_dir($dir, function ($path) use ($excludes) {
             if ($path->isDir()) {
-                run_gwt_tests($path->getRealpath());
+                run_gwt_tests($path->getRealpath(), $excludes);
                 return;
             }
             if ($path->isFile() && ci_equal($path->getExtension(), 'php')) {

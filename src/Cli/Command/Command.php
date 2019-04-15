@@ -83,7 +83,7 @@ class Command
      */
     public function testFramework($console)
     {
-        $tests = ospath(__DIR__.'/../../..', ['tests']);
+        $tests = realpath(ospath(__DIR__.'/../../..', ['tests']));
         $start = microtime(true);
         run_gwt_tests($tests, [realpath(ospath($tests, 'run.php')) => true]);
         $success  = \Dof\Framework\GWT::getSuccess();
