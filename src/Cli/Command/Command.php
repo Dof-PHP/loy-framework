@@ -37,7 +37,7 @@ class Command
     {
         $lock = ospath(Kernel::getRoot(), WebKernel::HALT_FLAG);
         if (is_file($lock)) {
-            $force = strtolower($console->getOption('force', '0'));
+            $force = strtolower((string) $console->getOption('force', '0'));
             if (($force === '1') || ('true' === $force)) {
                 if (false === unlink($lock)) {
                     $console->output('ERROR! Force shutdown failed.');
@@ -49,7 +49,7 @@ class Command
             }
         }
 
-        $message = $console->getOption('message');
+        $message = $console->getOption('message', 'Unknown');
         $since = microftime('T Y-m-d H:i:s');
         $res = file_put_contents($lock, enjson(compact('message', 'since')));
         if (false === $res) {

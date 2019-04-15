@@ -30,9 +30,9 @@ class Console
         exit($context ? enjson([$message, $context]) : $message);
     }
 
-    public function getOption(string $name)
+    public function getOption(string $name, $default = null)
     {
-        return $this->options->get($name);
+        return $this->options->get($name, $default);
     }
 
     /**
