@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework;
+namespace Dof\Framework;
 
 /**
  * Rules about domain:
@@ -11,7 +11,7 @@ namespace Loy\Framework;
  */
 final class DomainManager
 {
-    const DOMAIN_DIR  = 'domain';
+    const DOMAIN_PATH = 'domain';
     const DOMAIN_FLAG = '__domain__';
     const DOMAIN_FILE = 'domain.php';
 
@@ -38,11 +38,18 @@ final class DomainManager
 
     public static function compile(string $root)
     {
-        $domainRoot = ospath($root, self::DOMAIN_DIR);
+        $domainRoot = ospath($root, self::DOMAIN_PATH);
         if (! is_dir($domainRoot)) {
             exception('InvalidDomainRoot', compact(['root', 'domainRoot']));
         }
         self::$root = $domainRoot;
+
+        $cache = Kernel::formatCacheFile(__FILE__);
+        if (file_exists($cache)) {
+            list(self::$dirs, self::$keys, self::$metas, self::$files, self::$namespaces) = load_php($cache);
+            return;
+        }
+
         self::$dirs = [];
         self::$keys = [];
         self::$metas = [];
@@ -50,6 +57,8 @@ final class DomainManager
         self::$namespaces = [];
 
         self::find(self::$root);
+
+        array2code([self::$dirs, self::$keys, self::$metas, self::$files, self::$namespaces], $cache);
     }
     
     /**

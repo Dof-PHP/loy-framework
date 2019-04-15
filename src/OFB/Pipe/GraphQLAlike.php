@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\OFB\Pipe;
+namespace Dof\Framework\OFB\Pipe;
 
-use Loy\Framework\DDD\ApplicationService;
-use Loy\Framework\Paginator;
-use Loy\Framework\DSL\IFRSN;
-use Loy\Framework\Facade\Assembler;
+use Dof\Framework\DDD\ApplicationService;
+use Dof\Framework\Paginator;
+use Dof\Framework\DSL\IFRSN;
+use Dof\Framework\Facade\Assembler;
 
 class GraphQLAlike
 {

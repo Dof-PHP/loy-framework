@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Cli\Command;
+namespace Dof\Framework\Cli\Command;
 
-use Loy\Framework\Kernel;
-use Loy\Framework\Web\Kernel as WebKernel;
+use Dof\Framework\Kernel;
+use Dof\Framework\Web\Kernel as WebKernel;
 
 class Command
 {
@@ -86,11 +86,11 @@ class Command
         $tests = ospath(__DIR__.'/../../..', ['tests']);
         $start = microtime(true);
         run_gwt_tests($tests, [realpath(ospath($tests, 'run.php')) => true]);
-        $success  = \Loy\Framework\GWT::getSuccess();
+        $success  = \Dof\Framework\GWT::getSuccess();
         $_success = count($success);
-        $failure  = \Loy\Framework\GWT::getFailure();
+        $failure  = \Dof\Framework\GWT::getFailure();
         $_failure = count($failure);
-        $exception  = \Loy\Framework\GWT::getException();
+        $exception  = \Dof\Framework\GWT::getException();
         $_exception = count($exception);
         $end = microtime(true);
 

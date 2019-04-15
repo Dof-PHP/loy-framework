@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\DDD;
+namespace Dof\Framework\DDD;
 
 use Throwable;
-use Loy\Framework\StorageManager;
-use Loy\Framework\RepositoryManager;
+use Dof\Framework\StorageManager;
+use Dof\Framework\RepositoryManager;
 
 /**
  * Storage is the persistence layer implementations
- * In Loy, it's also the configuration of ORM
+ * In Dof, it's also the configuration of ORM
  */
 class Storage implements Repository
 {

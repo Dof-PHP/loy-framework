@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework;
+namespace Dof\Framework;
 
 use Throwable;
 
@@ -417,7 +417,7 @@ class Validator
     /**
      * Setter for fails
      *
-     * @param Loy\Framework\Collection $fails
+     * @param Dof\Framework\Collection $fails
      * @return Validator
      */
     public function setFails($fails)
@@ -430,7 +430,7 @@ class Validator
     /**
      * Getter for fails
      *
-     * @return Loy\Framework\Collection|null
+     * @return Dof\Framework\Collection|null
      */
     public function getFails()
     {

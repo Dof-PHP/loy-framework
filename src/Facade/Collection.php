@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Facade;
+namespace Dof\Framework\Facade;
 
-use Loy\Framework\Facade;
-use Loy\Framework\Collection as Instance;
+use Dof\Framework\Facade;
+use Dof\Framework\Collection as Instance;
 
 class Collection extends Facade
 {

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Facade;
+namespace Dof\Framework\Facade;
 
 use Closure;
 use Throwable;
-use Loy\Framework\Facade;
-use Loy\Framework\Web\Response as Instance;
-use Loy\Framework\Web\Route;
+use Dof\Framework\Facade;
+use Dof\Framework\Web\Response as Instance;
+use Dof\Framework\Web\Route;
 
 class Response extends Facade
 {

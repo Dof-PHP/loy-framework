@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\DDD;
+namespace Dof\Framework\DDD;
 
 class Entity
 {

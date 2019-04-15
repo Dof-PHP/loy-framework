@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Web;
+namespace Dof\Framework\Web;
 
-use Loy\Framework\Web\RouteManager;
+use Dof\Framework\Web\RouteManager;
 
 final class Route
 {

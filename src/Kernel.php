@@ -2,19 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework;
+namespace Dof\Framework;
 
 use Closure;
-use Loy\Framework\Facade\Log;
-use Loy\Framework\Web\Kernel as WebKernel;
-use Loy\Framework\Cli\Kernel as CliKernel;
+use Dof\Framework\Facade\Log;
+use Dof\Framework\Web\Kernel as WebKernel;
+use Dof\Framework\Cli\Kernel as CliKernel;
 
 /**
- * Loy Framework Core Kernel
+ * Dof Framework Core Kernel
  */
 final class Kernel
 {
-    const RUNTIME_DIR = 'var';
+    const RUNTIME = 'var';
+    const CACHE   = 'cache';
+    const LOGGING = 'log';
+    const LOCATE  = __DIR__;
 
     /** @var string: Project Root Directory */
     private static $root;
@@ -69,8 +72,8 @@ final class Kernel
         // Record every uncatched exceptions
         set_exception_handler(function ($throwable) {
             $context = [
-                'trace' => explode(PHP_EOL, $throwable->getTraceAsString()),
-                'sapi'  => Kernel::getSapiContext(),
+                explode(PHP_EOL, $throwable->getTraceAsString()),
+                Kernel::getSapiContext(),
             ];
 
             Log::log('exception', $throwable->getMessage(), $context);
@@ -78,9 +81,9 @@ final class Kernel
         // Record every uncatched error regardless to the setting of the error_reporting setting
         set_error_handler(function ($errno, $errstr, $errfile, $errline) {
             $context = [
-                'file' => $errfile,
-                'line' => $errline,
-                'sapi' => Kernel::getSapiContext(),
+                $errfile,
+                $errline,
+                Kernel::getSapiContext(),
             ];
 
             Log::log('error', $errstr, $context);
@@ -125,6 +128,17 @@ final class Kernel
     public static function getRoot()
     {
         return self::$root;
+    }
+
+    public static function formatCacheFile(...$params) : string
+    {
+        return ospath(
+            self::$root,
+            self::RUNTIME,
+            self::CACHE,
+            'framework',
+            join('.', [md5(join('.', $params)), self::CACHE])
+        );
     }
 
     public static function getSapiContext() : ?array

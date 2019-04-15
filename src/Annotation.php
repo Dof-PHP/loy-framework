@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework;
+namespace Dof\Framework;
 
 use Closure;
 use ReflectionClass;

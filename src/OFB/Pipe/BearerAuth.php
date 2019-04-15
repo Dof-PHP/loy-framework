@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\OFB\Pipe;
+namespace Dof\Framework\OFB\Pipe;
 
 class BearerAuth
 {

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Facade;
+namespace Dof\Framework\Facade;
 
-use Loy\Framework\DDD\Assembler as AssembleObject;
-use Loy\Framework\DDD\ApplicationService;
-use Loy\Framework\Paginator;
+use Dof\Framework\DDD\Assembler as AssembleObject;
+use Dof\Framework\DDD\ApplicationService;
+use Dof\Framework\Paginator;
 
 class Assembler
 {

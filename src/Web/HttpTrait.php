@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Web;
+namespace Dof\Framework\Web;
 
 use Closure;
-use Loy\Framework\Collection;
+use Dof\Framework\Collection;
 
 trait HttpTrait
 {

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework;
+namespace Dof\Framework;
 
-use Loy\Framework\DDD\Entity;
-use Loy\Framework\DDD\Storage;
-use Loy\Framework\Facade\Annotation;
+use Dof\Framework\DDD\Entity;
+use Dof\Framework\DDD\Storage;
+use Dof\Framework\Facade\Annotation;
 
 final class RepositoryManager
 {
@@ -78,6 +78,12 @@ final class RepositoryManager
 
     public static function compile(array $dirs)
     {
+        $cache = Kernel::formatCacheFile(__FILE__);
+        if (file_exists($cache)) {
+            list(self::$dirs, self::$repositories) = load_php($cache);
+            return;
+        }
+
         if (count($dirs) < 1) {
             return;
         }
@@ -100,6 +106,8 @@ final class RepositoryManager
                 self::assemble($ofClass);
             }
         }, __CLASS__);
+
+        array2code([self::$dirs, self::$repositories], $cache);
     }
 
     /**

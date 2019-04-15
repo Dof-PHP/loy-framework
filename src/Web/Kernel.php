@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Web;
+namespace Dof\Framework\Web;
 
 use Throwable;
-use Loy\Framework\Kernel as Core;
-use Loy\Framework\Container;
-use Loy\Framework\RouteManager;
-use Loy\Framework\TypeHint;
-use Loy\Framework\Validator;
-use Loy\Framework\Facade\Log;
-use Loy\Framework\Facade\Request;
-use Loy\Framework\Facade\Response;
+use Dof\Framework\Kernel as Core;
+use Dof\Framework\Container;
+use Dof\Framework\RouteManager;
+use Dof\Framework\TypeHint;
+use Dof\Framework\Validator;
+use Dof\Framework\Facade\Log;
+use Dof\Framework\Facade\Request;
+use Dof\Framework\Facade\Response;
 
 /**
- * Loy Framework Web Kernel
+ * Dof Framework Web Kernel
  */
 final class Kernel
 {
@@ -23,7 +23,7 @@ final class Kernel
     const PIPEOUT_HANDLER = 'pipeout';
     const WRAPOUT_HANDLER = 'wrapout';
     const WRAPERR_HANDLER = 'wraperr';
-    const HALT_FLAG = '.LOCK.WEB.LOY';
+    const HALT_FLAG = '.LOCK.WEB.DOF';
 
     private static $booted = false;
 

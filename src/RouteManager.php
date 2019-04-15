@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework;
+namespace Dof\Framework;
 
-use Loy\Framework\Facade\Annotation;
+use Dof\Framework\Facade\Annotation;
 
 final class RouteManager
 {
@@ -102,6 +102,12 @@ final class RouteManager
      */
     public static function compile(array $dirs)
     {
+        $cache = Kernel::formatCacheFile(__FILE__);
+        if (file_exists($cache)) {
+            list(self::$dirs, self::$aliases, self::$routes) = load_php($cache);
+            return;
+        }
+
         if (count($dirs) < 1) {
             return;
         }
@@ -125,6 +131,8 @@ final class RouteManager
                 self::assemble($ofClass, $ofProperties, $ofMethods);
             }
         }, __CLASS__);
+
+        array2code([self::$dirs, self::$aliases, self::$routes], $cache);
     }
 
     /**

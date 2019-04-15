@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework;
+namespace Dof\Framework;
 
-use Loy\Framework\Facade\Annotation;
-use Loy\Framework\Cli\Command\Command;
+use Dof\Framework\Facade\Annotation;
+use Dof\Framework\Cli\Command\Command;
 
 final class CommandManager
 {
@@ -19,6 +19,12 @@ final class CommandManager
 
     public static function compile(array $dirs)
     {
+        $cache = Kernel::formatCacheFile(__FILE__);
+        if (file_exists($cache)) {
+            list(self::$dirs, self::$commands) = load_php($cache);
+            return;
+        }
+
         self::$commands['default'] = [];
         self::loadDirs([dirname(get_file_of_namespace(Command::class))], 'default');
 
@@ -38,6 +44,8 @@ final class CommandManager
         }, $dirs);
 
         self::loadDirs(self::$dirs, 'domain');
+
+        array2code([self::$dirs, self::$commands], $cache);
     }
 
     public static function loadDirs(array $dirs, string $type)
@@ -56,10 +64,10 @@ final class CommandManager
      */
     public static function assemble(array $ofClass, array $ofMethods, string $type)
     {
-        $namespace    = $ofClass['namespace']      ?? null;
-        $cmdPrefix    = $ofClass['doc']['CMD']     ?? null;
-        $commentGroup = $ofClass['doc']['COMMENT'] ?? null;
-        $optionGroup  = $ofClass['doc']['OPTION']  ?? [];
+        $namespace    = $ofClass['namespace']     ?? null;
+        $cmdPrefix    = $ofClass['doc']['CMD']    ?? null;
+        $commentGroup = $ofClass['doc']['DESC']   ?? null;
+        $optionGroup  = $ofClass['doc']['OPTION'] ?? [];
 
         foreach (($ofMethods ?? []) as $method => $data) {
             $docMethod = $data['doc'] ?? [];
@@ -68,8 +76,8 @@ final class CommandManager
                 continue;
             }
             $command = $cmdPrefix ? join('.', [$cmdPrefix, $cmd]) : $cmd;
-            $comment = $docMethod['COMMENT'] ?? null;
-            $comment = join(': ', [$commentGroup, $comment]);
+            $comment = $docMethod['DESC'] ?? null;
+            $comment = $commentGroup ? join(': ', [$commentGroup, $comment]) : $comment;
             $options = $docMethod['OPTION']  ?? [];
             $options = array_merge($optionGroup, $options);
 

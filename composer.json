@@ -1,6 +1,6 @@
 {
-    "name": "loy/framework",
-    "description": "Loy Framework Set",
+    "name": "dof/framework",
+    "description": "Dof Framework Core",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -11,7 +11,7 @@
     ],
 	"autoload": {
 		"psr-4": {
-			"Loy\\Framework\\": "./src/"
+			"Dof\\Framework\\": "./src/"
 		},
 		"files": [
 			"./src/functions/base.php",
@@ -22,7 +22,7 @@
     },
     "autoload-dev": {
         "psr-4": { 
-           "Loy\\Framework\\Tests\\": "./tests/"
+           "Dof\\Framework\\Tests\\": "./tests/" 
         }
     },
     "require": {}

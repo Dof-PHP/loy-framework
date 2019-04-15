@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Log;
+namespace Dof\Framework\Log;
 
-use Loy\Framework\Log\Logger\File;
+use Dof\Framework\Log\Logger\File;
 
 class LoggerAware
 {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Log\Logger;
+namespace Dof\Framework\Log\Logger;
 
-use Loy\Framework\Kernel;
-use Loy\Framework\Log\LoggerInterface;
+use Dof\Framework\Kernel;
+use Dof\Framework\Log\LoggerInterface;
 
 class File implements LoggerInterface
 {

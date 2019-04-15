@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Facade;
+namespace Dof\Framework\Facade;
 
-use Loy\Framework\Facade;
-use Loy\Framework\Web\Request as Instance;
+use Dof\Framework\Facade;
+use Dof\Framework\Web\Request as Instance;
 
 class Request extends Facade
 {

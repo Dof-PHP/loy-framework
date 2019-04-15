@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Facade;
+namespace Dof\Framework\Facade;
 
-use Loy\Framework\Facade;
-use Loy\Framework\Log\LoggerAware as Instance;
+use Dof\Framework\Facade;
+use Dof\Framework\Log\LoggerAware as Instance;
 
 class Log extends Facade
 {

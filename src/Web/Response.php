@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Web;
+namespace Dof\Framework\Web;
 
 class Response
 {

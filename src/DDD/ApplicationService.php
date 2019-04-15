@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\DDD;
+namespace Dof\Framework\DDD;
 
-use Loy\Framework\Container;
+use Dof\Framework\Container;
 
 abstract class ApplicationService
 {

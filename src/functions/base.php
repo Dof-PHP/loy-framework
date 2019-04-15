@@ -467,6 +467,50 @@ if (! function_exists('array_trim_from_string')) {
         return array_trim($arr);
     }
 }
+if (! function_exists('array_stringify')) {
+    function array_stringify(array $arr)
+    {
+        $level = 1;
+        $str   = "[\n";
+        $str  .= array_stringify_main($arr, $level);
+        $str  .= ']';
+
+        return $str;
+    }
+}
+if (! function_exists('array_stringify_main')) {
+    function array_stringify_main(array $arr, &$level)
+    {
+        $str = '';
+        $margin = str_repeat("\t", $level++);
+        foreach ($arr as $key => $val) {
+            $key  = is_int($key) ? $key : "'{$key}'";
+            $str .= $margin.$key.' => ';
+            if (is_array($val)) {
+                $str .= "[\n";
+                $str .= array_stringify_main($val, $level);
+                $str .= $margin."],\n";
+                --$level;
+            } else {
+                $val  = is_int($val) ? $val : (is_null($val) ? 'null' : ("'".stringify($val)."'"));
+                $str .= $val.",\n";
+            }
+        }
+        return $str;
+    }
+}
+if (! function_exists('array2code')) {
+    function array2code(array $data, string $path)
+    {
+        $code = array_stringify($data);
+        $code = <<<ARR
+<?php
+
+return {$code};\n
+ARR;
+        file_put_contents($path, $code);
+    }
+}
 if (! function_exists('stringify')) {
     function stringify($value)
     {

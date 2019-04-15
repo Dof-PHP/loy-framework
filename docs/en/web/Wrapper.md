@@ -1,6 +1,6 @@
 Wrappers are the validators for both HTTP request and response. They will be used in port method annotation definitions for different purposes.
 
-There are three type of wrappers in loy:
+There are three type of wrappers in dof:
 
 ## wrapperin
 
@@ -10,7 +10,7 @@ Validate request parameters.
 
 Validate success response parameters.
 
-Typically, response data are php arrays. Four types of format of wrappers in Loy:
+Typically, response data are php arrays. Four types of format of wrappers in Dof:
 
 ### Index Array
 

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Web;
+namespace Dof\Framework\Web;
 
-use Loy\Framework\Facade\Annotation;
-use Loy\Framework\Facade\Request;
-use Loy\Framework\Facade\Validator;
+use Dof\Framework\Facade\Annotation;
+use Dof\Framework\Facade\Request;
+use Dof\Framework\Facade\Validator;
 
 final class Wrapin
 {
@@ -27,7 +27,7 @@ final class Wrapin
      *
      * @param string $wrapin: Wrapin class to apply
      * @param iterable|null $params: The origin data to be validated
-     * @return Loy\Framework\Validator
+     * @return Dof\Framework\Validator
      */
     public static function apply(string $wrapin, $params = null)
     {
@@ -46,7 +46,7 @@ final class Wrapin
      * @param iterable $arguments: Validate rules list
      * @param string $origin: The origin class request a wrapin check
      * @param iterable|null $params: The origin data to be validated
-     * @return Loy\Framework\Validator
+     * @return Dof\Framework\Validator
      */
     public static function execute($arguments, string $origin, $params = null)
     {
@@ -119,6 +119,10 @@ final class Wrapin
         if ($wrapins) {
             foreach ($wrapins as $__wrapin) {
                 foreach ($__wrapin as $wrapin => $_data) {
+                    if (! $_data) {
+                        continue;
+                    }
+
                     $_wrapin = get_annotation_ns($wrapin, $origin);
                     if (false === $_wrapin) {
                         exception('InvalidWrapinAnnotation', compact('wrapin'));

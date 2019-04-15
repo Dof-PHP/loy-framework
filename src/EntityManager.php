@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework;
+namespace Dof\Framework;
 
-use Loy\Framework\Facade\Annotation;
-use Loy\Framework\DDD\Repository;
+use Dof\Framework\Facade\Annotation;
+use Dof\Framework\DDD\Repository;
 
 final class EntityManager
 {
@@ -16,6 +16,12 @@ final class EntityManager
 
     public static function compile(array $dirs)
     {
+        $cache = Kernel::formatCacheFile(__FILE__);
+        if (file_exists($cache)) {
+            list(self::$dirs, self::$entities) = load_php($cache);
+            return;
+        }
+
         if (count($dirs) < 1) {
             return;
         }
@@ -38,6 +44,8 @@ final class EntityManager
                 self::assemble($ofClass, $ofProperties);
             }
         }, __CLASS__);
+
+        array2code([self::$dirs, self::$entities], $cache);
     }
 
     /**

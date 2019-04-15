@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Cli;
+namespace Dof\Framework\Cli;
 
 use Throwable;
-use Loy\Framework\Kernel as Core;
-use Loy\Framework\ConfigManager;
-use Loy\Framework\CommandManager;
-use Loy\Framework\DSL\CLIA;
-use Loy\Framework\Facade\Console;
-use Loy\Framework\Facade\Log;
+use Dof\Framework\Kernel as Core;
+use Dof\Framework\ConfigManager;
+use Dof\Framework\CommandManager;
+use Dof\Framework\DSL\CLIA;
+use Dof\Framework\Facade\Console;
+use Dof\Framework\Facade\Log;
 
 final class Kernel
 {
@@ -40,7 +40,7 @@ final class Kernel
                 ]), self::getContext(false));
 
                 // Reset file/directory permission
-                $runtime = ospath(Core::getRoot(), Core::RUNTIME_DIR);
+                $runtime = ospath(Core::getRoot(), Core::RUNTIME);
                 if (is_dir($runtime)) {
                     if ($owner = ConfigManager::getFramework('runtime.permission.owner')) {
                         chownr($runtime, $owner);

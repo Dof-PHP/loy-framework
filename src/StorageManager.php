@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework;
+namespace Dof\Framework;
 
 use Throwable;
-use Loy\Framework\Kernel;
-use Loy\Framework\Storage\MySQL;
-use Loy\Framework\Facade\Log;
-use Loy\Framework\Facade\Annotation;
-use Loy\Framework\DDD\Repository;
+use Dof\Framework\Kernel;
+use Dof\Framework\Storage\MySQL;
+use Dof\Framework\Facade\Log;
+use Dof\Framework\Facade\Annotation;
+use Dof\Framework\DDD\Repository;
 
 final class StorageManager
 {
@@ -31,6 +31,12 @@ final class StorageManager
 
     public static function compile(array $dirs)
     {
+        $cache = Kernel::formatCacheFile(__FILE__);
+        if (file_exists($cache)) {
+            list(self::$dirs, self::$orms) = load_php($cache);
+            return;
+        }
+
         if (count($dirs) < 1) {
             return;
         }
@@ -53,6 +59,8 @@ final class StorageManager
                 self::assemble($ofClass, $ofProperties);
             }
         }, __CLASS__);
+
+        array2code([self::$dirs, self::$orms], $cache);
     }
 
     /**

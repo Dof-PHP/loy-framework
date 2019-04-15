@@ -11,7 +11,7 @@ packages/
 /**/*.swp
 /**/*.pyc
 
-/* Loy Framework */
+/* Dof Framework */
 var/
 config/
 /**/*.log

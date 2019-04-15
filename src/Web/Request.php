@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Web;
+namespace Dof\Framework\Web;
 
 class Request
 {
@@ -247,7 +247,7 @@ class Request
             }
 
             $uri = $this->getRequestUri();
-            $res = (string) parse_url("http://loy{$uri}", PHP_URL_QUERY);
+            $res = (string) parse_url("http://dof{$uri}", PHP_URL_QUERY);
 
             return $res;
         });
@@ -286,7 +286,7 @@ class Request
     {
         return $this->getOrSet('uriRaw', function () {
             $uri = $this->getRequestUri();
-            $uri = (string) parse_url("http://loy{$uri}", PHP_URL_PATH);
+            $uri = (string) parse_url("http://dof{$uri}", PHP_URL_PATH);
 
             return $uri;
         });

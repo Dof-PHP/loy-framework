@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Log;
+namespace Dof\Framework\Log;
 
 /**
  * See: <https://www.php-fig.org/psr/psr-3/#3-psrlogloggerinterface>

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\OFB\Pipe;
+namespace Dof\Framework\OFB\Pipe;
 
-use Loy\Framework\DSL\IFRSN;
+use Dof\Framework\DSL\IFRSN;
 
 class Paginate
 {

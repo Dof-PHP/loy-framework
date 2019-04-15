@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework;
+namespace Dof\Framework;
 
-use Loy\Framework\Facade\Annotation;
+use Dof\Framework\Facade\Annotation;
 
 /**
  * Classes container - the key of dependency injection

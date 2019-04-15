@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Cli;
+namespace Dof\Framework\Cli;
 
-use Loy\Framework\Collection;
+use Dof\Framework\Collection;
 
 class Console
 {

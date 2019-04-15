@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework;
+namespace Dof\Framework;
 
 final class ConfigManager
 {
@@ -23,8 +23,15 @@ final class ConfigManager
         if (! is_dir($root)) {
             exception('InvalidProjectRoot', compact('root'));
         }
+        $cache = Kernel::formatCacheFile(__FILE__, 'framework');
+        if (file_exists($cache)) {
+            self::$default = load_php($cache);
+            return;
+        }
 
         self::$default = self::loadDir(ospath($root, self::DEFAULT_DIR));
+
+        array2code(self::$default, $cache);
     }
 
     /**
@@ -34,9 +41,17 @@ final class ConfigManager
      */
     public static function load(array $dirs)
     {
+        $cache = Kernel::formatCacheFile(__FILE__, 'domains');
+        if (file_exists($cache)) {
+            self::$domains = load_php($cache);
+            return;
+        }
+
         foreach ($dirs as $meta => $domain) {
             self::$domains[$domain] = self::loadDir($meta);
         }
+
+        array2code(self::$domains, $cache);
     }
 
     public static function loadDir(string $path)

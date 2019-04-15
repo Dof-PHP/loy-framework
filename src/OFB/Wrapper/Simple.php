@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\OFB\Wrapper;
+namespace Dof\Framework\OFB\Wrapper;
 
 class Simple
 {

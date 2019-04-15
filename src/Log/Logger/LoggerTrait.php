@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Log\Logger;
+namespace Dof\Framework\Log\Logger;
 
 trait LoggerTrait
 {

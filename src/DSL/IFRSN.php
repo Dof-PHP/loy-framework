@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\DSL;
+namespace Dof\Framework\DSL;
 
 /**
  * IFRSN: Input Fields Relation Structured Notation

@@ -67,7 +67,7 @@ declare(strict_types=1);
 
 namespace Domain\User\Http\Port;
 
-use Loy\Framework\Web\Port;
+use Dof\Framework\Web\Port;
 
 /**
  * @route(users)

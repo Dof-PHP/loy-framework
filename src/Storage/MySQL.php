@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Loy\Framework\Storage;
+namespace Dof\Framework\Storage;
 
 use PDO;
 use Throwable;
-use Loy\Framework\Validator;
+use Dof\Framework\Validator;
 
 class MySQL implements StorageInterface
 {
-    /** @var \Loy\Framework\Collection: Configuration collection instance */
+    /** @var \Dof\Framework\Collection: Configuration collection instance */
     private $config = [];
 
-    /** @var \Loy\Framework\Collection: SQL Query used data, collection instance */
+    /** @var \Dof\Framework\Collection: SQL Query used data, collection instance */
     private $query = [];
 
     /** @var object|null: Connection Instance */
