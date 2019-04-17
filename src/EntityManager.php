@@ -14,14 +14,41 @@ final class EntityManager
     private static $dirs = [];
     private static $entities = [];
 
-    public static function compile(array $dirs)
+    /**
+     * Load domain entities among domain directories with cache management
+     *
+     * @param array $dirs: Domain directories
+     */
+    public static function load(array $dirs)
     {
-        $cache = Kernel::formatCacheFile(__FILE__);
-        if (file_exists($cache)) {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
             list(self::$dirs, self::$entities) = load_php($cache);
             return;
         }
 
+        self::compile($dirs);
+
+        if (ConfigManager::matchEnv(['ENABLE_ENTITY_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
+            array2code([self::$dirs, self::$entities], $cache);
+        }
+    }
+
+    public static function flush()
+    {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
+            unlink($cache);
+        }
+    }
+
+    /**
+     * Load domain entities among domain directories
+     *
+     * @param array $dirs: Domain directories
+     */
+    public static function compile(array $dirs, bool $cache = false)
+    {
         if (count($dirs) < 1) {
             return;
         }
@@ -45,7 +72,9 @@ final class EntityManager
             }
         }, __CLASS__);
 
-        array2code([self::$dirs, self::$entities], $cache);
+        if ($cache) {
+            array2code([self::$dirs, self::$entities], Kernel::formatCacheFile(__CLASS__));
+        }
     }
 
     /**

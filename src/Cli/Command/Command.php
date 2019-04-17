@@ -5,6 +5,13 @@ declare(strict_types=1);
 namespace Dof\Framework\Cli\Command;
 
 use Dof\Framework\Kernel;
+use Dof\Framework\ConfigManager;
+use Dof\Framework\DomainManager;
+use Dof\Framework\EntityManager;
+use Dof\Framework\StorageManager;
+use Dof\Framework\RepositoryManager;
+use Dof\Framework\CommandManager;
+use Dof\Framework\RouteManager;
 use Dof\Framework\Web\Kernel as WebKernel;
 
 class Command
@@ -83,9 +90,12 @@ class Command
      */
     public function testFramework($console)
     {
-        $tests = realpath(ospath(__DIR__.'/../../..', ['tests']));
+        $tests = ospath(__DIR__.'/../../..', ['tests']);
         $start = microtime(true);
-        run_gwt_tests($tests, [realpath(ospath($tests, 'run.php')) => true]);
+        run_gwt_tests($tests, [
+            ospath($tests, 'run.php'),
+            ospath($tests, 'data'),
+        ]);
         $success  = \Dof\Framework\GWT::getSuccess();
         $_success = count($success);
         $failure  = \Dof\Framework\GWT::getFailure();
@@ -118,18 +128,82 @@ class Command
     }
 
     /**
-     * @CMD(compile.framework)
-     * @Desc(Compiles classes and annotations of framework)
+     * @CMD(clear.compile)
+     * @Desc(Clear all classes compile cache)
      */
-    public function complieFramework()
+    public function clearCompile($console)
     {
+        ConfigManager::flush();
+
+        DomainManager::flush();
+
+        EntityManager::flush();
+
+        StorageManager::flush();
+
+        RepositoryManager::flush();
+
+        CommandManager::flush();
+
+        RouteManager::flush();
     }
 
     /**
-     * @CMD(compile.domain)
-     * @Desc(Compiles classes and annotations of domains)
-     * @Option(domain)
+     * @CMD(compile)
+     * @Desc(Compile all classes)
      */
+    public function compile($console)
+    {
+        ConfigManager::compileDefault(Kernel::getRoot(), true);
+
+        DomainManager::compile(Kernel::getRoot(), true);
+
+        ConfigManager::compileDomains(DomainManager::getMetas(), true);
+
+        $domains = DomainManager::getDirs();
+
+        EntityManager::compile($domains, true);
+
+        StorageManager::compile($domains, true);
+
+        RepositoryManager::compile($domains, true);
+
+        CommandManager::compile($domains, true);
+
+        RouteManager::compile($domains, true);
+    }
+
+    /**
+    * @CMD(compile.port)
+    * @Desc(Compiles Port classes and it's annotations)
+    */
+    public function compliePort($console)
+    {
+        ConfigManager::compileDefault(Kernel::getRoot(), true);
+
+        DomainManager::compile(Kernel::getRoot(), true);
+
+        ConfigManager::compileDomains(DomainManager::getMetas(), true);
+
+        $domains = DomainManager::getDirs();
+
+        RouteManager::compile($domains, true);
+    }
+
+    /**
+    * @CMD(compile.port.clear)
+    * @Desc(Clear Port compile result)
+    */
+    public function clearPortComplie($console)
+    {
+        RouteManager::flush();
+    }
+
+    /**
+    * @CMD(compile.domain)
+    * @Desc(Compiles classes and annotations of domains)
+    * @Option(domain)
+    */
     public function complieDomain($console)
     {
     }

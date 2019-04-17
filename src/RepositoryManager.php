@@ -76,14 +76,31 @@ final class RepositoryManager
         return $instance;
     }
 
-    public static function compile(array $dirs)
+    public static function load(array $dirs)
     {
-        $cache = Kernel::formatCacheFile(__FILE__);
-        if (file_exists($cache)) {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
             list(self::$dirs, self::$repositories) = load_php($cache);
             return;
         }
 
+        self::compile($dirs);
+
+        if (ConfigManager::matchEnv(['ENABLE_REPOSITORY_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
+            array2code([self::$dirs, self::$repositories], $cache);
+        }
+    }
+
+    public static function flush()
+    {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
+            unlink($cache);
+        }
+    }
+
+    public static function compile(array $dirs, bool $cache = false)
+    {
         if (count($dirs) < 1) {
             return;
         }
@@ -107,7 +124,9 @@ final class RepositoryManager
             }
         }, __CLASS__);
 
-        array2code([self::$dirs, self::$repositories], $cache);
+        if ($cache) {
+            array2code([self::$dirs, self::$repositories], Kernel::formatCacheFile(__CLASS__));
+        }
     }
 
     /**

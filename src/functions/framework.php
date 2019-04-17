@@ -313,6 +313,7 @@ if (! function_exists('GWT')) {
             $trace = $e->getTrace()[0] ?? [];
 
             $result = [
+                $e->getMessage(),
                 $trace['file'],
                 $trace['line'],
                 $trace['args'],

@@ -492,7 +492,7 @@ if (! function_exists('array_stringify_main')) {
                 $str .= $margin."],\n";
                 --$level;
             } else {
-                $val  = is_int($val) ? $val : (is_null($val) ? 'null' : ("'".stringify($val)."'"));
+                $val  = is_int($val) ? $val : (is_null($val) ? 'null' : ("'".addslashes(stringify($val))."'"));
                 $str .= $val.",\n";
             }
         }

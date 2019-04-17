@@ -17,14 +17,31 @@ final class CommandManager
         'domain'  => [],
     ];
 
-    public static function compile(array $dirs)
+    public static function load(array $dirs)
     {
-        $cache = Kernel::formatCacheFile(__FILE__);
-        if (file_exists($cache)) {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
             list(self::$dirs, self::$commands) = load_php($cache);
             return;
         }
 
+        self::compile($dirs);
+
+        if (ConfigManager::matchEnv(['ENABLE_COMMAND_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
+            array2code([self::$dirs, self::$commands], $cache);
+        }
+    }
+
+    public static function flush()
+    {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
+            unlink($cache);
+        }
+    }
+
+    public static function compile(array $dirs, bool $cache = false)
+    {
         self::$commands['default'] = [];
         self::loadDirs([dirname(get_file_of_namespace(Command::class))], 'default');
 
@@ -45,7 +62,9 @@ final class CommandManager
 
         self::loadDirs(self::$dirs, 'domain');
 
-        array2code([self::$dirs, self::$commands], $cache);
+        if ($cache) {
+            array2code([self::$dirs, self::$commands], Kernel::formatCacheFile(__CLASS__));
+        }
     }
 
     public static function loadDirs(array $dirs, string $type)

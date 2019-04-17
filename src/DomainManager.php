@@ -36,19 +36,46 @@ final class DomainManager
     /** @var array: Domain collection object pool */
     private static $pool = [];
 
-    public static function compile(string $root)
+    /**
+     * Load doamins in whole project with cache management
+     *
+     * @param string $root: Project root
+     */
+    public static function load(string $root)
+    {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
+            list(self::$dirs, self::$keys, self::$metas, self::$files, self::$namespaces) = load_php($cache);
+            return;
+        }
+
+        self::compile($root);
+
+        if (ConfigManager::matchEnv(['ENABLE_DOMAIN_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
+            array2code([self::$dirs, self::$keys, self::$metas, self::$files, self::$namespaces], $cache);
+        }
+    }
+
+    public static function flush()
+    {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
+            unlink($cache);
+        }
+    }
+
+    /**
+     * Load doamins in whole project
+     *
+     * @param string $root: Project root
+     */
+    public static function compile(string $root, bool $cache = false)
     {
         $domainRoot = ospath($root, self::DOMAIN_PATH);
         if (! is_dir($domainRoot)) {
             exception('InvalidDomainRoot', compact(['root', 'domainRoot']));
         }
         self::$root = $domainRoot;
-
-        $cache = Kernel::formatCacheFile(__FILE__);
-        if (file_exists($cache)) {
-            list(self::$dirs, self::$keys, self::$metas, self::$files, self::$namespaces) = load_php($cache);
-            return;
-        }
 
         self::$dirs = [];
         self::$keys = [];
@@ -58,7 +85,15 @@ final class DomainManager
 
         self::find(self::$root);
 
-        array2code([self::$dirs, self::$keys, self::$metas, self::$files, self::$namespaces], $cache);
+        if ($cache) {
+            array2code([
+                self::$dirs,
+                self::$keys,
+                self::$metas,
+                self::$files,
+                self::$namespaces
+            ], Kernel::formatCacheFile(__CLASS__));
+        }
     }
     
     /**

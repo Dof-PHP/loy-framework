@@ -29,14 +29,34 @@ final class StorageManager
     /** @var array: Connection Key <=> Storage Instance KV */
     private static $connections = [];
 
-    public static function compile(array $dirs)
+    /**
+     * Compile storages among domain directories with cache management
+     *
+     * @param array $dirs
+     */
+    public static function load(array $dirs)
     {
-        $cache = Kernel::formatCacheFile(__FILE__);
-        if (file_exists($cache)) {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
             list(self::$dirs, self::$orms) = load_php($cache);
             return;
         }
 
+        self::compile($dirs);
+
+        if (ConfigManager::matchEnv(['ENABLE_STORAGE_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
+            array2code([self::$dirs, self::$orms], $cache);
+        }
+    }
+
+    /**
+     * Compile storages among domain directories
+     *
+     * @param array $dirs
+     * @param bool $cache
+     */
+    public static function compile(array $dirs, bool $cache = false)
+    {
         if (count($dirs) < 1) {
             return;
         }
@@ -60,7 +80,17 @@ final class StorageManager
             }
         }, __CLASS__);
 
-        array2code([self::$dirs, self::$orms], $cache);
+        if ($cache) {
+            array2code([self::$dirs, self::$orms], Kernel::formatCacheFile(__CLASS__));
+        }
+    }
+
+    public static function flush()
+    {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
+            unlink($cache);
+        }
     }
 
     /**

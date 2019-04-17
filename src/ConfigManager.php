@@ -14,46 +14,83 @@ final class ConfigManager
     private static $domains = [];
 
     /**
-     * Init default/basic configs for domain and framework
+     * Init default/basic configs for domain and framework with cache management
      *
-     * @param string $root: Absolute path of config dir
+     * @param string $root: Absolute path of project root
      */
     public static function init(string $root)
     {
         if (! is_dir($root)) {
             exception('InvalidProjectRoot', compact('root'));
         }
-        $cache = Kernel::formatCacheFile(__FILE__, 'framework');
-        if (file_exists($cache)) {
+        $cache = Kernel::formatCacheFile(__CLASS__, 'default');
+        if (is_file($cache)) {
             self::$default = load_php($cache);
             return;
         }
 
-        self::$default = self::loadDir(ospath($root, self::DEFAULT_DIR));
+        self::compileDefault($root);
 
-        array2code(self::$default, $cache);
+        if (self::matchEnv(['ENABLE_CONFIG_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
+            array2code(self::$default, $cache);
+        }
     }
 
     /**
-     * Load configs from domains
+     * Compile default configs for domain and framework
+     *
+     * @param string $root: Absolute path of project root
+     */
+    public static function compileDefault(string $root, bool $cache = false)
+    {
+        self::$default = self::loadDir(ospath($root, self::DEFAULT_DIR));
+
+        if ($cache) {
+            array2code(self::$default, Kernel::formatCacheFile(__CLASS__, 'default'));
+        }
+    }
+
+    /**
+     * Load configs from domains with cache management
      *
      * @param array $dirs: Domain directories
      */
     public static function load(array $dirs)
     {
-        $cache = Kernel::formatCacheFile(__FILE__, 'domains');
+        $cache = Kernel::formatCacheFile(__CLASS__, 'domains');
         if (file_exists($cache)) {
             self::$domains = load_php($cache);
             return;
         }
 
+        self::compileDomains($dirs);
+
+        if (self::matchEnv(['ENABLE_CONFIG_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
+            array2code(self::$domains, $cache);
+        }
+    }
+
+    /**
+     * Compile configurations of domains
+     *
+     * @param array $dirs: Domain directories
+     */
+    public static function compileDomains(array $dirs, bool $cache = false)
+    {
         foreach ($dirs as $meta => $domain) {
             self::$domains[$domain] = self::loadDir($meta);
         }
 
-        array2code(self::$domains, $cache);
+        if ($cache) {
+            array2code(self::$domains, Kernel::formatCacheFile(__CLASS__, 'domains'));
+        }
     }
 
+    /**
+     * Load configuration files from a directory with no cache management
+     *
+     * @param stirng $path
+     */
     public static function loadDir(string $path)
     {
         $result = [];
@@ -103,6 +140,18 @@ final class ConfigManager
         }
     }
 
+    public static function flush()
+    {
+        $default = Kernel::formatCacheFile(__CLASS__, 'default');
+        if (is_file($default)) {
+            unlink($default);
+        }
+        $domains = Kernel::formatCacheFile(__CLASS__, 'domains');
+        if (is_file($domains)) {
+            unlink($domains);
+        }
+    }
+
     public static function get(string $key)
     {
         return array_get_by_chain_key(self::$default, $key, '.');
@@ -148,6 +197,26 @@ final class ConfigManager
         return self::getDomainByKey($domain, $key, $default) ?: self::getDefault($key, $default);
     }
 
+    public static function getDomainFinalEnvByNamespace(string $ns, string $key = null, $default = null)
+    {
+        $key = 'env.'.$key;
+
+        return self::getDomainFinalByNamespace($ns, $key, $default);
+    }
+
+    public static function getDomainFinalEnvByFile(string $file, string $key = null, $default = null)
+    {
+        $key = 'env.'.$key;
+
+        return self::getDomainFinalByFile($file, $key, $default);
+    }
+
+    public static function getDomainFinalEnvByKey(string $domain, string $key = null, $default = null)
+    {
+        $key = 'env.'.$key;
+
+        return self::getDomainFinalByKey($domain, $key, $default);
+    }
     public static function getDomainFinalDomainByNamespace(string $ns, string $key = null, $default = null)
     {
         $key = 'domain.'.$key;
@@ -182,6 +251,28 @@ final class ConfigManager
     public static function getDomainFinalDatabaseByKey(string $domain, string $key = null, $default = null)
     {
         return self::getDomainFinalByKey($domain, "database.{$key}", $default);
+    }
+
+    /**
+     * Match a env config item by a list of keys with order
+     *
+     * @param array $keys: The list of keys to match
+     * @param mixed $default
+     */
+    public static function matchEnv(array $keys = [], $default = null)
+    {
+        foreach ($keys as $key) {
+            if (is_string($key)) {
+                continue;
+            }
+
+            $val = self::getEnv($key);
+            if (! is_null($val)) {
+                return $val;
+            }
+        }
+
+        return $default;
     }
 
     public static function getEnv(string $key = null, $default = null)

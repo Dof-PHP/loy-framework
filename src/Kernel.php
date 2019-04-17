@@ -89,21 +89,21 @@ final class Kernel
             Log::log('error', $errstr, $context);
         });
 
-        DomainManager::compile(self::$root);
+        DomainManager::load(self::$root);
 
         ConfigManager::load(DomainManager::getMetas());
         
         $domains = DomainManager::getDirs();
 
-        EntityManager::compile($domains);
+        EntityManager::load($domains);
 
-        StorageManager::compile($domains);
+        StorageManager::load($domains);
 
-        RepositoryManager::compile($domains);
+        RepositoryManager::load($domains);
 
-        CommandManager::compile($domains);
+        CommandManager::load($domains);
 
-        RouteManager::compile($domains);
+        RouteManager::load($domains);
     }
 
     public static function register(string $event, Closure $callback)

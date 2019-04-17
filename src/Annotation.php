@@ -126,7 +126,7 @@ class Annotation
         $res = [];
         foreach ($properties as $property) {
             $_res = Reflector::formatClassProperty($property, $namespace);
-            $_res['doc'] = $this->parseComment((string) ($_res['doc'] ?? ''), $origin);
+            $_res['doc'] = $this->parseComment((string) ($_res['doc'] ?? ''), $origin, $namespace);
 
             $res[$property->name] = $_res;
         }
@@ -143,14 +143,14 @@ class Annotation
         $res = [];
         foreach ($methods as $method) {
             $_res = Reflector::formatClassMethod($method, $namespace);
-            $_res['doc'] = $this->parseComment((string) ($_res['doc'] ?? ''), $origin);
+            $_res['doc'] = $this->parseComment((string) ($_res['doc'] ?? ''), $origin, $namespace);
             $res[$method->name] = $_res;
         }
 
         return $res;
     }
 
-    public function parseComment(string $comment, $origin = null) : array
+    public function parseComment(string $comment, $origin = null, string $namespace = null) : array
     {
         if (! $comment) {
             return [];
@@ -178,17 +178,17 @@ class Annotation
             if (! is_null($origin)) {
                 $filterCallback = '__annotationFilter'.$suffix;
                 if (method_exists($origin, $filterCallback)) {
-                    $val = call_user_func_array([$origin, $filterCallback], [$val, $_ext]);
+                    $val = call_user_func_array([$origin, $filterCallback], [$val, $_ext, $namespace]);
                 }
                 $parameterCallback = '__annotationParameterFilter'.$suffix;
                 if (method_exists($origin, $parameterCallback)) {
-                    $_ext = call_user_func_array([$origin, $parameterCallback], [$_ext]);
+                    $_ext = call_user_func_array([$origin, $parameterCallback], [$_ext, $namespace]);
                 }
                 $multipleCallback = '__annotationMultiple'.$suffix;
                 $valueMultiple = (
                     true
                     && method_exists($origin, $multipleCallback)
-                    && call_user_func_array([$origin, $multipleCallback], [])
+                    && call_user_func_array([$origin, $multipleCallback], [$namespace])
                 );
             }
 
@@ -210,7 +210,7 @@ class Annotation
                     && $origin
                     && is_array($val)
                     && method_exists($origin, $multipleFormatMergeCallback)
-                    && ($merge = call_user_func_array([$origin, $multipleFormatMergeCallback], []))
+                    && ($merge = call_user_func_array([$origin, $multipleFormatMergeCallback], [$namespace]))
                 ) {
                     if (is_string($merge) && ci_equal($merge, 'kv')) {
                         $val = array_flip($val);

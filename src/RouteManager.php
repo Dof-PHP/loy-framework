@@ -13,7 +13,8 @@ final class RouteManager
 
     private static $aliases = [];
     private static $routes  = [];
-    private static $dirs    = [];
+
+    private static $dirs = [];
 
     /**
      * Find route definition by given uri, verb and mimes
@@ -95,25 +96,42 @@ final class RouteManager
         return false;
     }
 
+    public static function load(array $dirs)
+    {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
+            list(self::$dirs, self::$aliases, self::$routes) = load_php($cache);
+            return;
+        }
+
+        self::compile($dirs);
+
+        if (ConfigManager::matchEnv(['ENABLE_ROUTE_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
+            array2code([self::$dirs, self::$aliases, self::$routes], $cache);
+        }
+    }
+
+    public static function flush()
+    {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
+            unlink($cache);
+        }
+    }
+
     /**
      * Compile port classes and assemble formatted routes
      *
      * @param $dirs array: Directories store port classes
      */
-    public static function compile(array $dirs)
+    public static function compile(array $dirs, bool $cache = false)
     {
-        $cache = Kernel::formatCacheFile(__FILE__);
-        if (file_exists($cache)) {
-            list(self::$dirs, self::$aliases, self::$routes) = load_php($cache);
-            return;
-        }
-
         if (count($dirs) < 1) {
             return;
         }
 
         // Reset
-        self::$dirs    = [];
+        self::$dirs = [];
         self::$routes  = [];
         self::$aliases = [];
 
@@ -132,7 +150,9 @@ final class RouteManager
             }
         }, __CLASS__);
 
-        array2code([self::$dirs, self::$aliases, self::$routes], $cache);
+        if ($cache) {
+            array2code([self::$dirs, self::$aliases, self::$routes], Kernel::formatCacheFile(__CLASS__));
+        }
     }
 
     /**
@@ -194,6 +214,8 @@ final class RouteManager
             return;
         }
 
+        $author = $ofMethod['doc']['AUTHOR'] ?? ($docClass['AUTHOR'] ?? null);
+
         $globalRoute   = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.route', '');
         $globalPipein  = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.pipein', []);
         $globalPipeout = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.pipeout', []);
@@ -219,18 +241,12 @@ final class RouteManager
         $route   = $attrs['ROUTE']   ?? null;
         $alias   = $attrs['ALIAS']   ?? null;
         $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
-        $mimein  = ($mimein === '_')  ? null : $mimein;
         $mimeout = $attrs['MIMEOUT'] ?? $defaultMimeout;
-        $mimeout = ($mimeout === '_') ? null : $mimeout;
         $suffix  = $attrs['SUFFIX']  ?? $defaultSuffix;
         $wrapin  = $attrs['WRAPIN']  ?? $defaultWrapin;
-        $wrapin  = ($wrapin === '_')  ? null : $wrapin;
         $wrapout = $attrs['WRAPOUT'] ?? $defaultWrapout;
-        $wrapout = ($wrapout === '_') ? null : $wrapout;
         $wraperr = $attrs['WRAPERR'] ?? $defaultWraperr;
-        $wraperr = ($wraperr === '_') ? null : $wraperr;
         $assembler = $attrs['ASSEMBLER'] ?? $defaultAssembler;
-        $assembler = ($assembler === '_') ? null : $assembler;
         $pipein    = $attrs['PIPEIN']    ?? [];
         $pipeout   = $attrs['PIPEOUT']   ?? [];
         $nopipein  = $attrs['NOPIPEIN']  ?? [];
@@ -238,8 +254,8 @@ final class RouteManager
         $arguments = $attrs['ARGUMENT']  ?? [];
 
         $urlpath = join('/', [$globalRoute, $defaultRoute, $route]);
-        list($urlpath, $params) = self::parse($urlpath);
-        if (! $urlpath) {
+        list($urlpath, $route, $params) = self::parse($urlpath);
+        if (! $urlpath || (! $route)) {
             return;
         }
 
@@ -265,15 +281,16 @@ final class RouteManager
 
         $verbs = array_unique(array_merge(($attrs['VERB'] ?? []), $defaultVerbs));
         foreach ($verbs as $verb) {
-            self::deduplicate($urlpath, $verb, $alias, $class, $method, true);
+            self::deduplicate($route, $verb, $alias, $class, $method, true);
 
             if ($alias) {
                 self::$aliases[$alias] = [
                     'urlpath' => $urlpath,
+                    'route'   => $route,
                     'verb'    => $verb,
                 ];
             }
-            self::$routes[$urlpath][$verb] = [
+            self::$routes[$route][$verb] = [
                 'urlpath' => $urlpath,
                 'suffix'  => [
                     'allow'   => $suffix,
@@ -314,29 +331,32 @@ final class RouteManager
      * De-duplicate route and alias definitions
      */
     public static function deduplicate(
-        string $urlpath,
+        string $_route,
         string $verb,
         string $alias = null,
         string $classns = null,
         string $method = null,
         bool $exception = false
     ) {
-        if ($route = (self::$routes[$urlpath][$verb] ?? false)) {
-            $_classns = $route['class'] ?? '?';
+        if ($route = (self::$routes[$_route][$verb] ?? false)) {
+            $_urlpath = $route['urlpath'] ?? '?';
+            $_classns = $route['class']   ?? '?';
             $_method  = $route['method']['name'] ?? '?';
             if (! $exception) {
                 return false;
             }
 
             exception('DuplicateRouteDefinition', [
-                'verb' => $verb,
-                'path' => $urlpath,
+                'verb'  => $verb,
+                'route' => $_route,
                 'conflict' => [
+                    'path'   => $_urlpath,
                     'class'  => $_classns,
                     'method' => $_method,
                 ],
                 'current' => [
                     'class'  => $classns,
+                    'path'   => $urlpath,
                     'method' => $method,
                 ],
             ]);
@@ -347,6 +367,7 @@ final class RouteManager
                 return false;
             }
             $_urlpath = $_alias['urlpath'] ?? '?';
+            $__route  = $_alias['route']   ?? '?';
             $_verb    = $_alias['verb']    ?? '?';
             $_route   = self::$routes[$_urlpath][$_verb] ?? [];
             $_classns = $_route['class']   ?? '?';
@@ -357,12 +378,14 @@ final class RouteManager
                 'conflict' => [
                     'verb'   => $_verb,
                     'path'   => $_urlpath,
+                    'route'  => $__route,
                     'class'  => $_classns,
                     'method' => $_method,
                 ],
                 'previous' => [
                     'verb'   => $verb,
                     'path'   => $urlpath,
+                    'route'  => $_route,
                     'class'  => $classns,
                     'method' => $method,
                 ],
@@ -378,8 +401,10 @@ final class RouteManager
      */
     public static function parse(string $route) : array
     {
-        $route  = explode('/', self::__annotationFilterRoute($route));
-        $params = [];
+        $route   = explode('/', self::__annotationFilterRoute($route));
+        $urlpath = $route ? join('/', $route) : '/';
+        $params  = [];
+
         array_walk($route, function (&$val, $key) use (&$params) {
             $matches = [];
             if (1 === preg_match('#{([a-z]\w+)}#', $val, $matches)) {
@@ -392,7 +417,7 @@ final class RouteManager
        
         $route = $route ? join('/', $route) : '/';
 
-        return [$route, $params];
+        return [$urlpath, $route, $params];
     }
 
     public static function __annotationFilterCompatible(string $val) : array
@@ -469,6 +494,69 @@ final class RouteManager
     public static function __annotationFilterVerb(string $val) : array
     {
         return array_trim_from_string(strtoupper(trim($val)), ',');
+    }
+
+    public static function __annotationFilterWrapout(string $wrapout, array $ext = [], string $namespace = null)
+    {
+        $wrapout = trim($wrapout);
+        if ((! $wrapout) || ci_equal($wrapout, '_')) {
+            return null;
+        }
+        if (class_exists($wrapout)) {
+            return $wrapout;
+        }
+        if ((! $namespace) || (! class_exists($namespace))) {
+            exception('MissingWrapOutUseClass', compact('wrapout', 'namespace'));
+        }
+
+        $_wrapout = get_annotation_ns($wrapout, $namespace);
+        if ((! $_wrapout) || (! class_exists($_wrapout))) {
+            exception('WrapperOutNotExists', compact('wrapout', 'namespace'));
+        }
+
+        return $_wrapout;
+    }
+
+    public static function __annotationFilterWraperr(string $wraperr, array $ext = [], string $namespace = null)
+    {
+        $wraperr = trim($wraperr);
+        if ((! $wraperr) || ci_equal($wraperr, '_')) {
+            return null;
+        }
+        if (class_exists($wraperr)) {
+            return $wraperr;
+        }
+        if ((! $namespace) || (! class_exists($namespace))) {
+            exception('MissingWrapErrUseClass', compact('wraperr', 'namespace'));
+        }
+
+        $_wraperr = get_annotation_ns($wraperr, $namespace);
+        if ((! $_wraperr) || (! class_exists($_wraperr))) {
+            exception('WrapperErrNotExists', compact('wraperr', 'namespace'));
+        }
+
+        return $_wraperr;
+    }
+
+    public static function __annotationFilterWrapin(string $wrapin, array $ext = [], string $namespace = null)
+    {
+        $wrapin = trim($wrapin);
+        if ((! $wrapin)|| ci_equal($wrapin, '_')) {
+            return null;
+        }
+        if (class_exists($wrapin)) {
+            return $wrapin;
+        }
+        if ((! $namespace) || (! class_exists($namespace))) {
+            exception('MissingWrapInUseClass', compact('wrapin', 'namespace'));
+        }
+
+        $_wrapin = get_annotation_ns($wrapin, $namespace);
+        if ((! $_wrapin) || (! class_exists($_wrapin))) {
+            exception('WrapperInNotExists', compact('wrapin', 'namespace'));
+        }
+
+        return $_wrapin;
     }
 
     public static function __annotationFilterRoute(string $val)

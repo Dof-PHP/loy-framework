@@ -22,28 +22,37 @@ final class GWT
     public static function run(string $dir, array $excludes = [])
     {
         walk_dir($dir, function ($path) use ($excludes) {
+            $realpath = $path->getRealPath();
+            foreach ($excludes as $exclude) {
+                $exclude = realpath($exclude);
+                if (! $exclude) {
+                    continue;
+                }
+                if ($realpath === $exclude) {
+                    return;
+                }
+            }
+
             if ($path->isDir()) {
-                run_gwt_tests($path->getRealpath(), $excludes);
+                run_gwt_tests($realpath, $excludes);
                 return;
             }
             if ($path->isFile() && ci_equal($path->getExtension(), 'php')) {
-                $case = $path->getRealpath();
-                if ($excludes[$case] ?? false) {
-                    return;
-                }
-                include_once $case;
+                include_once $realpath;
             }
         });
     }
 
     public static function execute($given, $when, $then, &$result) : bool
     {
+        $tester = new Tester;
+
         // See: <https://stackoverflow.com/questions/7067536/how-to-call-a-closure-that-is-a-class-variable>
         $given  = is_closure($given) ? ($given)() : $given;
         $result = is_closure($when) ? ($when)($given) : $when;
 
         if (is_closure($then)) {
-            $then = $then($result);
+            $then = $then($result, $tester);
             return $then === true;
         }
 
