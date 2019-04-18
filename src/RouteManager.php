@@ -10,6 +10,7 @@ final class RouteManager
 {
     const ROUTE_DIR = ['Http', 'Port'];
     const AUTONOMY_HANLDER = 'execute';
+    const AUTH_TYPES = ['0', '1', '2', '3'];
 
     /** @var array: Aliases of route */
     private static $aliases = [];
@@ -221,14 +222,19 @@ final class RouteManager
         if (($attrs['NOTROUTE'] ?? false) || ($docClass['NOTROUTE'] ?? false)) {
             return;
         }
-
-        $author = $ofMethod['doc']['AUTHOR'] ?? ($docClass['AUTHOR'] ?? null);
-        $title  = $ofMethod['doc']['TITLE']  ?? ($docClass['TITLE']  ?? null);
-        if (! $title) {
-            exception('MissnigPortTitle', compact('class', 'method'));
+        $author = $attrs['AUTHOR'] ?? ($docClass['AUTHOR'] ?? null);
+        if (! $author) {
+            exception('MissingPortAuthor', compact('class', 'method'));
         }
-
-        $domainKey   = DomainManager::getKeyByNamespace($class);
+        $title = $attrs['TITLE'] ?? ($docClass['TITLE']  ?? null);
+        if (! $title) {
+            exception('MissingPortTitle', compact('class', 'method'));
+        }
+        $auth = $attrs['AUTH'] ?? ($docClass['AUTH'] ?? '0');
+        if (! in_array($auth, self::AUTH_TYPES)) {
+            exception('BadAuthType', compact('class', 'method'));
+        }
+        $domainKey = DomainManager::getKeyByNamespace($class);
         if (! $domainKey) {
             exception('BadPortClassWithOutDomainKey', compact('class'));
         }
@@ -243,6 +249,7 @@ final class RouteManager
 
         $defaultVersion = $docClass['VERSION'] ?? 'v0';
         $defaultGroup   = $docClass['GROUP']   ?? [];
+        $defaultModels  = $docClass['MODEL']   ?? null;
         $defaultRoute   = $docClass['ROUTE']   ?? null;
         $defaultVerbs   = $docClass['VERB']    ?? [];
         $defaultSuffix  = $docClass['SUFFIX']  ?? [];
@@ -262,12 +269,19 @@ final class RouteManager
         $alias   = $attrs['ALIAS']   ?? null;
         $group   = $attrs['GROUP']   ?? [];
         $version = $attrs['VERSION'] ?? $defaultVersion;
+        $models  = $attrs['MODEL']   ?? $defaultModels;
+        $models  = $models === '_'   ? null : $models;
         $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
+        $mimein  = $mimein === '_'   ?? $mimein;
         $mimeout = $attrs['MIMEOUT'] ?? $defaultMimeout;
+        $mimeout = $mimeout === '_'  ?? $mimeout;
         $suffix  = $attrs['SUFFIX']  ?? $defaultSuffix;
         $wrapin  = $attrs['WRAPIN']  ?? $defaultWrapin;
+        $wrapin  = $wrapin === '_'   ?? $wrapin;
         $wrapout = $attrs['WRAPOUT'] ?? $defaultWrapout;
+        $wrapout = $wrapout === '_'  ?? $wrapout;
         $wraperr = $attrs['WRAPERR'] ?? $defaultWraperr;
+        $wraperr = $wraperr === '_'  ?? $wraperr;
         $assembler = $attrs['ASSEMBLER'] ?? $defaultAssembler;
         $pipein    = $attrs['PIPEIN']    ?? [];
         $pipeout   = $attrs['PIPEOUT']   ?? [];
@@ -321,6 +335,7 @@ final class RouteManager
                 'verb'   => $verb,
                 'alias'  => $alias,
                 'class'  => $class,
+                'model'  => $model,
                 'method' => [
                     'name'   => $method,
                     'params' => $ofMethod['parameters'] ?? [],
@@ -359,6 +374,8 @@ final class RouteManager
         ];
         $doc  = [
             'route'  => $urlpath,
+            'auth'   => $auth,
+            'model'  => $model,
             'verbs'  => $verbs,
             'title'  => $title,
             'author' => $author,
@@ -582,6 +599,30 @@ final class RouteManager
         return array_trim_from_string(strtolower(trim($val)), ',');
     }
 
+    public static function __annotationFilterModel(string $model, array $ext = [], string $namespace = null)
+    {
+        $model = trim($model);
+        if (! $model) {
+            return null;
+        }
+        if ($model === '_') {
+            return $model;
+        }
+        if (class_exists($model)) {
+            return $model;
+        }
+        if ((! $namespace) || (! class_exists($namespace))) {
+            exception('MissingDataModelUseClass', compact('model', 'namespace'));
+        }
+
+        $_model = get_annotation_ns($model, $namespace);
+        if ((! $_model) || (! class_exists($_model))) {
+            exception('DataModelNotExists', compact('model', 'namespace'));
+        }
+
+        return $_model;
+    }
+
     public static function __annotationFilterVerb(string $val) : array
     {
         return array_trim_from_string(strtoupper(trim($val)), ',');
@@ -590,8 +631,11 @@ final class RouteManager
     public static function __annotationFilterWrapout(string $wrapout, array $ext = [], string $namespace = null)
     {
         $wrapout = trim($wrapout);
-        if ((! $wrapout) || ci_equal($wrapout, '_')) {
+        if (! $wrapout) {
             return null;
+        }
+        if ($wrapout === '_') {
+            return $wrapout;
         }
         if (class_exists($wrapout)) {
             return $wrapout;
@@ -611,8 +655,11 @@ final class RouteManager
     public static function __annotationFilterWraperr(string $wraperr, array $ext = [], string $namespace = null)
     {
         $wraperr = trim($wraperr);
-        if ((! $wraperr) || ci_equal($wraperr, '_')) {
+        if (! $wraperr) {
             return null;
+        }
+        if ($wraperr === '_') {
+            return $wraperr;
         }
         if (class_exists($wraperr)) {
             return $wraperr;
@@ -632,8 +679,11 @@ final class RouteManager
     public static function __annotationFilterWrapin(string $wrapin, array $ext = [], string $namespace = null)
     {
         $wrapin = trim($wrapin);
-        if ((! $wrapin)|| ci_equal($wrapin, '_')) {
+        if (! $wrapin) {
             return null;
+        }
+        if ($wrapein === '_') {
+            return $wrapein;
         }
         if (class_exists($wrapin)) {
             return $wrapin;
