@@ -272,16 +272,16 @@ final class RouteManager
         $models  = $attrs['MODEL']   ?? $defaultModels;
         $models  = $models === '_'   ? null : $models;
         $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
-        $mimein  = $mimein === '_'   ?? $mimein;
+        $mimein  = $mimein === '_'   ? null : $mimein;
         $mimeout = $attrs['MIMEOUT'] ?? $defaultMimeout;
-        $mimeout = $mimeout === '_'  ?? $mimeout;
+        $mimeout = $mimeout === '_'  ? null : $mimeout;
         $suffix  = $attrs['SUFFIX']  ?? $defaultSuffix;
         $wrapin  = $attrs['WRAPIN']  ?? $defaultWrapin;
-        $wrapin  = $wrapin === '_'   ?? $wrapin;
+        $wrapin  = $wrapin === '_'   ? null : $wrapin;
         $wrapout = $attrs['WRAPOUT'] ?? $defaultWrapout;
-        $wrapout = $wrapout === '_'  ?? $wrapout;
+        $wrapout = $wrapout === '_'  ? null : $wrapout;
         $wraperr = $attrs['WRAPERR'] ?? $defaultWraperr;
-        $wraperr = $wraperr === '_'  ?? $wraperr;
+        $wraperr = $wraperr === '_'  ? null : $wraperr;
         $assembler = $attrs['ASSEMBLER'] ?? $defaultAssembler;
         $pipein    = $attrs['PIPEIN']    ?? [];
         $pipeout   = $attrs['PIPEOUT']   ?? [];
@@ -335,7 +335,7 @@ final class RouteManager
                 'verb'   => $verb,
                 'alias'  => $alias,
                 'class'  => $class,
-                'model'  => $model,
+                'model'  => $models,
                 'method' => [
                     'name'   => $method,
                     'params' => $ofMethod['parameters'] ?? [],
@@ -375,7 +375,7 @@ final class RouteManager
         $doc  = [
             'route'  => $urlpath,
             'auth'   => $auth,
-            'model'  => $model,
+            'models' => $models,
             'verbs'  => $verbs,
             'title'  => $title,
             'author' => $author,
