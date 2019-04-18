@@ -511,6 +511,24 @@ ARR;
         file_put_contents($path, $code);
     }
 }
+if (! function_exists('array_append_dynamic')) {
+    function array_append_dynamic(array $data, $append, array $indexes)
+    {
+        $keys = $indexes;
+        foreach ($indexes as $idx => $key) {
+            $_data = $data[$key] ?? [];
+            unset($keys[$idx]);
+            if (false === next($indexes)) {
+                $data[$key][] = $append;
+            } else {
+                $data[$key] = array_append_dynamic($_data, $append, $keys);
+            }
+            break;
+        }
+
+        return $data;
+    }
+}
 if (! function_exists('stringify')) {
     function stringify($value)
     {

@@ -11,10 +11,17 @@ final class RouteManager
     const ROUTE_DIR = ['Http', 'Port'];
     const AUTONOMY_HANLDER = 'execute';
 
+    /** @var array: Aliases of route */
     private static $aliases = [];
-    private static $routes  = [];
 
+    /** @var array: Routes definitions */
+    private static $routes = [];
+
+    /** @var array: Ports resistant directories */
     private static $dirs = [];
+
+    /** @var array: Data for automate documentation */
+    private static $docs = [];
 
     /**
      * Find route definition by given uri, verb and mimes
@@ -100,14 +107,14 @@ final class RouteManager
     {
         $cache = Kernel::formatCacheFile(__CLASS__);
         if (is_file($cache)) {
-            list(self::$dirs, self::$aliases, self::$routes) = load_php($cache);
+            list(self::$dirs, self::$aliases, self::$routes, self::$docs) = load_php($cache);
             return;
         }
 
         self::compile($dirs);
 
         if (ConfigManager::matchEnv(['ENABLE_ROUTE_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
-            array2code([self::$dirs, self::$aliases, self::$routes], $cache);
+            array2code([self::$dirs, self::$aliases, self::$routes, self::$docs], $cache);
         }
     }
 
@@ -132,6 +139,7 @@ final class RouteManager
 
         // Reset
         self::$dirs = [];
+        self::$docs = [];
         self::$routes  = [];
         self::$aliases = [];
 
@@ -151,7 +159,7 @@ final class RouteManager
         }, __CLASS__);
 
         if ($cache) {
-            array2code([self::$dirs, self::$aliases, self::$routes], Kernel::formatCacheFile(__CLASS__));
+            array2code([self::$dirs, self::$aliases, self::$routes, self::$docs], Kernel::formatCacheFile(__CLASS__));
         }
     }
 
@@ -215,6 +223,16 @@ final class RouteManager
         }
 
         $author = $ofMethod['doc']['AUTHOR'] ?? ($docClass['AUTHOR'] ?? null);
+        $title  = $ofMethod['doc']['TITLE']  ?? ($docClass['TITLE']  ?? null);
+        if (! $title) {
+            exception('MissnigPortTitle', compact('class', 'method'));
+        }
+
+        $domainKey   = DomainManager::getKeyByNamespace($class);
+        if (! $domainKey) {
+            exception('BadPortClassWithOutDomainKey', compact('class'));
+        }
+        $domainTitle = ConfigManager::getDomainByNamespace($class, 'domain.title', $domainKey);
 
         $globalRoute   = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.route', '');
         $globalPipein  = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.pipein', []);
@@ -223,6 +241,8 @@ final class RouteManager
         $globalWrapout = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wrapout', null);
         $globalWraperr = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wraperr', null);
 
+        $defaultVersion = $docClass['VERSION'] ?? 'v0';
+        $defaultGroup   = $docClass['GROUP']   ?? [];
         $defaultRoute   = $docClass['ROUTE']   ?? null;
         $defaultVerbs   = $docClass['VERB']    ?? [];
         $defaultSuffix  = $docClass['SUFFIX']  ?? [];
@@ -240,6 +260,8 @@ final class RouteManager
 
         $route   = $attrs['ROUTE']   ?? null;
         $alias   = $attrs['ALIAS']   ?? null;
+        $group   = $attrs['GROUP']   ?? [];
+        $version = $attrs['VERSION'] ?? $defaultVersion;
         $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
         $mimeout = $attrs['MIMEOUT'] ?? $defaultMimeout;
         $suffix  = $attrs['SUFFIX']  ?? $defaultSuffix;
@@ -324,6 +346,75 @@ final class RouteManager
                 'assembler' => $assembler,
                 'arguments' => $properties,
             ];
+        }
+
+        if ($ofMethod['doc']['NODOC'] ?? ($docClass['NODOC'] ?? false)) {
+            return;
+        }
+
+        $docs = self::$docs[$version][$domainKey] ?? [
+            'title' => $domainTitle,
+            'group' => [],
+            'list'  => [],
+        ];
+        $doc  = [
+            'route'  => $urlpath,
+            'verbs'  => $verbs,
+            'title'  => $title,
+            'author' => $author,
+        ];
+
+        $groups = array_merge(self::formatDocGroups($defaultGroup), self::formatDocGroups($group));
+        if ($groups) {
+            $docs['group'] = self::dynamicAppendDocWithGroups($docs['group'] ?? [], $doc, $groups);
+        } else {
+            $docs['list'][] = $doc;
+        }
+
+        self::$docs[$version][$domainKey] = $docs;
+    }
+
+    private static function formatDocGroups($group)
+    {
+        if (! $group) {
+            return [];
+        }
+        list($key, $val) = $group;
+        $keys = array_trim_from_string($key, '/');
+        $vals = array_trim_from_string($val, '/');
+        $cntV = count($vals);
+        $cntK = count($keys);
+        if ($cntK !== $cntV) {
+            $_vals = [];
+            for ($i = $cntK-1; $i >= 0; $i--) {
+                $_vals[] = $vals[$i] ?? ($keys[$cntK-1-$i] ?? 'unknown');
+            }
+        } else {
+            $_vals = $vals;
+        }
+        return array_combine($keys, $_vals);
+    }
+
+    /**
+     * Append $append into $data dynamically with $groups
+     */
+    private static function dynamicAppendDocWithGroups(array $data, $append, array $groups)
+    {
+        $keys = $groups;
+        foreach ($groups as $name => $title) {
+            if (false === next($groups)) {
+                $data[$name]['title']  = $title;
+                $data[$name]['list'][] = $append;
+                $data[$name]['group']  = [];
+                return $data;
+            }
+
+            $_data = $data[$name]['group'] ?? [];
+            unset($keys[$name]);
+            $data[$name]['title'] = $title;
+            $data[$name]['group'] = self::dynamicAppendDocWithGroups($_data, $append, $keys);
+            $data[$name]['list']  = [];
+            return $data;
         }
     }
 
@@ -559,6 +650,13 @@ final class RouteManager
         return $_wrapin;
     }
 
+    public static function __annotationFilterGroup(string $group, array $params = [])
+    {
+        $title = $params['title'] ?? (array_keys($params)[0] ?? null);
+
+        return [trim(strtolower($group)), $title];
+    }
+
     public static function __annotationFilterRoute(string $val)
     {
         $arr = array_trim(explode('/', trim($val)));
@@ -604,5 +702,15 @@ final class RouteManager
     public static function getRoutes() : array
     {
         return self::$routes;
+    }
+
+    public static function getDirs() : array
+    {
+        return self::$dirs;
+    }
+
+    public static function getDocs() : array
+    {
+        return self::$docs;
     }
 }

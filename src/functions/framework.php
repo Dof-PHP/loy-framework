@@ -330,3 +330,12 @@ if (! function_exists('run_gwt_tests')) {
         \Dof\Framework\GWT::run($dir, $excludes);
     }
 }
+if (! function_exists('pathof')) {
+    /**
+     * Get path in dof project
+     */
+    function pathof(...$params)
+    {
+        return ospath(\Dof\Framework\Kernel::getRoot(), $params);
+    }
+}
