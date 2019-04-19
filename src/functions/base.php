@@ -35,10 +35,11 @@ if (! function_exists('zombie_object')) {
 if (! function_exists('pt')) {
     function pt(...$vars)
     {
-        if ($last = debug_backtrace()[0] ?? null) {
+        $trace = debug_backtrace();
+        if ($last = $trace[0] ?? null) {
             extract($last);
             if ($file === __FILE__) {
-                if ($last = debug_backtrace()[1] ?? null) {
+                if ($last = $trace[1] ?? null) {
                     extract($last);
                     print_r([sprintf('%s#%s:%s', $file, $line, $function), unsplat($vars)]);
                 }
@@ -83,10 +84,11 @@ if (! function_exists('ee')) {
 if (! function_exists('pp')) {
     function pp(...$vars)
     {
-        if ($last = debug_backtrace()[0] ?? null) {
+        $trace = debug_backtrace();
+        if ($last = $trace[0] ?? null) {
             extract($last);
             if ($file === __FILE__) {
-                if ($last = debug_backtrace()[1] ?? null) {
+                if ($last = $trace[1] ?? null) {
                     extract($last);
                     var_dump([
                         sprintf('%s#%s:%s', $file, $line, $function),

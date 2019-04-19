@@ -171,7 +171,7 @@ final class DomainManager
         $key = str_replace(self::DOMAIN_FLAG, '', str_replace(self::$root, '', $meta));
         $key = array_trim_from_string($key, DIRECTORY_SEPARATOR);
 
-        return strtolower(join('-', $key));
+        return $key ? strtolower(join('-', $key)) : '__monomer__';
     }
 
     public static function hasFile(string $path = null) : bool

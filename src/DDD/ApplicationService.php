@@ -26,7 +26,7 @@ abstract class ApplicationService
     /** @var bool: Whether this service's execute() method been called yet */
     protected $__executed = false;
 
-    public function exec()
+    final public function exec()
     {
         $this->__data = $this->execute();
 
@@ -37,17 +37,17 @@ abstract class ApplicationService
 
     abstract public function execute();
 
-    public static function init()
+    final public static function init()
     {
         return Container::di(static::class);
     }
 
-    public function toArray() : array
+    final public function toArray() : array
     {
         return $this->__toArray();
     }
     
-    public function __toArray() : array
+    final public function __toArray() : array
     {
         return [
             'code' => $this->__code,
@@ -58,60 +58,60 @@ abstract class ApplicationService
         ];
     }
 
-    protected function __setData($data)
+    final protected function __setData($data)
     {
         $this->__data = $data;
 
         return $this;
     }
 
-    public function __getData()
+    final public function __getData()
     {
         return $this->__data;
     }
 
-    protected function __setInfo(string $info)
+    final protected function __setInfo(string $info)
     {
         $this->__info = $info;
 
         return $this;
     }
 
-    public function __getInfo() : string
+    final public function __getInfo() : string
     {
         return $this->__info;
     }
 
-    protected function __setCode(int $code)
+    final protected function __setCode(int $code)
     {
         $this->__code = $code;
 
         return $this;
     }
 
-    public function __getCode()
+    final public function __getCode()
     {
         return $this->__code;
     }
 
-    public function __isExecuted() : bool
+    final public function __isExecuted() : bool
     {
         return $this->__executed;
     }
 
-    public function __isFail(int $success = null) : bool
+    final public function __isFail(int $success = null) : bool
     {
         return !$this->__isSuccess($success);
     }
 
-    public function __isSuccess(int $success = null) : bool
+    final public function __isSuccess(int $success = null) : bool
     {
         $code = $success ?: 0;
 
         return $this->__code === $code;
     }
 
-    public static function __callStatic(string $method, array $argvs = [])
+    final public static function __callStatic(string $method, array $argvs = [])
     {
         return call_user_func_array([self::init(), $method], $argvs);
     }
