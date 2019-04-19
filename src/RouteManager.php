@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework;
 
 use Dof\Framework\Facade\Annotation;
+use Dof\Framework\Facade\Request;
 
 final class RouteManager
 {
@@ -185,7 +186,9 @@ final class RouteManager
                     'handler' => self::AUTONOMY_HANLDER,
                 ]);
             }
-            $handler['doc']['WRAPIN'] = $namespace;
+            if (! ($handler['doc']['TITLE'] ?? null)) {
+                $handler['doc']['TITLE'] = $docClass['TITLE'] ?? null;
+            }
             self::add($namespace, self::AUTONOMY_HANLDER, $docClass, $handler, $ofProperties);
             return;
         }
@@ -226,9 +229,9 @@ final class RouteManager
         if (! $author) {
             exception('MissingPortAuthor', compact('class', 'method'));
         }
-        $title = $attrs['TITLE'] ?? ($docClass['TITLE']  ?? null);
+        $title = $attrs['TITLE'] ?? null;
         if (! $title) {
-            exception('MissingPortTitle', compact('class', 'method'));
+            exception('MissingPortMethodTitle', compact('class', 'method'));
         }
         $auth = $attrs['AUTH'] ?? ($docClass['AUTH'] ?? '0');
         if (! in_array($auth, self::AUTH_TYPES)) {
@@ -303,16 +306,20 @@ final class RouteManager
 
         // Arguments existence check
         $properties = [];
-        foreach ($argumentList as $argument => $rules) {
-            $property = $ofProperties[$argument] ?? false;
-            if (false === $property) {
-                exception('PortMethodArgumentNotDefined', compact('argument', 'class', 'method'));
-            }
+        if ($docClass['AUTONOMY'] ?? false) {
+            $properties = $ofProperties;
+        } else {
+            foreach ($argumentList as $argument => $rules) {
+                $property = $ofProperties[$argument] ?? false;
+                if (false === $property) {
+                    exception('PortMethodArgumentNotDefined', compact('argument', 'class', 'method'));
+                }
 
-            $doc = $property['doc'] ?? [];
-            $doc = array_merge($doc, $rules);
-            $property['doc'] = $doc;
-            $properties[$argument] = $property;
+                $doc = $property['doc'] ?? [];
+                $doc = array_merge($doc, $rules);
+                $property['doc'] = $doc;
+                $properties[$argument] = $property;
+            }
         }
 
         $verbs = array_unique(array_merge(($attrs['VERB'] ?? []), $defaultVerbs));
@@ -372,13 +379,49 @@ final class RouteManager
             'group' => [],
             'list'  => [],
         ];
-        $doc  = [
-            'route'  => $urlpath,
-            'auth'   => $auth,
-            'models' => $models,
-            'verbs'  => $verbs,
-            'title'  => $title,
-            'author' => $author,
+        $params = [];
+        $validators = [];
+        foreach ($properties as $key => $arg) {
+            $_doc = $arg['doc'] ?? [];
+            $param = [
+                'key'  => $key,
+                'name' => $_doc['TITLE'] ?? null,
+                'type' => $_doc['TYPE']  ?? null,
+                'notes' => $_doc['NOTES'] ?? '',
+                'default' => $_doc['DEFAULT'] ?? null,
+                'compatibles' => $_doc['COMPATIBLE'] ?? [],
+            ];
+
+            array_unset(
+                $_doc,
+                '__ext__',
+                'TITLE',
+                'TYPE',
+                'NOTES',
+                'DEFAULT',
+                'COMPATIBLE'
+            );
+
+            if ($wrapin = ($_doc['WRAPIN'] ?? false)) {
+                $_doc['WRAPIN'] = self::formatDocNamespace($wrapin);
+            }
+            $param['validators'] = $_doc;
+            $params[] = $param;
+        }
+        $doc = [
+            'route' => $urlpath,
+            'auth'  => $auth,
+            'verbs' => $verbs,
+            'title' => $title,
+            'models'  => self::formatDocNamespace($models),
+            'author'  => $author,
+            'version' => $version,
+            'params'  => $params,
+            'suffixs' => $suffix,
+            'headers' => [
+                'in'  => $mimein  ? [Request::getMimeByAlias($mimein)]  : [],
+                'out' => $mimeout ? [Request::getMimeByAlias($mimeout)] : [],
+            ],
         ];
 
         $groups = array_merge(self::formatDocGroups($defaultGroup), self::formatDocGroups($group));
@@ -389,6 +432,18 @@ final class RouteManager
         }
 
         self::$docs[$version][$domainKey] = $docs;
+    }
+
+    private static function formatDocNamespace(string $namespace = null)
+    {
+        if (! $namespace) {
+            return null;
+        }
+
+        $arr = array_trim_from_string($namespace, '\\');
+        unset($arr[0]);
+
+        return join('.', $arr);
     }
 
     private static function formatDocGroups($group)
@@ -545,10 +600,25 @@ final class RouteManager
 
     public static function __annotationFilterArgument(string $val, array $params = []) : array
     {
-        $argvs = array_trim_from_string($val, ',');
-        $data  = [];
+        $_params = [];
+        foreach ($params as $rule => $error) {
+            $arr = array_trim_from_string($rule, ':');
+            $_rule = $arr[0] ?? false;
+            unset($arr[0]);
+            $ext = join('', $arr);
+            if (! $_rule) {
+                continue;
+            }
+            $ext = $ext ? ":{$ext}": '';
+            $_rule = strtoupper($_rule);
+
+            $_params[$_rule.$ext] = $error;
+        }
+
+        $argvs  = array_trim_from_string($val, ',');
+        $data   = [];
         foreach ($argvs as $name) {
-            $data[$name] = $params;
+            $data[$name] = $_params;
         }
 
         return $data;
@@ -682,7 +752,7 @@ final class RouteManager
         if (! $wrapin) {
             return null;
         }
-        if ($wrapein === '_') {
+        if ($wrapin === '_') {
             return $wrapein;
         }
         if (class_exists($wrapin)) {

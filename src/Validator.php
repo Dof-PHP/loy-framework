@@ -81,9 +81,14 @@ class Validator
         return $this->{$validator}($key, ...$ext);
     }
 
-    private function validateValidator(string $key, string $rule, array $ext = [])
+    private function validateType(string $type, string $rule, array $ext = [])
     {
-        return $this->validate($rule, $key, $ext);
+        return $this->validate($rule, $type, $ext);
+    }
+
+    private function validateValidator(string $validator, string $rule, array $ext = [])
+    {
+        return $this->validate($rule, $key, $validator);
     }
 
     private function validateMax(string $key, $max)
@@ -103,6 +108,16 @@ class Validator
         }
 
         return false;
+    }
+
+    private function validateLength(string $key, $length)
+    {
+        $value = $this->data[$key] ?? null;
+        if (! TypeHint::isString($value)) {
+            return false;
+        }
+
+        return mb_strlen($value) === $length;
     }
 
     private function validateMin(string $key, $min)
@@ -125,6 +140,101 @@ class Validator
         }
 
         return false;
+    }
+
+    private function validateList($key)
+    {
+        return $this->validateListarray($key);
+    }
+
+    private function validateScalararray($key)
+    {
+        return $this->validateValuearray($key);
+    }
+
+    private function validateValuearray($key)
+    {
+        $list = $this->data[$key] ?? null;
+        if (! $list) {
+            return false;
+        }
+        if (! is_array($list)) {
+            return false;
+        }
+        foreach ($list as $idx => $val) {
+            if (! is_int($idx)) {
+                return false;
+            }
+            if (! is_scalar($val)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function validateObjectarray($key)
+    {
+        return $htis->validateAssocarray($key);
+    }
+
+    private function validateAssocarray($key)
+    {
+        $list = $this->data[$key] ?? null;
+        if (! $list) {
+            return false;
+        }
+        if (! is_array($list)) {
+            return false;
+        }
+
+        foreach ($list as $key => $val) {
+            if (! is_string($key)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function validateIndexarray($key)
+    {
+        $list = $this->data[$key] ?? null;
+        if (! $list) {
+            return false;
+        }
+        if (! is_array($list)) {
+            return false;
+        }
+        $keys = array_keys($list);
+        foreach ($keys as $idx) {
+            if (! TypeHint::isInt($idx)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function validateListarray($key)
+    {
+        $list = $this->data[$key] ?? null;
+        if (! $list) {
+            return false;
+        }
+        if (! is_array($list)) {
+            return false;
+        }
+        foreach ($list as $idx => $item) {
+            if (! TypeHint::isInt($idx)) {
+                return false;
+            }
+            if (! is_array($item)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function validateArray($key)
@@ -248,6 +358,20 @@ class Validator
         );
     }
 
+    private function validateIpv6(string $key)
+    {
+        $value = $this->data[$key] ?? null;
+
+        return filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
+    }
+
+    private function validateIpv4(string $key)
+    {
+        $value = $this->data[$key] ?? null;
+
+        return filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
+    }
+
     private function validateIp(string $key)
     {
         $value = $this->data[$key] ?? null;
@@ -322,7 +446,7 @@ class Validator
                     continue;
                 }
                 $ext  = $rarr[1] ?? '';
-                $msg  = $msg ?: $this->getDefaultRuleMessage($rule, $key);
+                $msg  = $msg ?: $this->getDefaultRuleMessage($rule, $key, $ext);
 
                 if (Validator::REQUIRE_RULES[strtolower($rule)] ?? false) {
                     if ($hasRequireRule) {
@@ -357,7 +481,7 @@ class Validator
         return $result;
     }
 
-    public function getDefaultRuleMessage(string $rule) : string
+    public function getDefaultRuleMessage(string $rule, string $key, string $ext) : string
     {
         $map = [
             'need' => 'RequireParameter:%s',
@@ -369,6 +493,9 @@ class Validator
 
         $rule  = strtolower($rule);
         $_rule = ucfirst($rule);
+        if ($rule === 'type') {
+            $_rule .= ucfirst($ext);
+        }
 
         return $map[$rule] ?? "Invalid{$_rule}:%s";
     }

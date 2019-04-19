@@ -13,8 +13,9 @@ final class Wrapin
     const RESERVE_KEYS = [
         'COMPATIBLE' => 1,
         // 'WRAPIN'  => 1,
-        'TITLE'   => 1,
         '__ext__' => 1,
+        'TITLE' => 1,
+        'NOTES' => 1,
     ];
 
     public static function get(string $namespace)

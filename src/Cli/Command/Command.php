@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework\Cli\Command;
 
 use Dof\Framework\Kernel;
+use Dof\Framework\Doc\Generator as DocGen;
 use Dof\Framework\ConfigManager;
 use Dof\Framework\DomainManager;
 use Dof\Framework\EntityManager;
@@ -120,11 +121,20 @@ class Command
     }
 
     /**
-     * @CMD(docs.http.port)
+     * @CMD(docs.http.build)
      * @Desc(Generate HTTP ports docs of domains)
      */
-    public function genDomainHttpPortDocs($console)
+    public function buildHttpDocs($console)
     {
+        $save  = $console->getOption('save', 'tmp/http-docs');
+        $isabs = $console->getOption('absolute', 0);
+        if (! $isabs) {
+            $save = ospath(Kernel::getRoot(), $save);
+        }
+
+        DocGen::buildHttp($console->getOption('ui', 'gitbook'), $save);
+
+        exit;
     }
 
     /**

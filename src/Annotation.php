@@ -10,7 +10,7 @@ use ReflectionException;
 
 class Annotation
 {
-    private $regex = '#@([a-zA-z]+)\((.*)\)(\{(.*)\})?#';
+    private $regex = '#@([a-zA-z\d]+)\((.*)\)(\{(.*)\})?#';
 
     /**
      * Parse class files or interface files annotations by directory paths

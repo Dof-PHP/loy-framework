@@ -531,6 +531,14 @@ if (! function_exists('array_append_dynamic')) {
         return $data;
     }
 }
+if (! function_exists('array_unset')) {
+    function array_unset(array &$data, ...$keys)
+    {
+        foreach ($keys as $key) {
+            unset($data[$key]);
+        }
+    }
+}
 if (! function_exists('stringify')) {
     function stringify($value)
     {

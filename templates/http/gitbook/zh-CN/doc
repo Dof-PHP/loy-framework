@@ -1,0 +1,70 @@
+<style>
+.page-inner {
+    max-width: 900px;
+}
+.markdown-section table
+{
+    display: inline-block;
+}
+</style>
+
+## <?= $title ?> 
+
+``` http
+<?= join('|', $verbs) ?> /<?= $route ?>
+```
+
+| 认证授权类型 | 关联数据模型 | 版本 | 资源后缀支持 | 负责人 | 最后更新时间 |
+| :--- | :--- | :--- | :--- |
+<?php
+    $suffixs = array_map(function ($val) { return "`{$val}`"; }, $suffixs);
+    $suffixs = $suffixs ? join('<br>', $suffixs) : '-';
+?>
+| <?= $auth ?> | <?= $models ?: '-' ?> | <?= $version ?> | <?= $suffixs ?> | <?= $author ?> | <?= fdate() ?> |
+
+<?php if ($headers['in'] ?? []) : ?>
+### 请求头
+
+<?php foreach($headers['in'] as $header) : ?>
+<?php if ($header) : ?>
+- `Content-Type: <?= $header ?>`
+<?php endif ?>
+<?php endforeach ?>
+<?php endif ?>
+
+<?php if ($params ?? false) : ?>
+### 请求参数
+
+| 字段 | 名称 | 基本类型 | 校验规则 | 默认值 | 兼容字段 | 备注 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+<?php foreach ($params as $arg) : ?>
+<?php
+    extract($arg, EXTR_OVERWRITE);
+    $compatibles = array_keys($compatibles);
+    $compatibles = array_map(function ($val) {return "`{$val}`";}, $compatibles);
+    $compatibles = join('<br>', $compatibles);
+    $default = $default ? "`{$default}`" : '-';
+    $notes = $notes ? $notes : '-';
+    $rules = [];
+    foreach ($validators as $rule => $err) {
+        $_rule = $rule;
+        if (false === mb_strpos($rule, ':')) {
+            $_rule = "{$rule}:{$err}";
+        }
+        $rules[] = $_rule;
+    }
+    $rules = $rules ? join('<br>', $rules) : '-';
+?>
+| `<?= $key ?>` | <?= $name ?> | <?= $type ?> | <?= $rules ?> | <?= $default ?> | <?= $compatibles ?> | <?= $notes ?> |
+<?php endforeach ?>
+<?php endif ?>
+
+<?php if ($headers['out'] ?? []) : ?>
+### 响应头
+
+<?php foreach($headers['out'] as $header) : ?>
+<?php if ($header) : ?>
+- (默认) `Content-Type: <?= $header ?>`
+<?php endif ?>
+<?php endforeach ?>
+<?php endif ?>

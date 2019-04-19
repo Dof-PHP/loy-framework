@@ -201,7 +201,7 @@ class Request
 
     public function getMimeLong() : ?string
     {
-        $mime = $_SERVER['HTTP_CONTENT_TYPE'] ?? false;
+        $mime = $_SERVER['HTTP_CONTENT_TYPE'] ?? null;
 
         return $mime ? trim(strtolower($mime)) : null;
     }
