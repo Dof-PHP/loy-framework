@@ -167,18 +167,16 @@ class GitBook
 
     private function appendMenuTree(string $title, string $folder, string $filename = null)
     {
+        $path = join('/', [$folder, $filename.'.md']);
         if (is_null($filename)) {
-            $filename = 'README';
+            $path = '';
         }
 
-        $filename .= '.md';
-
         $this->menuTree .= sprintf(
-            '%s* [%s](%s/%s)%s',
+            '%s* [%s](%s)%s',
             str_repeat("\t", $this->menuDepth),
             $title,
-            $folder,
-            $filename,
+            $path,
             PHP_EOL
         );
     }
