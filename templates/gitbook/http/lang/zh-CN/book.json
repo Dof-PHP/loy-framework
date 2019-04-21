@@ -1,0 +1,21 @@
+{
+    "plugins": [
+        "expandable-chapters",
+        "splitter",
+        "code",
+        "atoc",
+        "toc",
+        "anchors",
+        "versions-select",
+        "-sharing"
+    ],
+    "pluginsConfig": {
+        "atoc": {
+            "addClass": true,
+            "className": "atoc"
+        },
+        "versions": {
+            "options": <?= $options ?> 
+        }
+    }
+}

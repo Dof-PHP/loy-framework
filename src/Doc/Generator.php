@@ -41,6 +41,6 @@ final class Generator
             ->setLanguage($lang)
             ->setOutput($save)
             ->setData($docs)
-            ->build('http');
+            ->buildHttp();
     }
 }
