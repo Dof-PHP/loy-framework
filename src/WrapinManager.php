@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Dof\Framework\Web;
+namespace Dof\Framework;
 
 use Dof\Framework\Facade\Annotation;
 use Dof\Framework\Facade\Request;
 use Dof\Framework\Facade\Validator;
 
-final class Wrapin
+final class WrapinManager
 {
+    const WRAPIN_DIR = ['Http', 'Wrapper', 'In'];
     const RESERVE_KEYS = [
         'COMPATIBLE' => 1,
         // 'WRAPIN'  => 1,
@@ -18,9 +19,86 @@ final class Wrapin
         'NOTES' => 1,
     ];
 
-    public static function get(string $namespace)
+    private static $dirs = [];
+    private static $wrapins = [];
+
+    public static function load(array $dirs)
     {
-        return Annotation::parseNamespace($namespace, __CLASS__)[1] ?? null;
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
+            list(self::$dirs, self::$wrapins) = load_php($cache);
+            return;
+        }
+
+        self::compile($dirs);
+
+        if (ConfigManager::matchEnv(['ENABLE_WRAPIN_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
+            array2code([self::$dirs, self::$wrapins], $cache);
+        }
+    }
+
+    public static function flush()
+    {
+        $cache = Kernel::formatCacheFile(__CLASS__);
+        if (is_file($cache)) {
+            unlink($cache);
+        }
+    }
+
+    public static function compile(array $dirs, bool $cache = false)
+    {
+        if (count($dirs) < 1) {
+            return;
+        }
+
+        // Reset
+        self::$dirs = [];
+        self::$wrapins = [];
+
+        array_map(function ($item) {
+            $dir = ospath($item, self::WRAPIN_DIR);
+            if (is_dir($dir)) {
+                self::$dirs[] = $dir;
+            }
+        }, $dirs);
+
+        // Exceptions may thrown but let invoker to catch for different scenarios
+        Annotation::parseClassDirs(self::$dirs, function ($annotations) {
+            if ($annotations) {
+                list($ofClass, $ofProperties, ) = $annotations;
+                self::assemble($ofClass, $ofProperties);
+            }
+        }, __CLASS__);
+
+        if ($cache) {
+            array2code([self::$dirs, self::$wrapins], Kernel::formatCacheFile(__CLASS__));
+        }
+    }
+
+    public static function assemble(array $ofClass, array $ofProperties)
+    {
+        $namespace = $ofClass['namespace'] ?? false;
+        if (! $namespace) {
+            return;
+        }
+        if ($exists = (self::$wrapins[$namespace] ?? false)) {
+            exception('DuplicateWrapinNamespace', ['namespace' => $namespace]);
+        }
+        if (! ($ofClass['doc']['TITLE'] ?? false)) {
+            exception('MissingWrapinTitle', ['wrapin' => $namespace]);
+        }
+
+        self::$wrapins[$namespace]['meta'] = $ofClass['doc'] ?? [];
+        foreach ($ofProperties as $name => $attrs) {
+            if (! ($attrs['doc']['TITLE'] ?? false)) {
+                exception('MissingWrapinAttrTitle', ['wrapin' => $namespace, 'attr' => $name]);
+            }
+            if (! ($attrs['doc']['TYPE'] ?? false)) {
+                exception('MissingWrapinAttrType', ['wrapin' => $namespace, 'attr' => $name]);
+            }
+
+            self::$wrapins[$namespace]['properties'][$name] = $attrs['doc'] ?? [];
+        }
     }
 
     /**
@@ -168,6 +246,30 @@ final class Wrapin
         return null;
     }
 
+    public static function __annotationFilterWrapin($wrapin, array $ext, $namespace)
+    {
+        $wrapin = trim($wrapin);
+        if (! $wrapin) {
+            exception('MissingWrapInNamespace', compact('namespace'));
+        }
+        if (class_exists($wrapin)) {
+            return $wraperr;
+        }
+        if ((! $namespace) || (! class_exists($namespace))) {
+            exception('MissingWrapInUseClass', compact('wrapin', 'namespace'));
+        }
+
+        $_wrapin = get_annotation_ns($wrapin, $namespace);
+        if ((! $_wrapin) || (! class_exists($_wrapin))) {
+            exception('WrapInNotExists', compact('wrapin', 'namespace'));
+        }
+        if ($_wrapin === $namespace) {
+            exception('WrapInEqualsToUseClass', compact('wrapin', '_wrapin', 'namespace'));
+        }
+
+        return $_wrapin;
+    }
+
     public static function __annotationMultipleCompatible() : bool
     {
         return true;
@@ -176,6 +278,21 @@ final class Wrapin
     public static function __annotationMultipleMergeCompatible()
     {
         return 'kv';
+    }
+
+    public static function getWrapins()
+    {
+        return self::$wrapins;
+    }
+
+    public static function getDirs()
+    {
+        return self::$dirs;
+    }
+
+    public static function get(string $namespace)
+    {
+        return self::$wrapins[$namespace] ?? null;
     }
 
     public static function __annotationFilterCompatible(string $compatibles) : array

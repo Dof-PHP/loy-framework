@@ -2,10 +2,7 @@
     "plugins": [
         "expandable-chapters",
         "splitter",
-        "code",
         "atoc",
-        "toc",
-        "anchors",
         "versions-select",
         "-sharing"
     ],

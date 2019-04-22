@@ -1,0 +1,19 @@
+## <?= $model ?>
+
+| 属性KEY | 名称 | 基本类型 | 可接受参数 | 备注 |
+| :--- | :--- | :--- | :--- | :--- |
+<?php if ($properties ?? false) : ?>
+<?php foreach ($properties as $property) : ?>
+<?php
+    extract($property, EXTR_OVERWRITE);
+    $_arguments = '-';
+    if ($arguments) {
+        $_arguments = '';
+        foreach ($arguments as $key => $options) {
+            $_arguments .= "`{$key}` => ".enjson($options).'<br>';
+        }
+    }
+?>
+| `<?= $key ?>` | <?= $name ?> | <?= $type ?> | <?= $_arguments ?> | <?= $notes ?: '-' ?> |
+<?php endforeach ?>
+<?php endif ?>

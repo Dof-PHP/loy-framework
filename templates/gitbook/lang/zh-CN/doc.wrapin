@@ -1,0 +1,27 @@
+## <?= $wrapin ?>
+
+| 字段 | 名称 | 基本类型 | 校验规则 | 默认值 | 兼容字段 | 备注 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+<?php if ($params ?? false) : ?>
+<?php foreach ($params as $arg) : ?>
+<?php
+    extract($arg, EXTR_OVERWRITE);
+    $compatibles = array_keys($compatibles);
+    $compatibles = array_map(function ($val) {return "`{$val}`";}, $compatibles);
+    $compatibles = join('<br>', $compatibles);
+    $default = $default ? "`{$default}`" : '-';
+    $notes = $notes ? $notes : '-';
+    $rules = [];
+    foreach ($validators as $rule => $err) {
+        if (false === mb_strpos($rule, ':')) {
+            $_rule = "{$rule}:`{$err}`";
+        } else {
+            $_rule = "`{$rule}`";
+        }
+        $rules[] = $_rule;
+    }
+    $rules = $rules ? join('<br>', $rules) : '-';
+?>
+| `<?= $key ?>` | <?= $name ?> | <?= $type ?> | <?= $rules ?> | <?= $default ?> | <?= $compatibles ?> | <?= $notes ?> |
+<?php endforeach ?>
+<?php endif ?>

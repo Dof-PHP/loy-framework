@@ -89,9 +89,20 @@ final class EntityManager
         if ($exists = (self::$orms[$namespace] ?? false)) {
             exception('DuplicateOrmNamespace', ['namespace' => $namespace]);
         }
+        if (! ($ofClass['doc']['TITLE'] ?? false)) {
+            exception('MissingEntityTitle', ['entity' => $namespace]);
+        }
+
         self::$entities[$namespace]['meta'] = $ofClass['doc'] ?? [];
 
         foreach ($ofProperties as $name => $attrs) {
+            if (! ($attrs['doc']['TITLE'] ?? false)) {
+                exception('MissingEntityAttrTitle', ['entity' => $namespace, 'attr' => $name]);
+            }
+            if (! ($attrs['doc']['TYPE'] ?? false)) {
+                exception('MissingEntityAttrType', ['entity' => $namespace, 'attr' => $name]);
+            }
+
             self::$entities[$namespace]['properties'][$name] = $attrs['doc'] ?? [];
         }
     }
@@ -126,6 +137,11 @@ final class EntityManager
     public static function get(string $namespace)
     {
         return self::$entities[$namespace] ?? null;
+    }
+
+    public static function getDirs()
+    {
+        return self::$dirs;
     }
 
     public static function getEntities()

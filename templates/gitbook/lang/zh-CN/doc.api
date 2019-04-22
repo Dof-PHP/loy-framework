@@ -9,9 +9,9 @@
 </style>
 
 ## <?= $title ?> 
-
+<?php $route = $route === '/' ? $route : "/{$route}" ?>
 ``` http
-<?= join('|', $verbs) ?> /<?= $route ?>
+<?= join('|', $verbs) ?> <?= $route ?>
 ```
 
 | 认证授权类型 | 关联数据模型 | 版本 | 资源后缀支持 | 负责人 | 最后更新时间 |
@@ -19,8 +19,15 @@
 <?php
     $suffixs = array_map(function ($val) { return "`{$val}`"; }, $suffixs);
     $suffixs = $suffixs ? join('<br>', $suffixs) : '-';
+    if ($models) {
+        $_models = <<<LINK
+<a href='javascript:void(0);' onclick='goDofDoc("_model/{$models}.html")'>{$models}</a>
+LINK;
+    } else {
+        $_models = '-';
+    }
 ?>
-| <?= $auth ?> | <?= $models ?: '-' ?> | <?= $version ?> | <?= $suffixs ?> | <?= $author ?> | <?= fdate() ?> |
+| <?= $auth ?> | <?= $_models ?> | <?= $version ?> | <?= $suffixs ?> | <?= $author ?> | <?= fdate() ?> |
 
 <?php if ($headers['in'] ?? []) : ?>
 ### 请求头
@@ -47,9 +54,17 @@
     $notes = $notes ? $notes : '-';
     $rules = [];
     foreach ($validators as $rule => $err) {
-        $_rule = $rule;
         if (false === mb_strpos($rule, ':')) {
-            $_rule = "{$rule}:{$err}";
+            if (($rule == 'WRAPIN') && $err) {
+                $_rule = $rule; 
+                $_rule .= <<<LINK
+:<a href='javascript:void(0);' onclick='goDofDoc("_wrapin/{$err}.html")'>{$err}</a>
+LINK;
+            } else {
+                $_rule = $err ? "{$rule}:{$err}" : $rule;
+            }
+        } else {
+            $_rule = "{$rule}";
         }
         $rules[] = $_rule;
     }
@@ -68,3 +83,10 @@
 <?php endif ?>
 <?php endforeach ?>
 <?php endif ?>
+
+<script>
+function goDofDoc(path) {
+    let url = new URL(window.location.href)
+    window.open(url.origin + '/' + path, '_blank')
+}
+</script>

@@ -25,7 +25,7 @@
 
 除特殊情况，本手册所有接口文档均不包含接口返回值说明，因为所有 HTTP 接口实行了 GraphQL-like 调用风格——即接口要返回什么，是由客户端指定的。只不过客户端能指定返回哪些字段结构，是由具体的接口文档中的「关联数据模型」决定的。
 
-说明：接口可关联的数据模型列表由专门的数据模型文档维护，详见：[接口数据模型]()。
+说明：接口可关联的数据模型列表由专门的数据模型文档维护，详见：<a href="javascript:goDofDocVersion('_model')">接口数据模型</a>。
 
 ### 接口参数基本类型
 
@@ -55,7 +55,7 @@
 | KEY | 含义 | 可接受参数名 | 示例 |
 | :--- | :--- | :--- | :--- |
 | `EMAIL` | 电子邮箱 | - | `cjli@dofphp.org` |
-| `MOBILE` | 手机号码 | `cn`/`tw` 等手机号码地域代号 | `13344445555` |
+| `MOBILE` | 手机号码 | `cn` => 中国大陆手机号格式 | `13344445555` |
 | `IN` | 指定的参数必须在给定的枚举列表中 | - | 规则：`status` => 'in:1,2,3'<br>含义：表示名为 `status` 的参数必须是 `1`/`2`/`3` 的某一个|
 | `CIIN` | 指定的参数必须在给定的枚举列表中，不区分大小写 | - | 规则：`type` => 'ciin:a,b,C'<br>含义：表示名为 `type` 的参数必须是 `a`,`A`, `b`,`B`, `c`,`C` 的某一个|
 | `HOST` | 主机域名或者IP | - | `demo.dofphp.org`, `12.34.56.78` |
@@ -73,4 +73,11 @@
 #### 说明
 
 - 接口参数校验规则的 KEY 也不区分大小写。
-- `WrapIn` 实现了无限嵌套格式校验，关于本手册中所有文档可以使用的 `WrapIn` 列表详见：[WrapIn 校验集合]()。
+- `WrapIn` 实现了无限嵌套格式校验，关于本手册中所有文档可以使用的 `WrapIn` 列表详见：<a href="javascript:goDofDocVersion('_wrapin')">WrapIn 校验集合</a>。
+
+<script>
+function goDofDocVersion(version) {
+    let url = new URL(window.location.href)
+    window.location.href = url.origin + '/' + version
+}
+</script>

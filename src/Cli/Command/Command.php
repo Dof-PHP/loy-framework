@@ -12,6 +12,7 @@ use Dof\Framework\EntityManager;
 use Dof\Framework\StorageManager;
 use Dof\Framework\RepositoryManager;
 use Dof\Framework\CommandManager;
+use Dof\Framework\WrapinManager;
 use Dof\Framework\RouteManager;
 use Dof\Framework\Web\Kernel as WebKernel;
 
@@ -121,12 +122,46 @@ class Command
     }
 
     /**
-     * @CMD(docs.http.build)
-     * @Desc(Generate HTTP ports docs of domains)
+     * @CMD(docs.build.model)
+     * @Desc(Generate data model docs of domains)
      */
-    public function buildHttpDocs($console)
+    public function buildDocsModel($console)
     {
-        $save  = $console->getOption('save', 'tmp/http-docs');
+        $save  = $console->getOption('save', 'tmp/dof-docs-data-model');
+        $isabs = $console->getOption('absolute', 0);
+        if (! $isabs) {
+            $save = ospath(Kernel::getRoot(), $save);
+        }
+
+        DocGen::buildModel($console->getOption('ui', 'gitbook'), $save);
+
+        exit;
+    }
+
+    /**
+     * @CMD(docs.build.wrapin)
+     * @Desc(Generate wrapin docs of domains)
+     */
+    public function buildDocsWrapin($console)
+    {
+        $save  = $console->getOption('save', 'tmp/dof-docs-wrapin');
+        $isabs = $console->getOption('absolute', 0);
+        if (! $isabs) {
+            $save = ospath(Kernel::getRoot(), $save);
+        }
+
+        DocGen::buildWrapin($console->getOption('ui', 'gitbook'), $save);
+
+        exit;
+    }
+
+    /**
+     * @CMD(docs.build.http)
+     * @Desc(Generate http docs of domains)
+     */
+    public function buildDocsHttp($console)
+    {
+        $save  = $console->getOption('save', 'tmp/dof-docs-http');
         $isabs = $console->getOption('absolute', 0);
         if (! $isabs) {
             $save = ospath(Kernel::getRoot(), $save);
@@ -135,6 +170,32 @@ class Command
         DocGen::buildHttp($console->getOption('ui', 'gitbook'), $save);
 
         exit;
+    }
+
+    /**
+     * @CMD(docs.build.all)
+     * @Desc(Generate all docs of domains)
+     */
+    public function buildDocsAll($console)
+    {
+        $save  = $console->getOption('save', 'tmp/dof-docs-all');
+        $isabs = $console->getOption('absolute', 0);
+        if (! $isabs) {
+            $save = ospath(Kernel::getRoot(), $save);
+        }
+
+        DocGen::buildAll($console->getOption('ui', 'gitbook'), $save);
+
+        exit;
+    }
+
+    /**
+     * @CMD(docs.build)
+     * @Desc(Generate all docs of domains)
+     */
+    public function buildDocs($console)
+    {
+        return $this->buildDocsAll($console);
     }
 
     /**
@@ -154,6 +215,8 @@ class Command
         RepositoryManager::flush();
 
         CommandManager::flush();
+
+        WrapinManager::flush();
 
         RouteManager::flush();
     }
@@ -179,6 +242,8 @@ class Command
         RepositoryManager::compile($domains, true);
 
         CommandManager::compile($domains, true);
+
+        WrapinManager::compile($domains, true);
 
         RouteManager::compile($domains, true);
     }

@@ -740,7 +740,7 @@ final class RouteManager
 
         $_wraperr = get_annotation_ns($wraperr, $namespace);
         if ((! $_wraperr) || (! class_exists($_wraperr))) {
-            exception('WrapperErrNotExists', compact('wraperr', 'namespace'));
+            exception('WrapErrNotExists', compact('wraperr', 'namespace'));
         }
 
         return $_wraperr;
@@ -765,6 +765,9 @@ final class RouteManager
         $_wrapin = get_annotation_ns($wrapin, $namespace);
         if ((! $_wrapin) || (! class_exists($_wrapin))) {
             exception('WrapperInNotExists', compact('wrapin', 'namespace'));
+        }
+        if ($_wrapin === $namespace) {
+            exception('WrapInEqualsToUseClass', compact('wrapin', '_wrapin', 'namespace'));
         }
 
         return $_wrapin;

@@ -13,16 +13,26 @@ class GitBook
     ];
     const README  = 'README.md';
     const SUMMARY = 'SUMMARY.md';
-    const DOC_TPL = 'doc';
     const BUILDER = 'build.sh';
+    const DOC_API = 'doc.api';
+    const DOC_WRAPIN = 'doc.wrapin';
+    const DOC_MODEL  = 'doc.model';
     const BOOK_JSON = 'book.json';
     const VER_INDEX = 'index.html';
+    const WRAPIN_OUTPUT = '_wrapin';
+    const MODEL_OUTPUT  = '_model';
 
     /** @var string: UI language */
     private $language = 'zh-CN';
 
-    /** @var array: Templates data */
-    private $data;
+    /** @var array: API templates data */
+    private $apiData = [];
+
+    /** @var array: Wrapin templates data */
+    private $wrapinData = [];
+
+    /** @var array: Data model templates data */
+    private $modelData = [];
 
     /** @var string: Templates directory */
     private $templates;
@@ -45,8 +55,14 @@ class GitBook
     /** @var string: Build all-versions-in-one site */
     private $builder;
 
-    /** @var string: Doc template path */
-    private $doctpl;
+    /** @var string: API Doc template path */
+    private $docApi;
+
+    /** @var string: Wrapin Doc template path */
+    private $docWrapin;
+
+    /** @var string: Data Model Doc template path */
+    private $docModel;
 
     /** @var strign: Doc menus tree */
     private $menuTree  = '';
@@ -54,12 +70,15 @@ class GitBook
     /** @var int: Doc menus depth */
     private $menuDepth = 0;
 
-    public function prepare(string $type)
+    /** @var array: Doc versions selects list */
+    private $selects = [];
+
+    /** @var array: Doc versions list */
+    private $versions = [];
+
+    public function prepare()
     {
-        if (! $this->data) {
-            exception('NoDataForGitBookTemplates');
-        }
-        $template = ospath($this->templates, 'gitbook', $type, 'lang', $this->language);
+        $template = ospath($this->templates, 'gitbook', 'lang', $this->language);
         $summary = ospath($template, self::SUMMARY);
         if (! is_file($summary)) {
             exception('GitBookSummaryNotFound', compact('summary'));
@@ -76,9 +95,17 @@ class GitBook
         if (! is_file($builder)) {
             exception('GitBookSiteBuilderNotFound', compact('builder'));
         }
-        $doctpl = ospath($template, self::DOC_TPL);
-        if (! is_file($doctpl)) {
-            exception('DocTemplateNotFound', compact('doctpl'));
+        $docApi = ospath($template, self::DOC_API);
+        if (! is_file($docApi)) {
+            exception('ApiDocTemplateNotFound', compact('docApi'));
+        }
+        $docWrapin = ospath($template, self::DOC_WRAPIN);
+        if (! is_file($docWrapin)) {
+            exception('WrapinDocTemplateNotFound', compact('docWrapin'));
+        }
+        $docModel = ospath($template, self::DOC_MODEL);
+        if (! is_file($docModel)) {
+            exception('DataModelDocTemplateNotFound', compact('docModel'));
         }
         $verindex = ospath($template, self::VER_INDEX);
         if (! is_file($verindex)) {
@@ -91,22 +118,115 @@ class GitBook
         $this->bookjson = $bookjson;
         $this->builder  = $builder;
         $this->verindex = $verindex;
-        $this->doctpl   = $doctpl;
+        $this->docApi    = $docApi;
+        $this->docModel  = $docModel;
+        $this->docWrapin = $docWrapin;
     }
 
-    public function buildHttp()
+    public function buildModel(bool $standalone)
     {
-        $this->prepare('http');
+        if ($standalone) {
+            $this->prepare();
+        }
 
-        $selects = [];
-        foreach ($this->data as $version => $domain) {
+        $path = ospath($this->output, self::MODEL_OUTPUT);
+        if (! is_dir($path)) {
+            mkdir($path, 0775, true);
+        }
+
+        $this->selects[] = [
+            'value'   => '/'.self::MODEL_OUTPUT,
+            'text'    => 'Data Model',
+            'version' => self::MODEL_OUTPUT,
+        ];
+
+        foreach ($this->modelData as $ns => $model) {
+            $key = $this->formatDocNamespace($ns);
+            $this->appendMenuTree($key, null, $key);
+            $this->save(
+                ($this->render($this->docModel, $this->formatModelDocData($model, $key))),
+                ospath($path, "{$key}.md")
+            );
+        }
+
+        $this->save(
+            $this->render($this->readme, ['version' => 'Data Model']),
+            ospath($path, self::README)
+        );
+
+        $this->save(
+            $this->render($this->summary, ['tree' => $this->menuTree]),
+            ospath($path, self::SUMMARY)
+        );
+
+        $this->menuTree  = '';
+        $this->menuDepth = 0;
+        $this->versions[] = self::MODEL_OUTPUT;
+
+        if ($standalone) {
+            $this->publish();
+        }
+    }
+
+    public function buildWrapin(bool $standalone)
+    {
+        if ($standalone) {
+            $this->prepare();
+        }
+
+        $path = ospath($this->output, self::WRAPIN_OUTPUT);
+        if (! is_dir($path)) {
+            mkdir($path, 0775, true);
+        }
+
+        $this->selects[] = [
+            'value'   => '/'.self::WRAPIN_OUTPUT,
+            'text'    => 'Wrapin',
+            'version' => self::WRAPIN_OUTPUT,
+        ];
+
+        foreach ($this->wrapinData as $ns => $wrapin) {
+            $key = $this->formatDocNamespace($ns);
+            $this->appendMenuTree($key, null, $key);
+            $this->save(
+                ($this->render($this->docWrapin, $this->formatWrapinDocData($wrapin, $key))),
+                ospath($path, "{$key}.md")
+            );
+        }
+
+        $this->save(
+            $this->render($this->readme, ['version' => 'Wrapin List']),
+            ospath($path, self::README)
+        );
+
+        $this->save(
+            $this->render($this->summary, ['tree' => $this->menuTree]),
+            ospath($path, self::SUMMARY)
+        );
+
+        $this->menuTree  = '';
+        $this->menuDepth = 0;
+        $this->versions[] = self::WRAPIN_OUTPUT;
+
+        if ($standalone) {
+            $this->publish();
+        }
+    }
+
+    public function buildHttp(bool $standalone)
+    {
+        if ($standalone) {
+            $this->prepare();
+        }
+
+        foreach ($this->apiData as $version => $domain) {
             $ver = ospath($this->output, $version);
             if (! is_dir($ver)) {
                 mkdir($ver, 0775, true);
             }
-            $selects[] = [
+            $this->selects[] = [
                 'value'   => "/{$version}",
-                'text'    => "HTTP API {$version}",
+                'text'    => "API {$version}",
                 'version' => $version,
             ];
 
@@ -140,18 +260,38 @@ class GitBook
             $this->menuDepth = 0;
         }
 
+        $this->versions = array_merge($this->versions, array_keys($this->apiData));
+
+        if ($standalone) {
+            $this->publish();
+        }
+    }
+
+    public function buildAll()
+    {
+        $this->prepare();
+        $this->buildHttp(false);
+        $this->buildWrapin(false);
+        $this->buildModel(false);
+        $this->publish();
+    }
+
+    private function publish()
+    {
         $this->save(
-            $this->render($this->verindex, ['default' => $version]),
-            ospath($this->output, self::VER_INDEX)
-        );
-        $this->save(
-            $this->render($this->builder, ['versions' => array_keys($this->data)]),
+            $this->render($this->builder, ['versions' => $this->versions]),
             ospath($this->output, self::BUILDER)
         );
 
-        foreach ($selects as list('version' => $_version)) {
-            $_selects  = $selects;
-            $_versions = array_column($selects, 'version');
+        $this->save(
+            $this->render($this->verindex, ['default' => $this->versions[0] ?? 404]),
+            ospath($this->output, self::VER_INDEX)
+        );
+
+        // Foramt book.json versions plugin configs with default version display logic
+        foreach ($this->selects as list('version' => $_version)) {
+            $_selects  = $this->selects;
+            $_versions = array_column($this->selects, 'version');
             $idx = array_search($_version, $_versions);
             if (false !== $idx) {
                 $default = $_selects[$idx] ?? [];
@@ -165,11 +305,13 @@ class GitBook
         }
     }
 
-    private function appendMenuTree(string $title, string $folder, string $filename = null)
+    private function appendMenuTree(string $title, string $folder = null, string $filename = null)
     {
-        $path = join('/', [$folder, $filename.'.md']);
         if (is_null($filename)) {
-            $path = '';
+            $path = '';   // Avoid chapters toggle not working
+        } else {
+            $filename .= '.md';
+            $path = $folder ? join('/', [$folder, $filename]) : $filename;
         }
 
         $this->menuTree .= sprintf(
@@ -206,7 +348,7 @@ class GitBook
 
             $_title = $doc['title'] ?? '?';
             $this->appendMenuTree($_title, $path, $_doc);
-            $this->save(($this->render($this->doctpl, $doc)), ospath($dir, "{$_doc}.md"));
+            $this->save(($this->render($this->docApi, $doc)), ospath($dir, "{$_doc}.md"));
         }
     }
 
@@ -238,6 +380,68 @@ class GitBook
             }
             --$this->menuDepth;
         }
+    }
+
+    public function formatModelDocData(array $annotation, string $key)
+    {
+        $data = [];
+
+        $data['model'] = $annotation['meta']['TITLE'] ?? $key;
+        foreach ($annotation['properties'] ?? [] as $name => $options) {
+            $data['properties'][] = [
+                'key' => $name,
+                'name' => $options['TITLE'] ?? null,
+                'type' => $options['TYPE']  ?? null,
+                'notes' => $options['notes'] ?? null,
+                'arguments' => $options['__ext__']['ARGUMENT'] ?? [],
+            ];
+        }
+
+        return $data;
+    }
+
+    public function formatWrapinDocData(array $annotation, string $key)
+    {
+        $data = [];
+
+        $data['wrapin'] = $annotation['meta']['TITLE'] ?? $key;
+
+        foreach ($annotation['properties'] ?? [] as $name => $options) {
+            $rules = $options;
+            array_unset(
+                $rules,
+                '__ext__',
+                'TITLE',
+                'TYPE',
+                'NOTES',
+                'DEFAULT',
+                'COMPATIBLE'
+            );
+
+            $data['params'][] = [
+                'key' => $name,
+                'name' => $options['TITLE'] ?? null,
+                'type' => $options['TYPE']  ?? null,
+                'notes' => $options['NOTES'] ?? null,
+                'default' => $options['DEFAULT'] ?? null,
+                'compatibles' => $options['COMPATIBLES'] ?? [],
+                'validators'  => $rules,
+            ];
+        }
+
+        return $data;
+    }
+
+    private function formatDocNamespace(string $namespace = null)
+    {
+        if (! $namespace) {
+            return null;
+        }
+
+        $arr = array_trim_from_string($namespace, '\\');
+        unset($arr[0]);
+
+        return join('.', $arr);
     }
 
     private function save(string $content, string $save)
@@ -285,14 +489,40 @@ class GitBook
     }
 
     /**
-     * Setter for data
+     * Setter for apiData
      *
-     * @param array $data
+     * @param array $apiData
      * @return GitBook
      */
-    public function setData(array $data)
+    public function setApiData(array $apiData)
     {
-        $this->data = $data;
+        $this->apiData = $apiData;
+    
+        return $this;
+    }
+
+    /**
+     * Setter for wrapinData
+     *
+     * @param array $wrapinData
+     * @return GitBook
+     */
+    public function setWrapinData(array $wrapinData)
+    {
+        $this->wrapinData = $wrapinData;
+    
+        return $this;
+    }
+
+    /**
+     * Setter for modelData
+     *
+     * @param array $modelData
+     * @return GitBook
+     */
+    public function setModelData(array $modelData)
+    {
+        $this->modelData = $modelData;
     
         return $this;
     }

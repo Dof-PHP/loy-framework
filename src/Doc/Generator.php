@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Dof\Framework\Doc;
 
 use Dof\Framework\RouteManager;
+use Dof\Framework\EntityManager;
+use Dof\Framework\WrapinManager;
 use Dof\Framework\Doc\UI\GitBook;
 
 final class Generator
@@ -25,22 +27,59 @@ final class Generator
     }
 
     /**
-     * Build Http Docs with given $ui and save to $save
+     * Build Docs with given $ui and save to $save
      *
      * @param string $ui: The docs ui to use
      * @param string $save: The docs path to save
+     * @param string $lang: The doc template language
      */
-    public static function buildHttp(string $ui, string $save, string $lang = 'zh-CN')
+    public static function buildAll(string $ui, string $save, string $lang = 'zh-CN')
     {
-        $docs = RouteManager::getDocs();
-
         $templates = ospath(dirname(dirname(dirname(__FILE__))), self::TEMPLATE_DIR);
 
         self::support($ui)
             ->setTemplates($templates)
             ->setLanguage($lang)
             ->setOutput($save)
-            ->setData($docs)
-            ->buildHttp();
+            ->setApiData(RouteManager::getDocs())
+            ->setWrapinData(WrapinManager::getWrapins())
+            ->setModelData(EntityManager::getEntities())
+            ->buildAll();
+    }
+
+    public static function buildModel(string $ui, string $save, string $lang = 'zh-CN')
+    {
+        $templates = ospath(dirname(dirname(dirname(__FILE__))), self::TEMPLATE_DIR);
+
+        self::support($ui)
+            ->setTemplates($templates)
+            ->setLanguage($lang)
+            ->setOutput($save)
+            ->setModelData(EntityManager::getEntities())
+            ->buildModel(true);
+    }
+
+    public static function buildWrapin(string $ui, string $save, string $lang = 'zh-CN')
+    {
+        $templates = ospath(dirname(dirname(dirname(__FILE__))), self::TEMPLATE_DIR);
+
+        self::support($ui)
+            ->setTemplates($templates)
+            ->setLanguage($lang)
+            ->setOutput($save)
+            ->setWrapinData(WrapinManager::getWrapins())
+            ->buildWrapin(true);
+    }
+
+    public static function buildHttp(string $ui, string $save, string $lang = 'zh-CN')
+    {
+        $templates = ospath(dirname(dirname(dirname(__FILE__))), self::TEMPLATE_DIR);
+
+        self::support($ui)
+            ->setTemplates($templates)
+            ->setLanguage($lang)
+            ->setOutput($save)
+            ->setApiData(RouteManager::getDocs())
+            ->buildHttp(true);
     }
 }

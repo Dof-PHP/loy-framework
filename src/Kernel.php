@@ -103,6 +103,8 @@ final class Kernel
 
         CommandManager::load($domains);
 
+        WrapinManager::load($domains);
+
         RouteManager::load($domains);
     }
 

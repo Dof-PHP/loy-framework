@@ -8,6 +8,7 @@ use Throwable;
 use Dof\Framework\Kernel as Core;
 use Dof\Framework\Container;
 use Dof\Framework\RouteManager;
+use Dof\Framework\WrapinManager;
 use Dof\Framework\TypeHint;
 use Dof\Framework\Validator;
 use Dof\Framework\Facade\Log;
@@ -317,7 +318,7 @@ final class Kernel
         // 1. Check wrapin setting on route annotation first
         // 2. Check arguments annotations from route method and port properties
         try {
-            $validator = $wrapin ? Wrapin::apply($wrapin) : Wrapin::execute($arguments, Route::get('class'));
+            $validator = $wrapin ? WrapinManager::apply($wrapin) : WrapinManager::execute($arguments, Route::get('class'));
             if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
                 $context = (array) $fail->value;
                 if ($wrapin) {
