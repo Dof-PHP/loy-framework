@@ -26,16 +26,16 @@ class Command
     {
         $lock = ospath(Kernel::getRoot(), WebKernel::HALT_FLAG);
         if (! is_file($lock)) {
-            $console->output('OK! Application is up and running.');
+            $console->success('OK! Application is up and running.');
             return;
         }
 
         $res = unlink($lock);
         if ($res === false) {
-            $console->output('Failed!');
+            $console->fail('Failed!');
             return;
         }
-        $console->output('Success!');
+        $console->success('Success!');
     }
 
     /**
@@ -49,11 +49,11 @@ class Command
             $force = strtolower((string) $console->getOption('force', '0'));
             if (($force === '1') || ('true' === $force)) {
                 if (false === unlink($lock)) {
-                    $console->output('ERROR! Force shutdown failed.');
+                    $console->fail('ERROR! Force shutdown failed.');
                     return;
                 }
             } else {
-                $console->output('OK! Application was shutdown already.');
+                $console->success('OK! Application was shutdown already.');
                 return;
             }
         }
@@ -62,11 +62,11 @@ class Command
         $since = microftime('T Y-m-d H:i:s');
         $res = file_put_contents($lock, enjson(compact('message', 'since')));
         if (false === $res) {
-            $console->output('Failed!');
+            $console->fail('Failed!');
             return;
         }
 
-        $console->output('Success!');
+        $console->success('Success!');
     }
 
     /**
@@ -135,7 +135,7 @@ class Command
 
         DocGen::buildModel($console->getOption('ui', 'gitbook'), $save);
 
-        exit;
+        $console->success('Done!');
     }
 
     /**
@@ -152,7 +152,7 @@ class Command
 
         DocGen::buildWrapin($console->getOption('ui', 'gitbook'), $save);
 
-        exit;
+        $console->success('Done!');
     }
 
     /**
@@ -169,7 +169,7 @@ class Command
 
         DocGen::buildHttp($console->getOption('ui', 'gitbook'), $save);
 
-        exit;
+        $console->success('Done!');
     }
 
     /**
@@ -186,7 +186,7 @@ class Command
 
         DocGen::buildAll($console->getOption('ui', 'gitbook'), $save);
 
-        exit;
+        $console->success('Done!');
     }
 
     /**
