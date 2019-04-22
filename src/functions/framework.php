@@ -2,6 +2,43 @@
 
 declare(strict_types=1);
 
+if (! function_exists('pathof')) {
+    /**
+     * Get path in dof project
+     */
+    function pathof(...$params)
+    {
+        return ospath(\Dof\Framework\Kernel::getRoot(), $params);
+    }
+}
+if (! function_exists('get_dof_version')) {
+    // --------------------------------------------
+    //     The version format used in Dof:
+    //     [major].[minor].[release].[build]
+    //     2 commits = 1 build
+    //     1 release = 16 build  = 32 commits
+    //     1 minor   = 8 release = 256 commits
+    //     1 major   = 4 minor   = 1024 commits
+    // --------------------------------------------
+    function get_dof_version()
+    {
+        $path = ospath(dirname(dirname(dirname(__FILE__))), '.VER.DOF');
+        if (! is_file($path)) {
+            return '0.0.0.0';
+        }
+
+        $ver = $left = intval(file_get_contents($path));
+        $major   = floor($left / 1024);
+        $left    = $ver - $major*1024;
+        $minor   = floor($left / 256);
+        $left    = $left - $minor*256;
+        $release = floor($left / 32);
+        $left    = $left - $release*32;
+        $build   = floor($left / 2);
+
+        return $major.'.'.$minor.'.'.$release.'.'.$build;
+    }
+}
 if (! function_exists('collect')) {
     function collect(array $data, $origin = null, bool $recursive = true)
     {
@@ -328,14 +365,5 @@ if (! function_exists('run_gwt_tests')) {
     function run_gwt_tests(string $dir, array $excludes = [])
     {
         \Dof\Framework\GWT::run($dir, $excludes);
-    }
-}
-if (! function_exists('pathof')) {
-    /**
-     * Get path in dof project
-     */
-    function pathof(...$params)
-    {
-        return ospath(\Dof\Framework\Kernel::getRoot(), $params);
     }
 }

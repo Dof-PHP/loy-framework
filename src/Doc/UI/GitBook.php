@@ -64,7 +64,7 @@ class GitBook
     /** @var string: Data Model Doc template path */
     private $docModel;
 
-    /** @var strign: Doc menus tree */
+    /** @var string: Doc menus tree */
     private $menuTree  = '';
 
     /** @var int: Doc menus depth */

@@ -60,6 +60,9 @@ final class Kernel
         }
 
         list($entry, $cmd, $options, $params) = CLIA::build($argvs);
+        if (! $cmd) {
+            $cmd = 'dof';
+        }
         $isDomain = strtolower($cmd) === 'domain';
         if ($isDomain) {
             $cmd = array_shift($params);

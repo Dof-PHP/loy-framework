@@ -19,6 +19,53 @@ use Dof\Framework\Web\Kernel as WebKernel;
 class Command
 {
     /**
+     * @CMD(version)
+     * @Desc(Get Dof version)
+     */
+    public function version($console)
+    {
+        $console->line();
+        $console->output($console->render('Dof-PHP Framework', 'LIGHT_BLUE'));
+        $console->output('  ');
+        $console->output(get_dof_version());
+        $console->output('  ');
+        $console->output($console->render('ckwongloy@gmail.com', 'DARK_GRAY'));
+        $console->line(null, 2);
+
+        exit;
+    }
+
+    /**
+     * @CMD(help)
+     * @Desc(Print Dof help messages)
+     */
+    public function help($console)
+    {
+        $this->version();
+    }
+
+    /**
+     * @CMD(dof)
+     * @Desc(Dof default command)
+     */
+    public function dof($console)
+    {
+        if ($console->getOption('help')) {
+            return $this->help($console);
+        }
+
+        if ($console->getOption('version')) {
+            return $this->version($console);
+        }
+
+        if ($console->getOptions()->count()) {
+            $console->exception('UnSupportOptions', array_keys($console->getOptions()->toArray()));
+        }
+
+        $console->fail('MissingCommandName');
+    }
+
+    /**
      * @CMD(web.start)
      * @Desc(Start/Restart web application)
      */
@@ -75,7 +122,7 @@ class Command
      */
     public function listCommand($console)
     {
-        $console->output('TODO: display commands list');
+        $console->line('TODO: display commands list');
     }
 
     /**

@@ -44,26 +44,33 @@ class Console
         'LIGHT_PURPLE' => '1;35',
     ];
 
+    public function line($line = null, int $cnt = 1)
+    {
+        $lines = str_repeat(PHP_EOL, $cnt);
+
+        echo is_null($line) ? $lines : (stringify($line).$lines);
+    }
+
     public function output($result)
     {
-        echo stringify($result), PHP_EOL;
+        echo stringify($result);
     }
 
     public function info(string $text) : string
     {
-        $this->output($this->render($text, 'BLUE'));
+        $this->line($this->render($text, 'BLUE'));
     }
 
     public function success(string $text) : string
     {
-        $this->output($this->render($text, 'GREEN'));
+        $this->line($this->render($text, 'GREEN'));
 
         exit;
     }
 
     public function fail(string $text) : string
     {
-        $this->output($this->render($text, 'RED'));
+        $this->line($this->render($text, 'RED'));
 
         exit;
     }
@@ -81,14 +88,10 @@ class Console
 
     public function exception(string $message, array $context = [])
     {
-        if ($previous = ($context['__previous'] ?? null)) {
-            array_unset($previous, '__previous', '__trace');
-            ksort($previous);
-
-            $this->output($this->render(enjson($previous), 'LIGHT_RED'));
-        } else {
-            $this->output($this->render($message, 'LIGHT_RED'));
-        }
+        $this->output($this->render(
+            json_encode([$message, $context], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+            'LIGHT_RED'
+        ));
 
         exit;
     }

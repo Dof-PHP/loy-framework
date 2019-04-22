@@ -11,12 +11,14 @@ class CLIA
 {
     public static function build(array $argvs) : array
     {
-        $entry = $argvs[0] ?? null;
-        $cmd   = $argvs[1] ?? null;
+        list($options, $params) = CLIA::parse($argvs);
 
-        list($options, $params) = CLIA::parse(array_slice($argvs, 2));
+        $entry = $params[0] ?? null;
+        $cmd   = $params[1] ?? null;
 
-        return [$entry, $cmd, $options, $params];
+        unset($params[0], $params[1]);
+
+        return [$entry, $cmd, $options, array_values($params)];
     }
 
     public static function parse(array $argvs) : array
