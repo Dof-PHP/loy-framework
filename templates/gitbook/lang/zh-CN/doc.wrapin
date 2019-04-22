@@ -1,4 +1,4 @@
-## <?= $wrapin ?>
+## `<?= $key ?>` - <?= $wrapin ?>
 
 | 字段 | 名称 | 基本类型 | 校验规则 | 默认值 | 兼容字段 | 备注 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -10,18 +10,31 @@
     $compatibles = array_map(function ($val) {return "`{$val}`";}, $compatibles);
     $compatibles = join('<br>', $compatibles);
     $default = $default ? "`{$default}`" : '-';
-    $notes = $notes ? $notes : '-';
     $rules = [];
     foreach ($validators as $rule => $err) {
         if (false === mb_strpos($rule, ':')) {
-            $_rule = "{$rule}:`{$err}`";
+            if (($rule == 'WRAPIN') && $err) {
+                $_rule = $rule; 
+                $_rule .= <<<LINK
+:<a href='javascript:void(0);' onclick='goDofDoc("_wrapin/{$err}.html")'>{$err}</a>
+LINK;
+            } else {
+                $_rule = $err ? "{$rule}:{$err}" : $rule;
+            }
         } else {
-            $_rule = "`{$rule}`";
+            $_rule = "{$rule}";
         }
         $rules[] = $_rule;
     }
     $rules = $rules ? join('<br>', $rules) : '-';
 ?>
-| `<?= $key ?>` | <?= $name ?> | <?= $type ?> | <?= $rules ?> | <?= $default ?> | <?= $compatibles ?> | <?= $notes ?> |
+| `<?= $name ?>` | <?= $title ?> | <?= $type ?> | <?= $rules ?> | <?= $default ?> | <?= $compatibles ?> | <?= $notes ?: '-' ?> |
 <?php endforeach ?>
 <?php endif ?>
+
+<script>
+function goDofDoc(path) {
+    let url = new URL(window.location.href)
+    window.open(url.origin + '/' + path, '_blank')
+}
+</script>

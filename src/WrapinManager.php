@@ -253,7 +253,7 @@ final class WrapinManager
             exception('MissingWrapInNamespace', compact('namespace'));
         }
         if (class_exists($wrapin)) {
-            return $wraperr;
+            return $wrapin;
         }
         if ((! $namespace) || (! class_exists($namespace))) {
             exception('MissingWrapInUseClass', compact('wrapin', 'namespace'));

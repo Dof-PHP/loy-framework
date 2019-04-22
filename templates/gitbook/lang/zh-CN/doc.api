@@ -51,7 +51,6 @@ LINK;
     $compatibles = array_map(function ($val) {return "`{$val}`";}, $compatibles);
     $compatibles = join('<br>', $compatibles);
     $default = $default ? "`{$default}`" : '-';
-    $notes = $notes ? $notes : '-';
     $rules = [];
     foreach ($validators as $rule => $err) {
         if (false === mb_strpos($rule, ':')) {
@@ -70,7 +69,7 @@ LINK;
     }
     $rules = $rules ? join('<br>', $rules) : '-';
 ?>
-| `<?= $key ?>` | <?= $name ?> | <?= $type ?> | <?= $rules ?> | <?= $default ?> | <?= $compatibles ?> | <?= $notes ?> |
+| `<?= $name ?>` | <?= $title ?> | <?= $type ?> | <?= $rules ?> | <?= $default ?> | <?= $compatibles ?> | <?= $notes ?: '-' ?> |
 <?php endforeach ?>
 <?php endif ?>
 

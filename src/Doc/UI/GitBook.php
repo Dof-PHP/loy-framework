@@ -387,11 +387,12 @@ class GitBook
         $data = [];
 
         $data['model'] = $annotation['meta']['TITLE'] ?? $key;
+        $data['key'] = $key;
         foreach ($annotation['properties'] ?? [] as $name => $options) {
             $data['properties'][] = [
-                'key' => $name,
-                'name' => $options['TITLE'] ?? null,
+                'name' => $name,
                 'type' => $options['TYPE']  ?? null,
+                'title' => $options['TITLE'] ?? null,
                 'notes' => $options['notes'] ?? null,
                 'arguments' => $options['__ext__']['ARGUMENT'] ?? [],
             ];
@@ -405,6 +406,7 @@ class GitBook
         $data = [];
 
         $data['wrapin'] = $annotation['meta']['TITLE'] ?? $key;
+        $data['key'] = $key;
 
         foreach ($annotation['properties'] ?? [] as $name => $options) {
             $rules = $options;
@@ -418,10 +420,14 @@ class GitBook
                 'COMPATIBLE'
             );
 
+            if ($wrapin = ($rules['WRAPIN'] ?? false)) {
+                $rules['WRAPIN'] = $this->formatDocNamespace($wrapin);
+            }
+
             $data['params'][] = [
-                'key' => $name,
-                'name' => $options['TITLE'] ?? null,
+                'name' => $name,
                 'type' => $options['TYPE']  ?? null,
+                'title' => $options['TITLE'] ?? null,
                 'notes' => $options['NOTES'] ?? null,
                 'default' => $options['DEFAULT'] ?? null,
                 'compatibles' => $options['COMPATIBLES'] ?? [],

@@ -82,7 +82,7 @@ class Console
     public function exception(string $message, array $context = [])
     {
         if ($previous = ($context['__previous'] ?? null)) {
-            unset($previous['__previous']);
+            array_unset($previous, '__previous', '__trace');
             ksort($previous);
 
             $this->output($this->render(enjson($previous), 'LIGHT_RED'));

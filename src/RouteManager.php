@@ -384,9 +384,9 @@ final class RouteManager
         foreach ($properties as $key => $arg) {
             $_doc = $arg['doc'] ?? [];
             $param = [
-                'key'  => $key,
-                'name' => $_doc['TITLE'] ?? null,
-                'type' => $_doc['TYPE']  ?? null,
+                'name' => $key,
+                'type' => $_doc['TYPE'] ?? null,
+                'title' => $_doc['TITLE'] ?? null,
                 'notes' => $_doc['NOTES'] ?? '',
                 'default' => $_doc['DEFAULT'] ?? null,
                 'compatibles' => $_doc['COMPATIBLE'] ?? [],
