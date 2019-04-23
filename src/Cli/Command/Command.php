@@ -41,7 +41,8 @@ class Command
      */
     public function help($console)
     {
-        $this->version();
+        // TODO
+        $this->version($console);
     }
 
     /**
