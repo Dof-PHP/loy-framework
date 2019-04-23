@@ -13,7 +13,7 @@ use Dof\Framework\StorageManager;
 use Dof\Framework\RepositoryManager;
 use Dof\Framework\CommandManager;
 use Dof\Framework\WrapinManager;
-use Dof\Framework\RouteManager;
+use Dof\Framework\PortManager;
 use Dof\Framework\Web\Kernel as WebKernel;
 
 class Command
@@ -266,7 +266,7 @@ class Command
 
         WrapinManager::flush();
 
-        RouteManager::flush();
+        PortManager::flush();
     }
 
     /**
@@ -293,7 +293,7 @@ class Command
 
         WrapinManager::compile($domains, true);
 
-        RouteManager::compile($domains, true);
+        PortManager::compile($domains, true);
     }
 
     /**
@@ -310,7 +310,7 @@ class Command
 
         $domains = DomainManager::getDirs();
 
-        RouteManager::compile($domains, true);
+        PortManager::compile($domains, true);
     }
 
     /**
@@ -319,7 +319,7 @@ class Command
     */
     public function clearPortComplie($console)
     {
-        RouteManager::flush();
+        PortManager::flush();
     }
 
     /**

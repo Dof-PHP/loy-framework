@@ -168,6 +168,15 @@ if (! function_exists('response')) {
         return \Dof\Framework\Facade\Response::getInstance();
     }
 }
+if (! function_exists('port')) {
+    /**
+     * Get the port collection instance related to current request
+     */
+    function port()
+    {
+        return \Dof\Framework\Web\Port::getInstance();
+    }
+}
 if (! function_exists('route')) {
     /**
      * Get the route collection instance related to current request

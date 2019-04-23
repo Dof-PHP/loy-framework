@@ -11,14 +11,14 @@ use Dof\Framework\Facade\Assembler;
 
 class GraphQLAlike
 {
-    public function pipein($request, $response, $route)
+    public function pipein($request, $response, $route, $port)
     {
         $this->findAndSetFeilds($request, $route, true);
 
         return true;
     }
 
-    public function pipeout($result, $route, $request, $response)
+    public function pipeout($result, $route, $port, $request, $response)
     {
         if (! $route->params->pipe->has(__CLASS__)) {
             $this->findAndSetFeilds($request, $route, false);
@@ -29,7 +29,7 @@ class GraphQLAlike
             return null;
         }
 
-        $assembler = $route->get('assembler');
+        $assembler = $port->get('assembler');
         if ($assembler) {
             $assembler = get_annotation_ns($assembler, $route->get('class'));
             if (! class_exists($assembler)) {

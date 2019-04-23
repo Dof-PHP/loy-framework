@@ -6,7 +6,7 @@ namespace Dof\Framework\OFB\Pipe;
 
 class BearerAuth
 {
-    public function pipein($request, $response, $route)
+    public function pipein($request, $response, $route, $port)
     {
         // TODO
 

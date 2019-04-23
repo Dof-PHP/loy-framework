@@ -9,6 +9,7 @@ use Throwable;
 use Dof\Framework\Facade;
 use Dof\Framework\Web\Response as Instance;
 use Dof\Framework\Web\Route;
+use Dof\Framework\Web\Port;
 
 class Response extends Facade
 {
@@ -50,10 +51,10 @@ class Response extends Facade
             $response->setError(true);
         }
         $wrapper = $error ? 'err' : 'out';
-        $result  = self::package($result, $wrapper, Route::get("wrap{$wrapper}"), false);
+        $result  = self::package($result, $wrapper, Port::get("wrap{$wrapper}"), false);
 
         try {
-            $mimeout = Route::get('suffix.current') ?: Route::get('mimeout');
+            $mimeout = Route::get('suffix') ?: Port::get('mimeout');
             $response->setMimeAlias($mimeout)->setStatus($code)->send($result);
         } catch (Throwable $e) {
             Response::exception(

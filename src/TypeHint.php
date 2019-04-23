@@ -7,6 +7,7 @@ namespace Dof\Framework;
 final class TypeHint
 {
     const SUPPORTS = [
+        'uint'   => true,
         'int'    => true,
         'string' => true,
     ];
@@ -31,10 +32,18 @@ final class TypeHint
             return '';
         }
 
-        exception('TypeHintConvertFailed', [
-            'error' => 'Unable to convert to string',
-            'value' => string_literal($val)
-        ]);
+        exception('TypeHintStringFailed', compact('val'));
+    }
+
+    public static function convertToUint($val)
+    {
+        $val = self::convertToInt($val);
+
+        if ($val < 0) {
+            exception('TypeHintUintFailed', compact('val'));
+        }
+
+        return $val;
     }
 
     public static function convertToInt($val)
@@ -43,10 +52,7 @@ final class TypeHint
             return intval($val);
         }
 
-        exception('TypeHintConvertFailed', [
-            'error' => 'Unable to convert to int',
-            'value' => string_literal($val),
-        ]);
+        exception('TypeHintIntFailed', compact('val'));
     }
 
     public static function isString($val) : bool
@@ -70,6 +76,8 @@ final class TypeHint
         if (! $type) {
             return false;
         }
+
+        $type = strtolower(trim($type));
 
         return self::SUPPORTS[$type] ?? false;
     }

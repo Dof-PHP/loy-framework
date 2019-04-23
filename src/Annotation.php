@@ -104,7 +104,7 @@ class Annotation
         $classDocComment = $reflector->getDocComment();
         $ofClass = [];
         if (false !== $classDocComment) {
-            $ofClass['doc'] = $this->parseComment($classDocComment, $origin);
+            $ofClass['doc'] = $this->parseComment($classDocComment, $origin, $namespace);
         }
         $ofClass['namespace'] = $namespace;
         $ofProperties = $this->parseProperties($reflector->getProperties(), $namespace, $origin);

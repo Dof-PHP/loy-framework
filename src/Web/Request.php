@@ -8,8 +8,6 @@ class Request
 {
     use HttpTrait;
 
-    private $route;
-
     public function input(string $key = null)
     {
         $input = $this->getInput();
@@ -309,18 +307,6 @@ class Request
         }
 
         return false;
-    }
-
-    public function getRoute()
-    {
-        return $this->route;
-    }
-
-    public function setRoute($route)
-    {
-        $this->route = $route;
-
-        return $this;
     }
 
     public function getContext() : array

@@ -8,7 +8,7 @@ use Dof\Framework\DSL\IFRSN;
 
 class Paginate
 {
-    public function pipein($request, $response, $route)
+    public function pipein($request, $response, $route, $port)
     {
         $size = $this->getPaginateDefaultSize();
         $page = 1;

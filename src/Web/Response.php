@@ -8,17 +8,17 @@ class Response
 {
     use HttpTrait;
 
-    /** @var bool: user defined response error status */
+    /** @var bool: User defined response error status */
     private $error  = null;
 
     /** @var int: HTTP response status code */
     private $status = 200;
 
     /** @var string: HTTP response body content */
-    private $body  = '';
+    private $body;
 
-    /** @var string|enum: HTTP response content-type short name */
-    private $mime  = 'text/html';
+    /** @var string: HTTP response Content-Type short name */
+    private $mime = 'text/html';
 
     /** @var array: Response body structure elements candidates (KV) */
     private $wrappers = [

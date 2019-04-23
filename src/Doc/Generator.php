@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Doc;
 
-use Dof\Framework\RouteManager;
+use Dof\Framework\PortManager;
 use Dof\Framework\EntityManager;
 use Dof\Framework\WrapinManager;
 use Dof\Framework\Doc\UI\GitBook;
@@ -41,7 +41,7 @@ final class Generator
             ->setTemplates($templates)
             ->setLanguage($lang)
             ->setOutput($save)
-            ->setApiData(RouteManager::getDocs())
+            ->setApiData(PortManager::getDocs())
             ->setWrapinData(WrapinManager::getWrapins())
             ->setModelData(EntityManager::getEntities())
             ->buildAll();
@@ -79,7 +79,7 @@ final class Generator
             ->setTemplates($templates)
             ->setLanguage($lang)
             ->setOutput($save)
-            ->setApiData(RouteManager::getDocs())
+            ->setApiData(PortManager::getDocs())
             ->buildHttp(true);
     }
 }

@@ -7,7 +7,7 @@ namespace Dof\Framework\Web;
 use Throwable;
 use Dof\Framework\Kernel as Core;
 use Dof\Framework\Container;
-use Dof\Framework\RouteManager;
+use Dof\Framework\PortManager;
 use Dof\Framework\WrapinManager;
 use Dof\Framework\TypeHint;
 use Dof\Framework\Validator;
@@ -72,12 +72,12 @@ final class Kernel
             Kernel::throw('RoutingError', [], 500, $e);
         }
 
-        $class  = Route::get('class');
-        $method = Route::get('method.name');
-        if (! class_exists($class)) {
+        $class  = Port::get('class');
+        $method = Port::get('method');
+        if ((! $class) || (! class_exists($class))) {
             Kernel::throw('PortClassNotExist', compact('class'));
         }
-        if (! method_exists($class, $method)) {
+        if ((! $method) || (! method_exists($class, $method))) {
             Kernel::throw('PortMethodNotExist', compact('class', 'method'));
         }
 
@@ -130,42 +130,23 @@ final class Kernel
         $verb  = Request::getVerb();
         $uri   = Request::getUri();
         $mimes = Request::getMimeAliases();
-        $route = RouteManager::find($uri, $verb, $mimes);
-        if ($route === false) {
-            Kernel::throw('RouteNotExists', compact('verb', 'uri'), 404);
+        $route = PortManager::find($uri, $verb, $mimes);
+        if (! $route) {
+            Kernel::throw('RouteNotExists', compact('verb', 'uri', 'mimes'), 404);
         }
-        Route::setData($route);
-        Request::setRoute(Route::getInstance());
+        $port = PortManager::get($route);
+        if (! $port) {
+            Kernel::throw('BadRouteWithoutPort', compact('route'), 500);
+        }
 
-        if (($mimein = Route::get('mimein')) && (! Request::isMimeAlias($mimein))) {
+        Route::setData($route);
+        Port::setData($port);
+
+        if (($mimein = Port::get('mimein')) && (! Request::isMimeAlias($mimein))) {
             Kernel::throw('InvalidRequestMime', [
                 'current' => Request::getMimeShort(),
                 'require' => Request::getMimeByAlias($mimein),
             ], 400);
-        }
-
-        $class  = Route::get('class');
-        $method = Route::get('method.name');
-        if ($wrapin = Route::get('wrapin')) {
-            $_wrapin = get_annotation_ns($wrapin, $class);
-            if ((! $_wrapin) || (! class_exists($_wrapin))) {
-                Kernel::throw('WrapperInNotExists', compact('wrapin', 'class', 'method'));
-            }
-            Route::set('wrapin', $_wrapin);
-        }
-        if ($wrapout = Route::get('wrapout')) {
-            $_wrapout = get_annotation_ns($wrapout, $class);
-            if ((! $_wrapout) || (! class_exists($_wrapout))) {
-                Kernel::throw('WrapperOutNotExists', compact('wrapout', 'class', 'method'));
-            }
-            Route::set('wrapout', $_wrapout);
-        }
-        if ($wraperr = Route::get('wraperr')) {
-            $_wraperr = get_annotation_ns($wraperr, $class);
-            if ((! $_wraperr) || (! class_exists($_wraperr))) {
-                Kernel::throw('WrapperErrNotExists', compact('wraperr', 'class', 'method'));
-            }
-            Route::set('wraperr', $_wraperr);
         }
     }
 
@@ -177,20 +158,19 @@ final class Kernel
      */
     private static function pipingout($result)
     {
-        $pipes = Route::get('pipes.out');
-        $noout = Route::get('pipes.noout');
+        $pipes = Port::get('pipeout');
+        $noout = Port::get('nopipeout');
         if (count($pipes) === 0) {
             return $result;
         }
 
         $shouldPipeOutBeIgnored = function ($pipeout, $noout) : bool {
-            foreach ($noout as $_exclude) {
-                $exclude = get_annotation_ns($_exclude, Route::get('class'));
+            foreach ($noout as $exclude) {
                 if ((! $exclude) || (! class_exists($exclude))) {
                     Kernel::throw('NopipeoutClassNotExists', [
                         'nopipeout' => $_exclude,
                         'class'     => Route::get('class'),
-                        'method'    => Route::get('method.name'),
+                        'method'    => Route::get('method'),
                     ]);
                 }
                 if ($pipeout == $exclude) {
@@ -202,15 +182,14 @@ final class Kernel
         };
 
         $_result = $result;
-        foreach ($pipes as $_pipe) {
-            $pipe = get_annotation_ns($_pipe, Route::get('class'));
+        foreach ($pipes as $pipe) {
             if ($noout && $shouldPipeOutBeIgnored($pipe, $noout)) {
                 continue;
             }
             if ((! $pipe) || (! class_exists($pipe))) {
                 Kernel::throw('PipeOutClassNotExists', [
                     'port'    => Route::get('class'),
-                    'method'  => Route::get('method.name'),
+                    'method'  => Route::get('method'),
                     'pipeout' => $_pipe,
                 ]);
             }
@@ -224,7 +203,7 @@ final class Kernel
             try {
                 $_result = call_user_func_array(
                     [singleton($pipe), Kernel::PIPEOUT_HANDLER],
-                    [$_result, Route::getInstance(), Request::getInstance(), Response::getInstance()]
+                    [$_result, Route::getInstance(), Port::getInstance(), Request::getInstance(), Response::getInstance()]
                 );
             } catch (Throwable $e) {
                 Kernel::throw('PipeOutThroughFailed', compact('pipe'), 500, $e);
@@ -239,21 +218,19 @@ final class Kernel
      */
     private static function pipingin()
     {
-        $pipes = Route::get('pipes.in');
-        $noin  = Route::get('pipes.noin');
-
+        $pipes = Port::get('pipein');
+        $noin  = Port::get('nopipein');
         if (count($pipes) === 0) {
             return;
         }
 
         $shouldPipeInBeIgnored = function ($pipein, $noin) : bool {
-            foreach ($noin as $_exclude) {
-                $exclude = get_annotation_ns($_exclude, Route::get('class'));
+            foreach ($noin as $exclude) {
                 if ((! $exclude) || (! class_exists($exclude))) {
                     Kernel::throw('NopipeinClassNotExists', [
                         'nopipein' => $_exclude,
                         'class'    => Route::get('class'),
-                        'method'   => Route::get('method.name'),
+                        'method'   => Route::get('method'),
                     ]);
                 }
                 if ($pipein == $exclude) {
@@ -264,15 +241,14 @@ final class Kernel
             return false;
         };
 
-        foreach ($pipes as $_pipe) {
-            $pipe = get_annotation_ns($_pipe, Route::get('class'));
+        foreach ($pipes as $pipe) {
             if ($noin && $shouldPipeInBeIgnored($pipe, $noin)) {
                 continue;
             }
             if ((! $pipe) || (! class_exists($pipe))) {
                 Kernel::throw('PipeInClassNotExists', [
                     'port'   => Route::get('class'),
-                    'method' => Route::get('method.name'),
+                    'method' => Route::get('method'),
                     'pipein' => $_pipe,
                 ]);
             }
@@ -288,6 +264,7 @@ final class Kernel
                     Request::getInstance(),
                     Response::getInstance(),
                     Route::getInstance(),
+                    Port::getInstance()
                 ]);
                 if (true !== $res) {
                     Kernel::throw('PipeInThroughFailed', [
@@ -309,8 +286,8 @@ final class Kernel
      */
     private static function validate()
     {
-        $wrapin = Route::get('wrapin');
-        $arguments = Route::get('arguments');
+        $wrapin = Port::get('wrapin');
+        $arguments = Port::get('__arguments');
         if ((! $wrapin) && (! $arguments)) {
             return;
         }
@@ -326,7 +303,7 @@ final class Kernel
                 }
                 Response::send([400, $fail->key, $context], true, 400);
             }
-            Route::getInstance()->params->api = collect($validator->getResult());
+            Port::getInstance()->argument = collect($validator->getResult());
         } catch (Throwable $e) {
             Kernel::throw('ReqeustParameterValidationError', compact('wrapin'), 500, $e);
         }
@@ -337,7 +314,7 @@ final class Kernel
      */
     private static function build() : array
     {
-        $paramsMethod = Route::get('method.params');
+        $paramsMethod = Port::get('__parameters');
         $paramsRoute  = Route::get('params.kv');
         if (($paramsMethod->count() < 1) && ($paramsRoute->count() < 1)) {
             return [];
@@ -347,7 +324,7 @@ final class Kernel
             return Container::complete($paramsMethod, $paramsRoute);
         } catch (Throwable $e) {
             $class  = Route::get('class');
-            $method = Route::get('method.name');
+            $method = Route::get('method');
             $name = 'BuildPortParametersFailed';
             $code = 500;
             if (is_exception($e, 'TypeHintConvertFailed')) {

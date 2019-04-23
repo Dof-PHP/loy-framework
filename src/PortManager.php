@@ -7,41 +7,48 @@ namespace Dof\Framework;
 use Dof\Framework\Facade\Annotation;
 use Dof\Framework\Facade\Request;
 
-final class RouteManager
+final class PortManager
 {
-    const ROUTE_DIR = ['Http', 'Port'];
-    const AUTONOMY_HANLDER = 'execute';
+    const PORT_DIR   = ['Http', 'Port'];
     const AUTH_TYPES = ['0', '1', '2', '3'];
-
-    /** @var array: Aliases of route */
-    private static $aliases = [];
-
-    /** @var array: Routes definitions */
-    private static $routes = [];
+    const AUTONOMY_HANLDER = 'execute';
 
     /** @var array: Ports resistant directories */
     private static $dirs = [];
 
-    /** @var array: Data for automate documentation */
+    /** @var array: Port definitions (One port can own multiple routes) */
+    private static $ports = [];
+
+    /** @var array: Routes basic definitions (One route only belongs to one port) */
+    private static $routes = [];
+
+    /** @var array: Aliases of route */
+    private static $aliases = [];
+
+    /** @var array: Data for documentation automating */
     private static $docs = [];
 
     /**
-     * Find route definition by given uri, verb and mimes
+     * - Find definitions of current route by request uri, verb and mimes
+     * - Set uripath, suffix, params (etc) for route
      *
-     * @param string $uri: URL path
+     * @param string $uri: Request URL path
      * @param string $method: HTTP verb
      * @param array|null $mimes
-     * @return array|bool
+     * @return array|null
      */
-    public static function find(string $uri = null, string $method = null, ?array $mimes = [])
+    public static function find(string $uri = null, string $method = null, ?array $mimes = []) : ?array
     {
         if ((! $uri) || (! $method)) {
-            return false;
+            return null;
         }
-        $route = self::$routes[$uri][$method] ?? false;
+        $route = self::$routes[$uri][$method] ?? null;
         if ($route) {
+            $route['uripath'] = $uri;
+
             return $route;
         }
+
         $hasSuffix = false;
         foreach ($mimes as $alias) {
             $_length = mb_strlen($uri);
@@ -61,12 +68,17 @@ final class RouteManager
                 if (! $route) {
                     break;
                 }
-                if (in_array($alias, ($route['suffix']['allow'] ?? []))) {
-                    $route['suffix']['current'] = $alias;
+                if (! ($port = self::get($route))) {
+                    break;
+                }
+                if (in_array($alias, ($port['suffix'] ?? []))) {
+                    $route['suffix']  = $alias;
+                    $route['uripath'] = $uri;
+
                     return $route;
                 }
 
-                return false;
+                return null;
             }
         }
 
@@ -85,11 +97,14 @@ final class RouteManager
             if (! $route) {
                 continue;
             }
+            if (! ($port = self::get($route))) {
+                break;
+            }
             if ($hasSuffix) {
-                if (! in_array($hasSuffix, ($route['suffix']['allow'] ?? []))) {
-                    return false;
+                if (! in_array($hasSuffix, ($port['suffix'] ?? []))) {
+                    return null;
                 }
-                $route['suffix']['current'] = $hasSuffix;
+                $route['suffix'] = $hasSuffix;
             }
 
             $params = $route['params']['raw'] ?? [];
@@ -99,24 +114,31 @@ final class RouteManager
                 $route['params']['kv']  = array_combine($params, $replaced);
                 $route['params']['res'] = $replaced;
             }
+
+            $route['uripath'] = $uri;
+
             return $route;
         }
-
-        return false;
     }
 
     public static function load(array $dirs)
     {
         $cache = Kernel::formatCacheFile(__CLASS__);
         if (is_file($cache)) {
-            list(self::$dirs, self::$aliases, self::$routes, self::$docs) = load_php($cache);
+            list(self::$dirs, self::$ports, self::$routes, self::$aliases, self::$docs) = load_php($cache);
             return;
         }
 
         self::compile($dirs);
 
-        if (ConfigManager::matchEnv(['ENABLE_ROUTE_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
-            array2code([self::$dirs, self::$aliases, self::$routes, self::$docs], $cache);
+        if (ConfigManager::matchEnv(['ENABLE_PORT_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
+            array2code([
+                self::$dirs,
+                self::$ports,
+                self::$routes,
+                self::$aliases,
+                self::$docs
+            ], $cache);
         }
     }
 
@@ -142,11 +164,12 @@ final class RouteManager
         // Reset
         self::$dirs = [];
         self::$docs = [];
+        self::$ports = [];
         self::$routes  = [];
         self::$aliases = [];
 
         array_map(function ($item) {
-            $dir = ospath($item, self::ROUTE_DIR);
+            $dir = ospath($item, self::PORT_DIR);
             if (is_dir($dir)) {
                 self::$dirs[] = $dir;
             }
@@ -161,7 +184,13 @@ final class RouteManager
         }, __CLASS__);
 
         if ($cache) {
-            array2code([self::$dirs, self::$aliases, self::$routes, self::$docs], Kernel::formatCacheFile(__CLASS__));
+            array2code([
+                self::$dirs,
+                self::$ports,
+                self::$routes,
+                self::$aliases,
+                self::$docs
+            ], Kernel::formatCacheFile(__CLASS__));
         }
     }
 
@@ -221,6 +250,10 @@ final class RouteManager
         if (! method_exists($class, $method)) {
             exception('PortMethodNotExists', compact('class', 'method'));
         }
+        $domainKey = DomainManager::getKeyByNamespace($class);
+        if (! $domainKey) {
+            exception('BadPortClassWithOutDomainKey', compact('class'));
+        }
         $attrs = $ofMethod['doc'] ?? [];
         if (($attrs['NOTROUTE'] ?? false) || ($docClass['NOTROUTE'] ?? false)) {
             return;
@@ -235,22 +268,18 @@ final class RouteManager
         }
         $auth = $attrs['AUTH'] ?? ($docClass['AUTH'] ?? '0');
         if (! in_array($auth, self::AUTH_TYPES)) {
-            exception('BadAuthType', compact('class', 'method'));
+            exception('BadAuthType', compact('class', 'method', 'auth'));
         }
-        $domainKey = DomainManager::getKeyByNamespace($class);
-        if (! $domainKey) {
-            exception('BadPortClassWithOutDomainKey', compact('class'));
-        }
-        $domainTitle = ConfigManager::getDomainByNamespace($class, 'domain.title', $domainKey);
 
-        $globalRoute   = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.route', '');
+        $domainTitle   = ConfigManager::getDomainByNamespace($class, 'domain.title', $domainKey);
+        $globalRoute   = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.route', null);
         $globalPipein  = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.pipein', []);
         $globalPipeout = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.pipeout', []);
         $globalWrapin  = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wrapin', null);
         $globalWrapout = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wrapout', null);
         $globalWraperr = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wraperr', null);
 
-        $defaultVersion = $docClass['VERSION'] ?? 'v0';
+        $defaultVersion = $docClass['VERSION'] ?? null;
         $defaultGroup   = $docClass['GROUP']   ?? [];
         $defaultModels  = $docClass['MODEL']   ?? null;
         $defaultRoute   = $docClass['ROUTE']   ?? null;
@@ -272,6 +301,7 @@ final class RouteManager
         $alias   = $attrs['ALIAS']   ?? null;
         $group   = $attrs['GROUP']   ?? [];
         $version = $attrs['VERSION'] ?? $defaultVersion;
+        $version = self::formatDocVersion($version);
         $models  = $attrs['MODEL']   ?? $defaultModels;
         $models  = $models === '_'   ? null : $models;
         $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
@@ -312,7 +342,7 @@ final class RouteManager
             foreach ($argumentList as $argument => $rules) {
                 $property = $ofProperties[$argument] ?? false;
                 if (false === $property) {
-                    exception('PortMethodArgumentNotDefined', compact('argument', 'class', 'method'));
+                    exception('ArgumentOfPortMethodNotDefined', compact('argument', 'class', 'method'));
                 }
 
                 $doc = $property['doc'] ?? [];
@@ -323,53 +353,64 @@ final class RouteManager
         }
 
         $verbs = array_unique(array_merge(($attrs['VERB'] ?? []), $defaultVerbs));
+
+        // Formatting ports data
+        self::$ports[$class][$method] = [
+            'class'  => $class,
+            'method' => $method,
+            'title'  => $title,
+            'model'  => $models,
+            'author' => $author,
+            'suffix' => $suffix,
+            'mimein' => $mimein,
+            'mimeout' => $mimeout,
+            'wrapin'  => $wrapin,
+            'wrapout' => $wrapout,
+            'wraperr' => $wraperr,
+            'version' => $version,
+            'pipein'  => $pipeinList,
+            'pipeout' => $pipeoutList,
+            'nopipein'  => $nopipeinList,
+            'nopipeout' => $nopipeoutList,
+            'assembler' => $assembler,
+            'argument'  => [],    // Port parameters validated for port method
+            '__arguments'  => $properties,
+            '__parameters' => $ofMethod['parameters'] ?? [],
+        ];
+
+        // Formatting routes and alias data
         foreach ($verbs as $verb) {
-            self::deduplicate($route, $verb, $alias, $class, $method, true);
+            self::deduplicate($route, $verb, $urlpath, $class, $method, $alias, true);
 
             if ($alias) {
                 self::$aliases[$alias] = [
-                    'urlpath' => $urlpath,
                     'route'   => $route,
                     'verb'    => $verb,
+                    'class'   => $class,
+                    'alias'   => $alias,
+                    'method'  => $method,
+                    'urlpath' => $urlpath,
                 ];
             }
             self::$routes[$route][$verb] = [
                 'urlpath' => $urlpath,
-                'suffix'  => [
-                    'allow'   => $suffix,
-                    'current' => null,
-                ],
-                'verb'   => $verb,
-                'alias'  => $alias,
-                'class'  => $class,
-                'model'  => $models,
-                'method' => [
-                    'name'   => $method,
-                    'params' => $ofMethod['parameters'] ?? [],
-                ],
-                'pipes' => [
-                    'in'    => $pipeinList,
-                    'out'   => $pipeoutList,
-                    'noin'  => $nopipeinList,
-                    'noout' => $nopipeoutList,
-                ],
+                'uripath' => null,
+                'suffix'  => null,
+                'verb'  => $verb,
+                'route' => $route,
+                'alias' => $alias,
+                'class' => $class,
+                'method' => $method,
                 'params' => [
                     'raw'  => $params,    // Route parameter keys from definition
-                    'res'  => [],         // Route parameter values from request uri
-                    'api'  => [],         // Route parameters validated
-                    'kv'   => [],         // Route parameters valideted as K-V format
-                    'pipe' => [],         // Route parameters set by pipes
+                    'res'  => [],    // Route parameter values from request uri
+                    'kv'   => [],    // Route parameters valideted as K-V format
+                    'pipe' => [],    // Route parameters set by pipes
                 ],
-                'mimein'    => $mimein,
-                'mimeout'   => $mimeout,
-                'wrapin'    => $wrapin,
-                'wrapout'   => $wrapout,
-                'wraperr'   => $wraperr,
-                'assembler' => $assembler,
-                'arguments' => $properties,
             ];
         }
 
+        // Formatting doc data
         if ($ofMethod['doc']['NODOC'] ?? ($docClass['NODOC'] ?? false)) {
             return;
         }
@@ -387,7 +428,7 @@ final class RouteManager
                 'name' => $key,
                 'type' => $_doc['TYPE'] ?? null,
                 'title' => $_doc['TITLE'] ?? null,
-                'notes' => $_doc['NOTES'] ?? '',
+                'notes' => $_doc['NOTES'] ?? null,
                 'default' => $_doc['DEFAULT'] ?? null,
                 'compatibles' => $_doc['COMPATIBLE'] ?? [],
             ];
@@ -434,7 +475,19 @@ final class RouteManager
         self::$docs[$version][$domainKey] = $docs;
     }
 
-    private static function formatDocNamespace(string $namespace = null)
+    public static function formatDocVersion(string $version = null)
+    {
+        if ($version) {
+            $version = trim($version);
+        }
+        if (! $version) {
+            return 'v0';
+        }
+
+        return $version;
+    }
+
+    public static function formatDocNamespace(string $namespace = null)
     {
         if (! $namespace) {
             return null;
@@ -494,63 +547,55 @@ final class RouteManager
      * De-duplicate route and alias definitions
      */
     public static function deduplicate(
-        string $_route,
+        string $route,
         string $verb,
+        string $urlpath,
+        string $class,
+        string $method,
         string $alias = null,
-        string $classns = null,
-        string $method = null,
         bool $exception = false
     ) {
-        if ($route = (self::$routes[$_route][$verb] ?? false)) {
-            $_urlpath = $route['urlpath'] ?? '?';
-            $_classns = $route['class']   ?? '?';
-            $_method  = $route['method']['name'] ?? '?';
+        if ($exists = (self::$routes[$route][$verb] ?? false)) {
             if (! $exception) {
                 return false;
             }
 
             exception('DuplicateRouteDefinition', [
                 'verb'  => $verb,
-                'route' => $_route,
+                'route' => $route,
                 'conflict' => [
-                    'path'   => $_urlpath,
-                    'class'  => $_classns,
-                    'method' => $_method,
+                    'class'  => $exists['class']   ?? null,
+                    'method' => $exists['method']  ?? null,
+                    'path'   => $exists['urlpath'] ?? null,
                 ],
                 'current' => [
-                    'class'  => $classns,
-                    'path'   => $urlpath,
+                    'class'  => $class,
                     'method' => $method,
+                    'path'   => $urlpath,
                 ],
             ]);
         }
 
-        if ($alias && ($_alias = (self::$aliases[$alias] ?? false))) {
+        if ($alias && ($exists = (self::$aliases[$alias] ?? false))) {
             if (! $exception) {
                 return false;
             }
-            $_urlpath = $_alias['urlpath'] ?? '?';
-            $__route  = $_alias['route']   ?? '?';
-            $_verb    = $_alias['verb']    ?? '?';
-            $_route   = self::$routes[$_urlpath][$_verb] ?? [];
-            $_classns = $_route['class']   ?? '?';
-            $_method  = $_route['method']['name'] ?? '?';
 
             exception('DuplicateRouteAliasDefinition', [
                 'alias' => $alias,
                 'conflict' => [
-                    'verb'   => $_verb,
-                    'path'   => $_urlpath,
-                    'route'  => $__route,
-                    'class'  => $_classns,
-                    'method' => $_method,
+                    'verb'   => $exists['verb']    ?? null,
+                    'route'  => $exists['route']   ?? null,
+                    'class'  => $exists['class']   ?? null,
+                    'method' => $exists['method']  ?? null,
+                    'path'   => $exists['urlpath'] ?? null,
                 ],
                 'previous' => [
                     'verb'   => $verb,
-                    'path'   => $urlpath,
-                    'route'  => $_route,
-                    'class'  => $classns,
+                    'route'  => $route,
+                    'class'  => $class,
                     'method' => $method,
+                    'path'   => $urlpath,
                 ],
             ]);
         }
@@ -634,24 +679,88 @@ final class RouteManager
         return true;
     }
 
-    public static function __annotationFilterPipein(string $val) : ?string
+    public static function __annotationFilterPipein(string $pipein, array $ext, string $namespace = null) : ?string
     {
-        return trim($val) ?: null;
+        $pipein = trim($pipein);
+        if (! $pipein) {
+            return null;
+        }
+        if (class_exists($pipein)) {
+            return $pipein;
+        }
+        if ((! $namespace) || (! class_exists($namespace))) {
+            exception('MissingPipeInUseClass', compact('pipein', 'namespace'));
+        }
+
+        $_pipein = get_annotation_ns($pipein, $namespace);
+        if ((! $_pipein) || (! class_exists($_pipein))) {
+            exception('PipeInNotExists', compact('pipein', 'namespace'));
+        }
+
+        return $_pipein;
     }
 
-    public static function __annotationFilterNopipein(string $val) : ?string
+    public static function __annotationFilterNopipein(string $nopipein, array $ext, string $namespace = null) : ?string
     {
-        return trim($val) ?: null;
+        $nopipein = trim($nopipein);
+        if (! $nopipein) {
+            return null;
+        }
+        if (class_exists($nopipein)) {
+            return $nopipein;
+        }
+        if ((! $namespace) || (! class_exists($namespace))) {
+            exception('MissingNoPipeInUseClass', compact('nopipein', 'namespace'));
+        }
+
+        $_nopipein = get_annotation_ns($nopipein, $namespace);
+        if ((! $_nopipein) || (! class_exists($_nopipein))) {
+            exception('NoPipeInNotExists', compact('nopipein', 'namespace'));
+        }
+
+        return $_nopipein;
     }
 
-    public static function __annotationFilterNopipeout(string $val) : ?string
+    public static function __annotationFilterNopipeout(string $nopipeout, array $ext, string $namespace = null) : ?string
     {
-        return trim($val) ?: null;
+        $nopipeout = trim($nopipeout);
+        if (! $nopipeout) {
+            return null;
+        }
+        if (class_exists($nopipeout)) {
+            return $nopipeout;
+        }
+        if ((! $namespace) || (! class_exists($namespace))) {
+            exception('MissingNoPipeOutUseClass', compact('nopipeout', 'namespace'));
+        }
+
+        $_nopipeout = get_annotation_ns($nopipeout, $namespace);
+        if ((! $_nopipeout) || (! class_exists($_nopipeout))) {
+            exception('NoPipeOutNotExists', compact('nopipeout', 'namespace'));
+        }
+
+        return $_nopipeout;
     }
 
-    public static function __annotationFilterPipeout(string $val) : ?string
+    public static function __annotationFilterPipeout(string $pipeout, array $ext, string $namespace = null) : ?string
     {
-        return trim($val) ?: null;
+        $pipeout = trim($pipeout);
+        if (! $pipeout) {
+            return null;
+        }
+        if (class_exists($pipeout)) {
+            return $pipeout;
+        }
+        if ((! $namespace) || (! class_exists($namespace))) {
+            exception('MissingPipeOutUseClass', compact('pipeout', 'namespace'));
+        }
+
+        $_pipeout = get_annotation_ns($pipeout, $namespace);
+        if ((! $_pipeout) || (! class_exists($_pipeout))) {
+            exception('PipeOutNotExists', compact('pipeout', 'namespace'));
+        }
+
+        return $_pipeout;
     }
 
     public static function __annotationMultipleMergeSuffix() : bool
@@ -817,9 +926,27 @@ final class RouteManager
         return true;
     }
 
+    /**
+     * Get port definitions by route definition
+     *
+     * @param array $route: $route item
+     */
+    public static function get(array $route) : ?array
+    {
+        $class  = $route['class']  ?? null;
+        $method = $route['method'] ?? null;
+
+        return self::$ports[$class][$method] ?? null;
+    }
+
     public static function getAliases() : array
     {
         return self::$aliases;
+    }
+
+    public static function getPorts() : array
+    {
+        return self::$ports;
     }
 
     public static function getRoutes() : array

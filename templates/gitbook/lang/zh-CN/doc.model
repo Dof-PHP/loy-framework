@@ -1,6 +1,6 @@
 ## `<?= $key ?>` - <?= $model ?>
 
-| 属性KEY | 名称 | 基本类型 | 可接受参数 | 备注 |
+| 属性 | 名称 | 基本类型 | 可接受参数 | 备注 |
 | :--- | :--- | :--- | :--- | :--- |
 <?php if ($properties ?? false) : ?>
 <?php foreach ($properties as $property) : ?>
@@ -8,9 +8,9 @@
     extract($property, EXTR_OVERWRITE);
     $_arguments = '-';
     if ($arguments) {
-        $_arguments = enjson($arguments);
+        $_arguments = '`'.enjson($arguments).'`';
     }
 ?>
-| `<?= $name ?>` | <?= $title ?> | <?= $type ?> | `<?= $_arguments ?>` | <?= $notes ?: '-' ?> |
+| `<?= $name ?>` | <?= $title ?> | <?= $type ?> | <?= $_arguments ?> | <?= $notes ?: '-' ?> |
 <?php endforeach ?>
 <?php endif ?>

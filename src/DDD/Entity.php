@@ -4,28 +4,69 @@ declare(strict_types=1);
 
 namespace Dof\Framework\DDD;
 
-class Entity
+abstract class Entity
 {
-    public function getId() : ?int
+    /**
+     * @Title(Primary Key)
+     * @Type(Uint)
+     */
+    protected $id;
+
+    /**
+     * Update entity self
+     */
+    final public function save()
+    {
+        // Callback onSaved
+    }
+
+    /**
+     * Delete entity self
+     */
+    final public function delete()
+    {
+        // Callback onDeleted
+    }
+
+    public function onSaved()
+    {
+    }
+
+    public function onDeleted()
+    {
+    }
+
+    public function onUpdated()
+    {
+    }
+
+    final public function setId(int $id)
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
+    final public function getId() : ?int
     {
         return $this->id ?? null;
     }
 
-    public function __get(string $attr)
+    final public function __get(string $attr)
     {
         if (property_exists($this, $attr)) {
             return $this->{$attr};
         }
     }
 
-    public function __set(string $attr, $value)
+    final public function __set(string $attr, $value)
     {
         if (property_exists($this, $attr)) {
             $this->{$attr} = $value;
         }
     }
 
-    public function __call(string $method, array $params = [])
+    final public function __call(string $method, array $params = [])
     {
         if (0 === strpos($method, 'get')) {
             if ('get' !== $method) {
@@ -48,12 +89,12 @@ class Entity
         }
     }
 
-    public function __toArray()
+    final public function __toArray()
     {
         return (array) get_object_vars($this);
     }
 
-    public function toArray()
+    final public function toArray()
     {
         return $this->__toArray();
     }

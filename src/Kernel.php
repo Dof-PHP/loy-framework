@@ -105,7 +105,7 @@ final class Kernel
 
         WrapinManager::load($domains);
 
-        RouteManager::load($domains);
+        PortManager::load($domains);
     }
 
     public static function register(string $event, Closure $callback)

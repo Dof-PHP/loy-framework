@@ -27,10 +27,17 @@ class MySQL implements StorageInterface
         return $res[0] ?? null;
     }
 
-    public function delete(int $pk) : void
+    /**
+     * Delete a record by primary key
+     *
+     * @param int $pk: Primary ke of table
+     * @return int: Number of rows affected
+     */
+    public function delete(int $pk) : int
     {
         $sql = 'DELETE FROM #{TABLE} WHERE `id` = ?';
-        $this->exec($sql, [$pk]);
+
+        return $this->exec($sql, [$pk]);
     }
 
     public function __construct(array $config = [])
@@ -59,10 +66,20 @@ class MySQL implements StorageInterface
         }
     }
 
-    public function exec(string $sql)
+    public function exec(string $sql, array $params = null)
     {
         try {
-            $this->getConnection()->exec($sql);
+            $sql = $this->generate($sql);
+
+            if (is_null($params)) {
+                return $this->getConnection()->exec($sql);
+            }
+
+            $statement = $this->getConnection()->prepare($sql);
+
+            $statement->execute($params);
+
+            return $statement->rowCount();
         } catch (Throwable $e) {
             exception('OperationsToMySQLFailed', ['sql' => $sql], $e);
         }

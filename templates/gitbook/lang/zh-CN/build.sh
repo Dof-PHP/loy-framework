@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 <?php if ($versions ?? false) : ?>
 <?php foreach($versions as $version) : ?>
 cd <?= $version ?> && gitbook install

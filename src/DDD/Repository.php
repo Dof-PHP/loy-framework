@@ -35,7 +35,7 @@ interface Repository
      * Remove an entity from repository
      *
      * @param Entity|int: The entity instance or primary key of entity to remove
-     * @return int|null: Primary key when removed succssflly or null on failed
+     * @return int|null: Number of rows affected or null on failed
      */
-    public function remove($entity) : bool;
+    public function remove($entity) : ?int;
 }

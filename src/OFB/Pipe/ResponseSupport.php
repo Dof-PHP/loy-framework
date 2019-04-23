@@ -7,14 +7,12 @@ namespace Dof\Framework\OFB\Pipe;
 use Dof\Framework\DDD\ApplicationService;
 use Dof\Framework\Paginator;
 
+/**
+ * Recognize supported result types and set particular attributes to properties of current response
+ */
 class ResponseSupport
 {
-    /**
-     * Recognize supported result types and set particular attributes to properties of current response
-     *
-     * @param mixed $result: Responding result
-     */
-    public function pipeout($result, $route, $request, $response)
+    public function pipeout($result, $route, $port, $request, $response)
     {
         if ($result instanceof ApplicationService) {
             if (! $result->__isExecuted()) {

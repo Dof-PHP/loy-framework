@@ -22,31 +22,25 @@ class Storage implements Repository
         $this->__storage = StorageManager::init(static::class);
     }
 
-    public function find(int $pk) : ?Entity
+    final public function find(int $pk) : ?Entity
     {
         $result = $this->__storage->find($pk);
 
         return RepositoryManager::convert(static::class, $result);
     }
 
-    public function add(Entity $entity) : ?int
+    final public function add(Entity $entity) : ?int
     {
     }
 
-    /**
-     * Ignore when entity not exists in repository
-     *
-     * @param mixed $entity
-     * @return bool
-     */
-    public function remove($entity) : bool
+    final public function remove($entity) : ?int
     {
-        if ((! is_int($entity)) || (! ($entity instanceof Entity))) {
+        if ((! is_int($entity)) && (! ($entity instanceof Entity))) {
             return false;
         }
 
         if (is_int($entity)) {
-            if ($entiry < 1) {
+            if ($entity < 1) {
                 return false;
             }
         }
@@ -54,8 +48,10 @@ class Storage implements Repository
         $pk = is_int($entity) ? $entity : $entity->getId();
 
         try {
-            $this->__storage->delete($pk);
-            return true;
+            // Ignore when entity not exists in repository
+            return $this->__storage->delete($pk);
+
+            // TODO: Flush repository cache
         } catch (Throwable $e) {
             exception('RemoveEntityFailed', ['pk' => $pk, 'class' => static::class], $e);
         }
