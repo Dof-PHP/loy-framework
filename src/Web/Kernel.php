@@ -181,6 +181,7 @@ final class Kernel
                 }
                 Response::setStatus(400)
                     ->setMimeAlias(Response::mimeout())
+                    ->setError(true)
                     ->setBody(self::packing([400, $fail->key, $context]))
                     ->send();
             }

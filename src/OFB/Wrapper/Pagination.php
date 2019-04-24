@@ -9,11 +9,12 @@ class Pagination
     public function wrapout()
     {
         return [
-            'code' => 0,
-            'info' => 'ok',
             '__DATA__' => 'data',
             '__PAGINATOR__' => 'page',
-            'more'
+            'code' => 0,
+            'info' => 'ok',
+            'more',
+            'meta'
         ];
     }
 }

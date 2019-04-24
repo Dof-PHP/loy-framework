@@ -13,6 +13,12 @@ class Classic
 
     public function wrapout()
     {
-        return ['__DATA__' => 'data', 'code' => 0, 'info' => 'ok', 'more', 'meta'];
+        return [
+            '__DATA__' => 'data',
+            'code' => 0,
+            'info' => 'ok',
+            'more',
+            'meta'
+        ];
     }
 }
