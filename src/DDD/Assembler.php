@@ -27,7 +27,7 @@ class Assembler
      *
      * @var array
      */
-    protected $converters  = [];
+    protected $converters = [];
 
     final public function __construct($origin = null)
     {

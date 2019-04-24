@@ -16,5 +16,5 @@ gitbook build <?= $version ?> __site/<?= $version ?>
 
 <?php endforeach ?>
 
-mv index.html __site
+cp index.html __site
 <?php endif ?>

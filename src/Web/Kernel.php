@@ -101,7 +101,6 @@ final class Kernel
 
         try {
             $result = (new $class)->{$method}(...$params);
-            // $result = call_user_func_array([(new $class), $method], $params);
         } catch (Throwable $e) {
             Kernel::throw('ResultingResponseFailed', compact('class', 'method'), 500, $e);
         }
@@ -113,7 +112,13 @@ final class Kernel
         }
 
         try {
-            Response::send($result);
+            $result = self::packing($result);
+        } catch (Throwable $e) {
+            Kernel::throw('PackagingError', [], 500, $e);
+        }
+
+        try {
+            Response::setBody($result)->send();
         } catch (Throwable $e) {
             Kernel::throw('SendResponseFailed', [], 500, $e);
         }
@@ -132,7 +137,8 @@ final class Kernel
         $mimes = Request::getMimeAliases();
         $route = PortManager::find($uri, $verb, $mimes);
         if (! $route) {
-            Kernel::throw('RouteNotExists', compact('verb', 'uri', 'mimes'), 404);
+            $mime = Request::getMimeShort();
+            Kernel::throw('RouteNotExists', compact('verb', 'uri', 'mime'), 404);
         }
         $port = PortManager::get($route);
         if (! $port) {
@@ -141,76 +147,48 @@ final class Kernel
 
         Route::setData($route);
         Port::setData($port);
+        Response::setMimeAlias(Response::mimeout());
 
         if (($mimein = Port::get('mimein')) && (! Request::isMimeAlias($mimein))) {
             Kernel::throw('InvalidRequestMime', [
                 'current' => Request::getMimeShort(),
-                'require' => Request::getMimeByAlias($mimein),
+                'require' => Request::getMimeByAlias($mimein, '?'),
             ], 400);
         }
     }
 
     /**
-     * Response result through port pipe-outs defined in current route
-     *
-     * @param mixed $result
-     * @return mixed Pipeouted response result
+     * Validate request body parameters against route definitions
+     * - either: wrapin check
+     * - or: argument annotations check
      */
-    private static function pipingout($result)
+    private static function validate()
     {
-        $pipes = Port::get('pipeout');
-        $noout = Port::get('nopipeout');
-        if (count($pipes) === 0) {
-            return $result;
+        $wrapin = Port::get('wrapin');
+        $arguments = Port::get('__arguments');
+        if ((! $wrapin) && (! $arguments)) {
+            return;
         }
 
-        $shouldPipeOutBeIgnored = function ($pipeout, $noout) : bool {
-            foreach ($noout as $exclude) {
-                if ((! $exclude) || (! class_exists($exclude))) {
-                    Kernel::throw('NopipeoutClassNotExists', [
-                        'nopipeout' => $_exclude,
-                        'class'     => Route::get('class'),
-                        'method'    => Route::get('method'),
-                    ]);
+        // 1. Check wrapin setting on route annotation first
+        // 2. Check arguments annotations from route method and port properties
+        try {
+            $validator = $wrapin ? WrapinManager::apply($wrapin) : WrapinManager::execute($arguments, Route::get('class'));
+            if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
+                $context = (array) $fail->value;
+                if ($wrapin) {
+                    $context['wrapins'][] = $wrapin;
                 }
-                if ($pipeout == $exclude) {
-                    return true;
-                }
+                Response::setStatus(400)
+                    ->setMimeAlias(Response::mimeout())
+                    ->setBody(self::package([400, $fail->key, $context]))
+                    ->send();
             }
 
-            return false;
-        };
-
-        $_result = $result;
-        foreach ($pipes as $pipe) {
-            if ($noout && $shouldPipeOutBeIgnored($pipe, $noout)) {
-                continue;
-            }
-            if ((! $pipe) || (! class_exists($pipe))) {
-                Kernel::throw('PipeOutClassNotExists', [
-                    'port'    => Route::get('class'),
-                    'method'  => Route::get('method'),
-                    'pipeout' => $_pipe,
-                ]);
-            }
-            if (! method_exists($pipe, Kernel::PIPEOUT_HANDLER)) {
-                Kernel::throw('PipeOutHandlerNotExists', [
-                    'pipeout' => $pipe,
-                    'hanlder' => Kernel::PIPEOUT_HANDLER
-                ]);
-            }
-
-            try {
-                $_result = call_user_func_array(
-                    [singleton($pipe), Kernel::PIPEOUT_HANDLER],
-                    [$_result, Route::getInstance(), Port::getInstance(), Request::getInstance(), Response::getInstance()]
-                );
-            } catch (Throwable $e) {
-                Kernel::throw('PipeOutThroughFailed', compact('pipe'), 500, $e);
-            }
+            Port::getInstance()->argument = collect($validator->getResult());
+        } catch (Throwable $e) {
+            Kernel::throw('ReqeustParameterValidationError', compact('wrapin'), 500, $e);
         }
-
-        return $_result;
     }
 
     /**
@@ -280,36 +258,6 @@ final class Kernel
     }
 
     /**
-     * Validate request body parameters against route definitions
-     * - either: wrapin check
-     * - or: argument annotations check
-     */
-    private static function validate()
-    {
-        $wrapin = Port::get('wrapin');
-        $arguments = Port::get('__arguments');
-        if ((! $wrapin) && (! $arguments)) {
-            return;
-        }
-
-        // 1. Check wrapin setting on route annotation first
-        // 2. Check arguments annotations from route method and port properties
-        try {
-            $validator = $wrapin ? WrapinManager::apply($wrapin) : WrapinManager::execute($arguments, Route::get('class'));
-            if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
-                $context = (array) $fail->value;
-                if ($wrapin) {
-                    $context['wrapins'][] = $wrapin;
-                }
-                Response::send([400, $fail->key, $context], true, 400);
-            }
-            Port::getInstance()->argument = collect($validator->getResult());
-        } catch (Throwable $e) {
-            Kernel::throw('ReqeustParameterValidationError', compact('wrapin'), 500, $e);
-        }
-    }
-
-    /**
      * Build port parameters from port method definition and route params
      */
     private static function build() : array
@@ -333,6 +281,89 @@ final class Kernel
             }
             Kernel::throw($name, compact('class', 'method'), $code, $e);
         }
+    }
+
+    /**
+     * Response result through port pipe-outs defined in current route
+     *
+     * @param mixed $result
+     * @return mixed Pipeouted response result
+     */
+    private static function pipingout($result)
+    {
+        $pipes = Port::get('pipeout');
+        $noout = Port::get('nopipeout');
+        if (count($pipes) === 0) {
+            return $result;
+        }
+
+        $shouldPipeOutBeIgnored = function ($pipeout, $noout) : bool {
+            foreach ($noout as $exclude) {
+                if ((! $exclude) || (! class_exists($exclude))) {
+                    Kernel::throw('NopipeoutClassNotExists', [
+                        'nopipeout' => $_exclude,
+                        'class'     => Route::get('class'),
+                        'method'    => Route::get('method'),
+                    ]);
+                }
+                if ($pipeout == $exclude) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        $_result = $result;
+        foreach ($pipes as $pipe) {
+            if ($noout && $shouldPipeOutBeIgnored($pipe, $noout)) {
+                continue;
+            }
+            if ((! $pipe) || (! class_exists($pipe))) {
+                Kernel::throw('PipeOutClassNotExists', [
+                    'port'    => Route::get('class'),
+                    'method'  => Route::get('method'),
+                    'pipeout' => $_pipe,
+                ]);
+            }
+            if (! method_exists($pipe, Kernel::PIPEOUT_HANDLER)) {
+                Kernel::throw('PipeOutHandlerNotExists', [
+                    'pipeout' => $pipe,
+                    'hanlder' => Kernel::PIPEOUT_HANDLER
+                ]);
+            }
+
+            try {
+                $_result = call_user_func_array(
+                    [singleton($pipe), Kernel::PIPEOUT_HANDLER],
+                    [$_result, Route::getInstance(), Port::getInstance(), Request::getInstance(), Response::getInstance()]
+                );
+            } catch (Throwable $e) {
+                Kernel::throw('PipeOutThroughFailed', compact('pipe'), 500, $e);
+            }
+        }
+
+        return $_result;
+    }
+
+    /**
+     * Package response result with given wrapper (if exists)
+     *
+     * @param mixed $result: result data to response
+     * @return $result: Packaged response result
+     */
+    private static function packing($result = null)
+    {
+        $isError = Response::hasError();
+        $wrapout = Port::get('wrapout');
+        $wraperr = Port::get('wraperr');
+        $wrapper = $isError ? wrapper($wraperr, 'err') : wrapper($wrapout, 'out');
+
+        if ((! $wrapper) || (! is_array($wrapper))) {
+            return $result;
+        }
+
+        return $isError ? Response::wraperr($result, $wrapper) : Response::wrapout($result, $wrapper);
     }
 
     /**

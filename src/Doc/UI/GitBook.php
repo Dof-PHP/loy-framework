@@ -125,6 +125,10 @@ class GitBook
 
     public function buildModel(bool $standalone)
     {
+        if (! $this->modelData) {
+            return;
+        }
+
         if ($standalone) {
             $this->prepare();
         }
@@ -170,6 +174,10 @@ class GitBook
 
     public function buildWrapin(bool $standalone)
     {
+        if (! $this->wrapinData) {
+            return;
+        }
+
         if ($standalone) {
             $this->prepare();
         }

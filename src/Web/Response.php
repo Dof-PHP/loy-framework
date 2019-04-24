@@ -9,13 +9,16 @@ class Response
     use HttpTrait;
 
     /** @var bool: User defined response error status */
-    private $error  = null;
+    private $error = false;
 
     /** @var int: HTTP response status code */
     private $status = 200;
 
     /** @var string: HTTP response body content */
     private $body;
+
+    /** @var bool: Response instance is sent or not */
+    private $sent = false;
 
     /** @var string: HTTP response Content-Type short name */
     private $mime = 'text/html';
@@ -71,26 +74,7 @@ class Response
         return $this;
     }
 
-    public function send($body = null, int $status = null, array $headers = null)
-    {
-        if ($body instanceof Response) {
-            return $body->__send();
-        }
-
-        if (! is_null($body)) {
-            $this->stringBody($body);
-        }
-        if (! is_null($status)) {
-            $this->status = $status;
-        }
-        if (! is_null($headers)) {
-            $this->headers = $headers;
-        }
-
-        $this->__send();
-    }
-
-    private function __send()
+    public function send()
     {
         if ($this->headers) {
             foreach ($this->headers as $key => $value) {
@@ -103,7 +87,11 @@ class Response
         }
 
         http_response_code($this->status);
-        echo stringify($this->body);
+
+        echo $this->body;
+
+        $this->sent = true;
+
         exit(0);
     }
 
@@ -124,7 +112,7 @@ class Response
         }
         if (is_object($body)) {
             if ($body instanceof Response) {
-                return $this->__send();
+                return $this->send();
             }
 
             if (method_exists($body, '__toString')) {
@@ -197,7 +185,7 @@ class Response
 
     public function setBody($body)
     {
-        $this->body = $body;
+        $this->body = $this->stringBody($body);
 
         return $this;
     }
@@ -229,6 +217,7 @@ class Response
         if ($success) {
             return $this->status === $success;
         }
+
         return (100 <= $this->status) && ($this->status < 400);
     }
 
@@ -278,15 +267,16 @@ class Response
 
     public function __descruct()
     {
-        $this->__send();
+        $this->send();
     }
 
     public function getContext() : array
     {
-        return [
+        return $this->sent
+        ? [
             $this->getStatus(),
             $this->getMimeAlias(),
             $this->getError(),
-        ];
+        ] : [200, 'html', false];
     }
 }

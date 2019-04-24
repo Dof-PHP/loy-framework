@@ -119,6 +119,8 @@ final class PortManager
 
             return $route;
         }
+
+        return null;
     }
 
     public static function load(array $dirs)
@@ -301,7 +303,6 @@ final class PortManager
         $alias   = $attrs['ALIAS']   ?? null;
         $group   = $attrs['GROUP']   ?? [];
         $version = $attrs['VERSION'] ?? $defaultVersion;
-        $version = self::formatDocVersion($version);
         $models  = $attrs['MODEL']   ?? $defaultModels;
         $models  = $models === '_'   ? null : $models;
         $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
@@ -322,7 +323,13 @@ final class PortManager
         $nopipeout = $attrs['NOPIPEOUT'] ?? [];
         $arguments = $attrs['ARGUMENT']  ?? [];
 
-        $urlpath = join('/', [$globalRoute, $defaultRoute, $route]);
+        // Decide version prefix in route definition
+        $_version = $version[0] ?? null;
+        if ('0' == ($version[1]['ROUTE'] ?? 1)) {
+            $_version = null;
+        }
+
+        $urlpath = join('/', [$_version, $globalRoute, $defaultRoute, $route]);
         list($urlpath, $route, $params) = self::parse($urlpath);
         if (! $urlpath || (! $route)) {
             return;
@@ -411,11 +418,12 @@ final class PortManager
         }
 
         // Formatting doc data
+        $_version = self::formatDocVersion($_version);
         if ($ofMethod['doc']['NODOC'] ?? ($docClass['NODOC'] ?? false)) {
             return;
         }
 
-        $docs = self::$docs[$version][$domainKey] ?? [
+        $docs = self::$docs[$_version][$domainKey] ?? [
             'title' => $domainTitle,
             'group' => [],
             'list'  => [],
@@ -449,6 +457,8 @@ final class PortManager
             $param['validators'] = $_doc;
             $params[] = $param;
         }
+
+        $fields = $assembler ? singleton($assembler)->getCompatibles() : [];
         $doc = [
             'route' => $urlpath,
             'auth'  => $auth,
@@ -456,12 +466,13 @@ final class PortManager
             'title' => $title,
             'models'  => self::formatDocNamespace($models),
             'author'  => $author,
-            'version' => $version,
+            'version' => $_version,
             'params'  => $params,
             'suffixs' => $suffix,
+            'fields'  => $fields,
             'headers' => [
-                'in'  => $mimein  ? [Request::getMimeByAlias($mimein)]  : [],
-                'out' => $mimeout ? [Request::getMimeByAlias($mimeout)] : [],
+                'in'  => $mimein  ? [Request::getMimeByAlias($mimein, '?')]  : [],
+                'out' => $mimeout ? [Request::getMimeByAlias($mimeout, '?')] : [],
             ],
         ];
 
@@ -472,7 +483,7 @@ final class PortManager
             $docs['list'][] = $doc;
         }
 
-        self::$docs[$version][$domainKey] = $docs;
+        self::$docs[$_version][$domainKey] = $docs;
     }
 
     public static function formatDocVersion(string $version = null)
@@ -646,6 +657,7 @@ final class PortManager
     public static function __annotationFilterArgument(string $val, array $params = []) : array
     {
         $_params = [];
+        $hasNeed = false;
         foreach ($params as $rule => $error) {
             $arr = array_trim_from_string($rule, ':');
             $_rule = $arr[0] ?? false;
@@ -654,10 +666,17 @@ final class PortManager
             if (! $_rule) {
                 continue;
             }
-            $ext = $ext ? ":{$ext}": '';
             $_rule = strtoupper($_rule);
-
+            if ($_rule === 'NEED') {
+                $hasNeed = true;
+            }
+            $ext = $ext ? ":{$ext}": '';
             $_params[$_rule.$ext] = $error;
+        }
+
+        // Add default NEED rule for saving definitions
+        if (! $hasNeed) {
+            $_params['NEED'] = null;
         }
 
         $argvs  = array_trim_from_string($val, ',');
@@ -807,6 +826,27 @@ final class PortManager
         return array_trim_from_string(strtoupper(trim($val)), ',');
     }
 
+    public static function __annotationFilterAssembler(string $assembler, array $ext = [], string $namespace = null)
+    {
+        $assembler = trim($assembler);
+        if (! $assembler) {
+            return null;
+        }
+        if (class_exists($assembler)) {
+            return $assembler;
+        }
+        if ((! $namespace) || (! class_exists($namespace))) {
+            exception('MissingAssemblerUseClass', compact('assembler', 'namespace'));
+        }
+
+        $_assembler = get_annotation_ns($assembler, $namespace);
+        if ((! $_assembler) || (! class_exists($_assembler))) {
+            exception('AssemblerNotExists', compact('assembler', 'namespace'));
+        }
+
+        return $_assembler;
+    }
+
     public static function __annotationFilterWrapout(string $wrapout, array $ext = [], string $namespace = null)
     {
         $wrapout = trim($wrapout);
@@ -887,6 +927,11 @@ final class PortManager
         $title = $params['title'] ?? (array_keys($params)[0] ?? null);
 
         return [trim(strtolower($group)), $title];
+    }
+
+    public static function __annotationFilterVersion(string $version, array $ext)
+    {
+        return [$version, array_change_key_case($ext, CASE_UPPER)];
     }
 
     public static function __annotationFilterRoute(string $val)

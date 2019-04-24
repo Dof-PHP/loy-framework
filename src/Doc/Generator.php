@@ -6,6 +6,7 @@ namespace Dof\Framework\Doc;
 
 use Dof\Framework\PortManager;
 use Dof\Framework\EntityManager;
+use Dof\Framework\DataModelManager;
 use Dof\Framework\WrapinManager;
 use Dof\Framework\Doc\UI\GitBook;
 
@@ -26,6 +27,11 @@ final class Generator
         return new $_ui;
     }
 
+    public static function getDataModels()
+    {
+        return array_merge(EntityManager::getEntities(), DataModelManager::getModels());
+    }
+
     /**
      * Build Docs with given $ui and save to $save
      *
@@ -43,7 +49,7 @@ final class Generator
             ->setOutput($save)
             ->setApiData(PortManager::getDocs())
             ->setWrapinData(WrapinManager::getWrapins())
-            ->setModelData(EntityManager::getEntities())
+            ->setModelData(self::getDataModels())
             ->buildAll();
     }
 
@@ -55,7 +61,7 @@ final class Generator
             ->setTemplates($templates)
             ->setLanguage($lang)
             ->setOutput($save)
-            ->setModelData(EntityManager::getEntities())
+            ->setModelData(self::getDataModels())
             ->buildModel(true);
     }
 

@@ -40,9 +40,11 @@ trait HttpTrait
         return ($alias === false) ? null : $alias;
     }
 
-    public function getMimeByAlias(string $alias) : ?string
+    public function getMimeByAlias(string $alias, string $default = null) : ?string
     {
-        return self::$mimes[$alias] ?? '?';
+        $mime = self::$mimes[strtolower($alias)] ?? null;
+
+        return $mime ? $mime : $default;
     }
 
     protected function getOrSet(string $key, Closure $callback)

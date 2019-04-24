@@ -16,7 +16,7 @@ trait CollectionFacadeTrait
 
     public static function setData(array $data)
     {
-        self::$data     = $data;
+        self::$data = $data;
         self::$instance = null;
     }
 
@@ -34,8 +34,10 @@ trait CollectionFacadeTrait
         self::getInstance()->set($key, $value);
     }
 
-    public static function get(string $key)
+    public static function get(string $key, string $default = null)
     {
+        $key = strtolower($key);
+
         $getter = self::getInstance();
         if (! is_null($val = $getter->get($key))) {
             return $val;
@@ -55,6 +57,6 @@ trait CollectionFacadeTrait
             }
         }
 
-        return $value;
+        return is_null($value) ? $default : $value;
     }
 }

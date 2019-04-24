@@ -9,10 +9,15 @@
 </style>
 
 ## <?= $title ?> 
+
+### 接口定义
+
 <?php $route = $route === '/' ? $route : "/{$route}" ?>
 ``` http
 <?= join('|', $verbs) ?> <?= $route ?>
 ```
+
+### 基础信息
 
 | 认证授权类型 | 关联数据模型 | 版本 | 资源后缀支持 | 负责人 | 最后更新时间 |
 | :--- | :--- | :--- | :--- |
@@ -80,6 +85,16 @@ LINK;
 <?php if ($header) : ?>
 - (默认) `Content-Type: <?= $header ?>`
 <?php endif ?>
+<?php endforeach ?>
+<?php endif ?>
+
+<?php if ($fields ?? []) : ?>
+### 关联数据模型的兼容字段
+
+| 兼容字段名 | 关联数据模型的原始属性名 |
+| :--- | :--- |
+<?php foreach($fields as $f => $p) : ?>
+| `<?= $f ?>` | `<?= $p ?>` |
 <?php endforeach ?>
 <?php endif ?>
 

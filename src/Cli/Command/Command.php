@@ -8,6 +8,7 @@ use Dof\Framework\Kernel;
 use Dof\Framework\Doc\Generator as DocGen;
 use Dof\Framework\ConfigManager;
 use Dof\Framework\DomainManager;
+use Dof\Framework\DataModelManager;
 use Dof\Framework\EntityManager;
 use Dof\Framework\StorageManager;
 use Dof\Framework\RepositoryManager;
@@ -264,6 +265,8 @@ class Command
 
         EntityManager::flush();
 
+        DataModelManager::flush();
+
         StorageManager::flush();
 
         RepositoryManager::flush();
@@ -290,6 +293,8 @@ class Command
         $domains = DomainManager::getDirs();
 
         EntityManager::compile($domains, true);
+
+        DataModelManager::compile($domains, true);
 
         StorageManager::compile($domains, true);
 

@@ -97,6 +97,8 @@ final class Kernel
 
         EntityManager::load($domains);
 
+        DataModelManager::load($domains);
+
         StorageManager::load($domains);
 
         RepositoryManager::load($domains);

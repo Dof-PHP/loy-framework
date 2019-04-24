@@ -543,7 +543,7 @@ if (! function_exists('stringify')) {
     function stringify($value)
     {
         if (is_null($value)) {
-            return 'NULL';
+            return '';
         }
         if (is_scalar($value)) {
             return (string) $value;
