@@ -24,6 +24,11 @@ class Command
      */
     public function version($console)
     {
+        $console->success(get_dof_version());
+    }
+
+    private function header($console)
+    {
         $console->line();
         $console->output($console->render('Dof-PHP Framework', 'LIGHT_BLUE'));
         $console->output('  ');
@@ -31,8 +36,6 @@ class Command
         $console->output('  ');
         $console->output($console->render('ckwongloy@gmail.com', 'DARK_GRAY'));
         $console->line(null, 2);
-
-        exit;
     }
 
     /**
@@ -42,7 +45,7 @@ class Command
     public function help($console)
     {
         // TODO
-        $this->version($console);
+        $this->header($console);
     }
 
     /**
@@ -60,10 +63,13 @@ class Command
         }
 
         if ($console->getOptions()->count()) {
-            $console->exception('UnSupportOptions', array_keys($console->getOptions()->toArray()));
+            $console->exception(
+                'UnSupportOptions',
+                array_keys($console->getOptions()->toArray())
+            );
         }
 
-        $console->fail('MissingCommandName');
+        return $this->header($console);
     }
 
     /**
