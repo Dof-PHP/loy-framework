@@ -56,23 +56,49 @@ class Console
         echo stringify($result);
     }
 
-    public function info(string $text) : string
+    public function info(string $text, bool $exit = false)
     {
         $this->line($this->render($text, 'BLUE'));
+
+        if ($exit) {
+            $this->exit();
+        }
     }
 
-    public function success(string $text) : string
+    public function warning(string $text, bool $exit = false)
+    {
+        $this->line($this->render($text, 'YELLOW'));
+
+        if ($exit) {
+            $this->exit();
+        }
+    }
+
+    public function success(string $text, bool $exit = false)
     {
         $this->line($this->render($text, 'GREEN'));
 
-        exit;
+        if ($exit) {
+            $this->exit();
+        }
     }
 
-    public function fail(string $text) : string
+    public function error(string $text, bool $exit = false)
+    {
+        $this->line($this->render($text, 'LIGHT_RED'));
+
+        if ($exit) {
+            $this->exit();
+        }
+    }
+
+    public function fail(string $text, bool $exit = false)
     {
         $this->line($this->render($text, 'RED'));
 
-        exit;
+        if ($exit) {
+            $this->exit();
+        }
     }
 
     public function render(string $text, string $color) : string
@@ -88,11 +114,11 @@ class Console
 
     public function exception(string $message, array $context = [])
     {
-        $this->output($this->render(
-            json_encode([$message, $context], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
-            'LIGHT_RED'
-        ));
+        $this->error(json_pretty([$message, $context]), true);
+    }
 
+    public function exit()
+    {
         exit;
     }
 

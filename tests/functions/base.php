@@ -119,6 +119,30 @@ GWT('Test dexml() #1: index array', '<?xml version="1.0" encoding="utf-8"?><xml>
 });
  */
 
+GWT('Test is_xml(): #1', '123456', function ($given) {
+    return is_xml($given);
+}, function ($result, $tester) {
+    return $result === false;
+});
+
+GWT('Test is_xml(): #2', '123456', function ($given) {
+    return is_xml($given, true);
+}, function ($result, $tester) {
+    return trim($result) == "Start tag expected, '<' not found";
+});
+
+GWT('Test is_xml(): #3', '<?xml version="1.0" encoding="utf-8"?><xml><data><token>token</token></data><code>0</code><info>ok</info><more></more><meta></meta></xml>', function ($given) {
+    return is_xml($given, true);
+}, function ($result, $tester) {
+    return $result === true;
+});
+
+GWT('Test is_xml(): #4', '<xml><data><token>token</token></data><code>0</code><info>ok</info><more></more><meta></meta></xml>', function ($given) {
+    return is_xml($given, true);
+}, function ($result, $tester) {
+    return $result === true;
+});
+
 GWT('Test is_date_format(): #1', '2019-01-01 10:10:10', function ($given) {
     return is_date_format($given);
 }, function ($result, $tester) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework\Cli\Command;
 
 use Dof\Framework\Kernel;
+use Dof\Framework\GWT;
 use Dof\Framework\Doc\Generator as DocGen;
 use Dof\Framework\ConfigManager;
 use Dof\Framework\DomainManager;
@@ -25,7 +26,11 @@ class Command
      */
     public function version($console)
     {
-        $console->success(get_dof_version());
+        if ($console->getOption('raw')) {
+            $console->success((string) get_dof_version_raw(), true);
+        }
+
+        $console->success(get_dof_version(), true);
     }
 
     private function header($console)
@@ -37,6 +42,7 @@ class Command
         $console->output('  ');
         $console->output($console->render('ckwongloy@gmail.com', 'DARK_GRAY'));
         $console->line(null, 2);
+        $console->exit();
     }
 
     /**
@@ -81,16 +87,15 @@ class Command
     {
         $lock = ospath(Kernel::getRoot(), WebKernel::HALT_FLAG);
         if (! is_file($lock)) {
-            $console->success('OK! Application is up and running.');
-            return;
+            $console->success('OK! Application is up and running.', true);
         }
 
         $res = unlink($lock);
         if ($res === false) {
-            $console->fail('Failed!');
-            return;
+            $console->fail('Failed!', true);
         }
-        $console->success('Success!');
+
+        $console->success('Success!', true);
     }
 
     /**
@@ -104,12 +109,10 @@ class Command
             $force = strtolower((string) $console->getOption('force', '0'));
             if (($force === '1') || ('true' === $force)) {
                 if (false === unlink($lock)) {
-                    $console->fail('ERROR! Force shutdown failed.');
-                    return;
+                    $console->fail('ERROR! Force shutdown failed.', true);
                 }
             } else {
-                $console->success('OK! Application was shutdown already.');
-                return;
+                $console->success('OK! Application was shutdown already.', true);
             }
         }
 
@@ -117,11 +120,10 @@ class Command
         $since = microftime('T Y-m-d H:i:s');
         $res = file_put_contents($lock, enjson(compact('message', 'since')));
         if (false === $res) {
-            $console->fail('Failed!');
-            return;
+            $console->fail('Failed!', true);
         }
 
-        $console->success('Success!');
+        $console->success('Success!', true);
     }
 
     /**
@@ -153,27 +155,26 @@ class Command
             ospath($tests, 'run.php'),
             ospath($tests, 'data'),
         ]);
-        $success  = \Dof\Framework\GWT::getSuccess();
+        $success  = GWT::getSuccess();
         $_success = count($success);
-        $failure  = \Dof\Framework\GWT::getFailure();
+        $failure  = GWT::getFailure();
         $_failure = count($failure);
-        $exception  = \Dof\Framework\GWT::getException();
+        $exception  = GWT::getException();
         $_exception = count($exception);
         $end = microtime(true);
 
-        echo '-- Time Taken: ', $end-$start, ' s.', PHP_EOL;
-        echo '-- Memory Used: ', format_bytes(memory_get_usage()), PHP_EOL;
-        echo '-- Total Test Cases: ', $_success + $_failure + $_exception, PHP_EOL;
-        echo "-- \033[0;31mFailed Tests: {$_failure}\033[0m", PHP_EOL;
-        echo "-- \033[1;33mTesting Exceptions: {$_exception}\033[0m", PHP_EOL;
-        echo "-- \033[0;32mPassed Tests: {$_success}\033[0m", PHP_EOL;
-
-        echo "\033[1;33mException Tests => \033[0m";
-        print_r($exception);
-        echo "\033[0;31mFailed Tests => \033[0m";
-        print_r($failure);
-
-        exit;
+        $console->info('-- Time Taken: '.($end-$start).' s.');
+        $console->info('-- Memory Used: '.format_bytes(memory_get_usage()));
+        $console->info('-- Total Test Cases: '.($_success + $_failure + $_exception));
+        $console->success('-- Passed Tests: '.$_success);
+        $console->fail('-- Failed Tests: '.$_failure);
+        if ($_failure > 0) {
+            $console->fail(json_pretty($failure));
+        }
+        $console->warning('-- Exception Exceptions: '.$_exception);
+        if ($_exception > 0) {
+            $console->warning(json_pretty($exception));
+        }
     }
 
     /**
@@ -190,7 +191,7 @@ class Command
 
         DocGen::buildModel($console->getOption('ui', 'gitbook'), $save);
 
-        $console->success('Done!');
+        $console->success('Done!', true);
     }
 
     /**
@@ -207,7 +208,7 @@ class Command
 
         DocGen::buildWrapin($console->getOption('ui', 'gitbook'), $save);
 
-        $console->success('Done!');
+        $console->success('Done!', true);
     }
 
     /**
@@ -224,7 +225,7 @@ class Command
 
         DocGen::buildHttp($console->getOption('ui', 'gitbook'), $save);
 
-        $console->success('Done!');
+        $console->success('Done!', true);
     }
 
     /**
@@ -241,7 +242,7 @@ class Command
 
         DocGen::buildAll($console->getOption('ui', 'gitbook'), $save);
 
-        $console->success('Done!');
+        $console->success('Done!', true);
     }
 
     /**
@@ -276,6 +277,8 @@ class Command
         WrapinManager::flush();
 
         PortManager::flush();
+
+        $console->exit();
     }
 
     /**
@@ -305,6 +308,8 @@ class Command
         WrapinManager::compile($domains, true);
 
         PortManager::compile($domains, true);
+
+        $console->exit();
     }
 
     /**
@@ -322,6 +327,8 @@ class Command
         $domains = DomainManager::getDirs();
 
         PortManager::compile($domains, true);
+
+        $console->exit();
     }
 
     /**
@@ -331,6 +338,8 @@ class Command
     public function clearPortComplie($console)
     {
         PortManager::flush();
+
+        $console->exit();
     }
 
     /**

@@ -376,6 +376,12 @@ if (! function_exists('dexml')) {
         return dejson(enjson($xml), true);
     }
 }
+if (! function_exists('json_pretty')) {
+    function json_pretty($data)
+    {
+        return json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    }
+}
 if (! function_exists('enjson')) {
     function enjson($data)
     {
@@ -597,7 +603,7 @@ if (! function_exists('string_literal')) {
     }
 }
 if (! function_exists('is_xml')) {
-    function is_xml(string $xml)
+    function is_xml(string $xml, bool $returnError = false)
     {
         libxml_use_internal_errors(true);
         if (! ($doc = simplexml_load_string(
@@ -608,7 +614,7 @@ if (! function_exists('is_xml')) {
             $error = libxml_get_last_error();    // LibXMLError object
             libxml_clear_errors();
             if ($error !== false) {
-                return 'Illegal XML: '.$error->message;
+                return $returnError ? $error->message : false;
             }
         }
 

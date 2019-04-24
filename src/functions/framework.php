@@ -11,6 +11,17 @@ if (! function_exists('pathof')) {
         return ospath(\Dof\Framework\Kernel::getRoot(), $params);
     }
 }
+if (! function_exists('get_dof_version_raw')) {
+    function get_dof_version_raw() : int
+    {
+        $path = ospath(dirname(dirname(dirname(__FILE__))), '.VER.DOF');
+        if (! is_file($path)) {
+            return 0;
+        }
+
+        return intval(file_get_contents($path));
+    }
+}
 if (! function_exists('get_dof_version')) {
     // --------------------------------------------
     //     The version format used in Dof:
@@ -22,12 +33,12 @@ if (! function_exists('get_dof_version')) {
     // --------------------------------------------
     function get_dof_version()
     {
-        $path = ospath(dirname(dirname(dirname(__FILE__))), '.VER.DOF');
-        if (! is_file($path)) {
+        $raw = get_dof_version_raw();
+        if (0 === $raw) {
             return '0.0.0.0';
         }
 
-        $ver = $left = intval(file_get_contents($path));
+        $ver = $left = $raw;
         $major   = floor($left / 1024);
         $left    = $ver - $major*1024;
         $minor   = floor($left / 256);
