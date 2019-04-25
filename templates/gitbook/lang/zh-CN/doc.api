@@ -88,14 +88,42 @@ LINK;
 <?php endforeach ?>
 <?php endif ?>
 
-<?php if ($fields ?? []) : ?>
-### 关联数据模型的兼容字段
+<?php if ($wrapout ?? []) : ?>
+### 响应结构示例
+``` php
+<?= $wrapout ?>
+```
+<?php endif ?>
 
-| 兼容字段名 | 关联数据模型的原始属性名 |
+<?php if ($fields['model'] ?? []) : ?>
+### 关联数据模型
+
+#### `<?= $models ?>` | <?= $fields['model']['title'] ?? $_models ?>
+
+<?php if ($fields['model']['properties'] ?? []) : ?>
+| 属性 | 名称 | 基本类型 | 可接受参数 | 备注 |
+| :--- | :--- | :--- | :--- | :--- |
+<?php foreach ($fields['model']['properties'] as $property) : ?>
+<?php
+    extract($property, EXTR_OVERWRITE);
+    $_arguments = '-';
+    if ($arguments) {
+        $_arguments = '`'.enjson($arguments).'`';
+    }
+?>
+| `<?= $name ?>` | <?= $title ?> | <?= $type ?> | <?= $_arguments ?> | <?= $notes ?: '-' ?> |
+<?php endforeach ?>
+<?php endif ?>
+
+<?php if ($fields['compatibles'] ?? []) : ?>
+#### 兼容字段
+
+| 兼容字段名 | 原始属性名 |
 | :--- | :--- |
-<?php foreach($fields as $f => $p) : ?>
+<?php foreach($fields['compatibles'] as $f => $p) : ?>
 | `<?= $f ?>` | `<?= $p ?>` |
 <?php endforeach ?>
+<?php endif ?>
 <?php endif ?>
 
 <script>

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Facade;
 
+use Throwable;
 use Dof\Framework\Facade;
+use Dof\Framework\ConfigManager;
 use Dof\Framework\Web\Response as Instance;
 use Dof\Framework\Web\Port;
 use Dof\Framework\Web\Route;
@@ -15,8 +17,23 @@ class Response extends Facade
     protected static $namespace = Instance::class;
 
     /**
-     * Send a format-fixed exception response
-     *
+     * It's a user level error
+     */
+    public static function error(int $status, string $message, array $context = [])
+    {
+        $body = ConfigManager::getEnv('web.debug', false)
+            ? [$status, $message, $context]
+            : [$status, $message];
+
+        Response::new()
+            ->setStatus($status)
+            ->setMimeAlias(self::mimeout())
+            ->setError(true)
+            ->setBody(self::wraperr($body, wrapper(Port::get('wraperr'), 'err')))
+            ->send();
+    }
+
+    /**
      * It's a system level error
      */
     public static function exception(int $status, string $message, array $context = [])
@@ -25,10 +42,25 @@ class Response extends Facade
         Log::log('exception', $message, $context);
         unset($context['__request']);
 
+        $body = ConfigManager::getEnv('web.debug', false)
+            ? [$status, $message, $context]
+            : [$status, $message];
+
+        $wraperr = ConfigManager::getFramework('web.exception.wrapper', null);
+        if (is_array($wraperr)) {
+            $body = self::wraperr($body, $wraperr);
+        } elseif (class_exists($wraperr)) {
+            try {
+                $body = self::wraperr($body, wrapper($wraperr, 'err'));
+            } catch (Throwable $e) {
+                // ignore if any exception thrown to avoid empty response
+            }
+        }
+
         Response::new()
         ->setStatus($status)
         ->setMimeAlias('json')
-        ->setBody([$status, $message, $context])
+        ->setBody($body)
         ->send();
     }
 

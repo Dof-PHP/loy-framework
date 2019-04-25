@@ -406,11 +406,11 @@ if (! function_exists('dejson')) {
     function dejson(string $json, bool $assoc = true, bool $file = false)
     {
         if ($file) {
-            if (is_file($json)) {
-                $json = file_get_contents($json);
+            if (! is_file($json)) {
+                exception('JsonFileNotExists', ['file' => $json]);
             }
 
-            exception('JsonFileNotExists', ['file' => $json]);
+            $json = file_get_contents($json);
         }
 
         $res = json_decode($json, $assoc);
@@ -1023,5 +1023,69 @@ if (! function_exists('format_bytes')) {
         $e = floor(log($bytes)/log(1024));
       
         return sprintf('%.6f '.$s[$e], ($bytes/pow(1024, floor($e))));
+    }
+}
+if (! function_exists('get_os_bit_ver')) {
+    function get_os_bit_ver()
+    {
+        return (PHP_INT_SIZE / 4) * 32;
+    }
+}
+if (! function_exists('is_timestamp')) {
+    function is_timestamp($var) : bool
+    {
+        if (! is_numeric($var)) {
+            return false;
+        }
+
+        $_var = intval($var);
+        if ($_var != $var) {
+            return false;
+        }
+
+        return (-2147483649 <= $var) && ($_var <= 2147483649);
+    }
+}
+if (! function_exists('debase64')) {
+    function debase64(string $base64, bool $urlsafe = false) : string
+    {
+        if ($urlsafe) {
+            return base64_decode(str_pad(strtr($base64, '-_', '+/'), strlen($base64) % 4, '=', STR_PAD_RIGHT));
+        }
+
+        return base64_decode($base64);
+    }
+}
+if (! function_exists('enbase64')) {
+    function enbase64(string $text, bool $urlsafe = false) : string
+    {
+        if ($urlsafe) {
+            return rtrim(strtr(base64_encode($text), '+/', '-_'), '=');
+        }
+
+        return base64_encode($text);
+    }
+}
+if (! function_exists('get_buffer_string')) {
+    function get_buffer_string(\Closure $action, \Closure $exception = null) : string
+    {
+        try {
+            $level = ob_get_level();
+            ob_start();
+
+            $action();
+
+            return (string) ob_get_clean();
+        } catch (Throwable $e) {
+            while (ob_get_level() > $level) {
+                ob_end_clean();
+            }
+
+            if ($exception) {
+                $exception();
+            }
+        }
+
+        return '';
     }
 }

@@ -418,6 +418,10 @@ final class PortManager
         }
 
         // Formatting doc data
+        if (! ConfigManager::getEnv('web.docs.compile', false)) {
+            return;
+        }
+
         $_version = self::formatDocVersion($_version);
         if ($ofMethod['doc']['NODOC'] ?? ($docClass['NODOC'] ?? false)) {
             return;
@@ -458,7 +462,6 @@ final class PortManager
             $params[] = $param;
         }
 
-        $fields = $assembler ? singleton($assembler)->getCompatibles() : [];
         $doc = [
             'route' => $urlpath,
             'auth'  => $auth,
@@ -469,7 +472,11 @@ final class PortManager
             'version' => $_version,
             'params'  => $params,
             'suffixs' => $suffix,
-            'fields'  => $fields,
+            'fields'  => [
+                'model' => self::formatDocModel($models),
+                'compatibles' => ($assembler ? singleton($assembler)->getCompatibles() : []),
+            ],
+            'wrapout' => self::formatDocWrapout($wrapout),
             'headers' => [
                 'in'  => $mimein  ? [Request::getMimeByAlias($mimein, '?')]  : [],
                 'out' => $mimeout ? [Request::getMimeByAlias($mimeout, '?')] : [],
@@ -484,6 +491,69 @@ final class PortManager
         }
 
         self::$docs[$_version][$domainKey] = $docs;
+    }
+
+    public static function formatDocModel(string $model = null)
+    {
+        if (! $model) {
+            return [];
+        }
+        $annotation = Annotation::getByNamespace($model);
+        if (! $annotation) {
+            return [];
+        }
+    
+        list($class, $properties, ) = $annotation;
+
+        $_properties = [];
+        foreach ($properties as $name => list('doc' => $options)) {
+            $_properties[] = [
+                'name' => $name,
+                'type' => $options['TYPE']  ?? null,
+                'title' => $options['TITLE'] ?? null,
+                'notes' => $options['notes'] ?? null,
+                'arguments' => $options['__ext__']['ARGUMENT'] ?? [],
+            ];
+        }
+
+        return [
+            'title' => $class['doc']['TITLE'] ?? null,
+            'properties' => $_properties,
+        ];
+    }
+
+    public static function formatDocWrapout(string $wrapout = null)
+    {
+        if (! $wrapout) {
+            return [];
+        }
+
+        try {
+            $arr = singleton($wrapout)->wrapout();
+            if (is_array($arr)) {
+                $res = [];
+                foreach ($arr as $key => $val) {
+                    $_key = is_int($key) ? $val : $key;
+                    $_val = is_int($key) ? null : $val;
+                    if (in_array($_key, [
+                        '__DATA__',
+                        '__PAGINATOR__',
+                    ])) {
+                        $_val = $_key;
+                        $_key = $val;
+                    }
+
+                    $res[$_key] = $_val;
+                }
+
+                return get_buffer_string(function () use ($res) {
+                    print_r($res);
+                });
+            }
+        } catch (Throwable $e) {
+        }
+
+        return [];
     }
 
     public static function formatDocVersion(string $version = null)

@@ -9,6 +9,7 @@ use Dof\Framework\Kernel as Core;
 use Dof\Framework\Container;
 use Dof\Framework\PortManager;
 use Dof\Framework\WrapinManager;
+use Dof\Framework\ConfigManager;
 use Dof\Framework\TypeHint;
 use Dof\Framework\Validator;
 use Dof\Framework\Facade\Log;
@@ -24,6 +25,7 @@ final class Kernel
     const PIPEOUT_HANDLER = 'pipeout';
     const WRAPOUT_HANDLER = 'wrapout';
     const WRAPERR_HANDLER = 'wraperr';
+    const PREFLIGHT_HANDLER = 'preflight';
     const HALT_FLAG = '.LOCK.WEB.DOF';
 
     private static $booted = false;
@@ -63,7 +65,13 @@ final class Kernel
         }
 
         if (is_file($flag = ospath($root, Kernel::HALT_FLAG))) {
-            Kernel::throw('ServerClosed', dejson(file_get_contents($flag)), 503);
+            Kernel::throw('ServerClosed', dejson($flag, true, true), 503);
+        }
+
+        try {
+            self::preflight();
+        } catch (Throwable $e) {
+            Kernel::throw('PreflightingError', [], 500, $e);
         }
 
         try {
@@ -125,6 +133,33 @@ final class Kernel
     }
 
     /**
+     * Preflight stuffs before process request
+     */
+    private static function preflight()
+    {
+        $preflights = ConfigManager::getDomain('http.preflight', []);
+        if ((! $preflights) || (! is_array($preflights))) {
+            return;
+        }
+
+        foreach ($preflights as $preflight) {
+            if (! class_exists($preflight)) {
+                Kernel::throw('PreflightNotExists', compact('preflight'));
+            }
+            if (! method_exists($preflight, self::PREFLIGHT_HANDLER)) {
+                Kernel::throw('PreflightHandlerNotExists');
+            }
+
+            if (true !== ($res = call_user_func_array([singleton($preflight), self::PREFLIGHT_HANDLER], [
+                Request::getInstance(),
+                Response::getInstance()
+            ]))) {
+                Kernel::throw('PreflightingFailed', compact('res'));
+            }
+        }
+    }
+
+    /**
      * Routing logics
      *
      * 1. Find route definition by request information
@@ -179,11 +214,8 @@ final class Kernel
                 if ($wrapin) {
                     $context['wrapins'][] = $wrapin;
                 }
-                Response::setStatus(400)
-                    ->setMimeAlias(Response::mimeout())
-                    ->setError(true)
-                    ->setBody(self::packing([400, $fail->key, $context]))
-                    ->send();
+
+                Response::error(400, $fail->key, $context);
             }
 
             Port::getInstance()->argument = collect($validator->getResult());
@@ -373,6 +405,7 @@ final class Kernel
      * @param string $name: Exception name
      * @param array $context: Exception Context
      * @param int $status: Error Code (compatible with HTTP status code)
+     * @param Throwable $previous: Previous exception in chain
      * @return null
      */
     public static function throw(

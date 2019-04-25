@@ -9,7 +9,7 @@ use Dof\Framework\Collection;
 
 trait HttpTrait
 {
-    private $headers = [];
+    protected $headers = [];
 
     protected static $mimes = [
         'text' => 'text/plain',

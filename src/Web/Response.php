@@ -104,6 +104,9 @@ class Response
                 return $this->{$formatter}($body);
             }
         }
+        if (is_null($body)) {
+            return $this->body = '';
+        }
         if (is_scalar($body)) {
             return $this->body = (string) $body;
         }
@@ -229,6 +232,20 @@ class Response
     public function getWraperrs()
     {
         return $this->wrappers['err'] ?? [];
+    }
+
+    public function addHeader(string $key, $val)
+    {
+        $this->headers[$key] = $val;
+
+        return $this;
+    }
+
+    public function setHeaders(array $headers)
+    {
+        $this->headers = $headers;
+
+        return $this;
     }
 
     public function getWraperr(string $key)

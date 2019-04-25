@@ -163,7 +163,7 @@ class Command
         $_exception = count($exception);
         $end = microtime(true);
 
-        $console->info('-- Time Taken: '.($end-$start).' s.');
+        $console->info('-- Time Taken: '.($end-$start).' s');
         $console->info('-- Memory Used: '.format_bytes(memory_get_usage()));
         $console->info('-- Total Test Cases: '.($_success + $_failure + $_exception));
         $console->success('-- Passed Tests: '.$_success);

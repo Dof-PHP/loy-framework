@@ -287,7 +287,7 @@ class GitBook
     private function publish()
     {
         $this->save(
-            $this->render($this->builder, ['versions' => $this->versions]),
+            $this->render($this->builder, ['versions' => $this->versions, 'output' => $this->output]),
             ospath($this->output, self::BUILDER)
         );
 
@@ -468,21 +468,14 @@ class GitBook
         if (! is_file($tpl)) {
             exception('RenderTemplateNotExists', compact('tpl'));
         }
-        extract($data, EXTR_OVERWRITE);
-        try {
-            $level = ob_get_level();
-            ob_start();
+
+        return get_buffer_string(function () use ($data, $tpl) {
+            extract($data, EXTR_OVERWRITE);
 
             include $tpl;
-
-            return (string) ob_get_clean();
-        } catch (Throwable $e) {
-            while (ob_get_level() > $level) {
-                ob_end_clean();
-            }
-
+        }, function ($e) use ($tpl) {
             exception('GitBookRenderError', compact('tpl'), $e);
-        }
+        });
     }
 
     /**

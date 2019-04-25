@@ -8,6 +8,8 @@ class BearerAuth
 {
     public function pipein($request, $response, $route, $port)
     {
+        $auth = $request->getHeader('AUTHORIZATION');
+
         // TODO
 
         return false;
