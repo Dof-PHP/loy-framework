@@ -12,6 +12,7 @@ final class PortManager
     const PORT_DIR   = ['Http', 'Port'];
     const AUTH_TYPES = ['0', '1', '2', '3'];
     const AUTONOMY_HANLDER = 'execute';
+    const SUPPORT_HTTP_VERB = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
     /** @var array: Ports resistant directories */
     private static $dirs = [];
@@ -260,12 +261,13 @@ final class PortManager
         if (($attrs['NOTROUTE'] ?? false) || ($docClass['NOTROUTE'] ?? false)) {
             return;
         }
+        $nodoc  = $attrs['NODOC'] ?? ($docClass['NODOC'] ?? false);
         $author = $attrs['AUTHOR'] ?? ($docClass['AUTHOR'] ?? null);
-        if (! $author) {
+        if ((! $nodoc) && (! $author)) {
             exception('MissingPortAuthor', compact('class', 'method'));
         }
         $title = $attrs['TITLE'] ?? null;
-        if (! $title) {
+        if ((! $nodoc) && (! $title)) {
             exception('MissingPortMethodTitle', compact('class', 'method'));
         }
         $subtitle = $attrs['SUBTITLE'] ?? null;
@@ -425,7 +427,7 @@ final class PortManager
         }
 
         $_version = self::formatDocVersion($_version);
-        if ($ofMethod['doc']['NODOC'] ?? ($docClass['NODOC'] ?? false)) {
+        if ($nodoc) {
             return;
         }
 
@@ -901,9 +903,18 @@ final class PortManager
         return $_model;
     }
 
-    public static function __annotationFilterVerb(string $val) : array
+    public static function __annotationFilterVerb(string $verbs, array $ext, string $namespace) : array
     {
-        return array_trim_from_string(strtoupper(trim($val)), ',');
+        $verbs = array_trim_from_string(trim($verbs), ',');
+        foreach ($verbs as &$_verb) {
+            $verb  = $_verb;
+            $_verb = strtoupper($_verb);
+            if (! in_array($_verb, self::SUPPORT_HTTP_VERB)) {
+                exception('InvalidHttpVerb', compact('verb', 'namespace'));
+            }
+        }
+
+        return $verbs;
     }
 
     public static function __annotationFilterAssembler(string $assembler, array $ext = [], string $namespace = null)

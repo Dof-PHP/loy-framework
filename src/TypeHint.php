@@ -60,6 +60,15 @@ final class TypeHint
         return is_scalar($val);
     }
 
+    public static function isUint($val) : bool
+    {
+        if (! self::isInt($val)) {
+            return false;
+        }
+
+        return $val > 0;
+    }
+
     public static function isInt($val) : bool
     {
         if (! is_numeric($val)) {

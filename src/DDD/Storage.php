@@ -14,6 +14,15 @@ use Dof\Framework\RepositoryManager;
  */
 class Storage implements Repository
 {
+    /**
+     * @Column(id)
+     * @Type(int)
+     * @Length(10)
+     * @Primary(1)
+     * @Notnull(1)
+     */
+    protected $id;
+
     /** @var Storage Instance */
     protected $__storage;
 
@@ -27,6 +36,23 @@ class Storage implements Repository
         $result = $this->__storage->find($pk);
 
         return RepositoryManager::convert(static::class, $result);
+    }
+
+    final public function convert(array $result = null)
+    {
+        return RepositoryManager::convert(static::class, $result);
+    }
+
+    final public function first(...$params)
+    {
+        $res = $this->__storage->get(...$params);
+
+        return $res[0] ?? null;
+    }
+
+    final public function get(...$params)
+    {
+        return $this->__storage->get(...$params);
     }
 
     final public function add(Entity $entity) : ?int

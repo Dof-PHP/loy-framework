@@ -1087,3 +1087,14 @@ if (! function_exists('get_buffer_string')) {
         return '';
     }
 }
+if (! function_exists('get_last_trace')) {
+    function get_last_trace() : array
+    {
+        $trace = debug_backtrace();
+        $last  = $trace[1] ?? [];
+
+        array_unset($last, 'type', 'args');
+
+        return $last;
+    }
+}

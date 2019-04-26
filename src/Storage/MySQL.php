@@ -45,6 +45,13 @@ class MySQL implements StorageInterface
         $this->config = collect($config);
     }
 
+    public function raw(string $sql)
+    {
+    }
+
+    /**
+     * Execute a query with given sql template and parameters
+     */
     public function get(string $sql, array $params = null)
     {
         try {

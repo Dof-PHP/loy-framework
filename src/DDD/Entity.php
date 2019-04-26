@@ -52,6 +52,15 @@ abstract class Entity
         return $this->id ?? null;
     }
 
+    final public function set(string $attr, $val)
+    {
+        if (property_exists($this, $attr)) {
+            $this->{$attr} = $val;
+        }
+
+        return $this;
+    }
+
     final public function __get(string $attr)
     {
         if (property_exists($this, $attr)) {

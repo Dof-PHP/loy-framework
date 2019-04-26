@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\OFB\Pipe;
 
-use Dof\Framework\DDD\ApplicationService;
+use Dof\Framework\DDD\Service;
 use Dof\Framework\Paginator;
 use Dof\Framework\Web\Response;
 
@@ -19,7 +19,7 @@ class ResponseSupport
             return $result->send();
         }
 
-        if ($result instanceof ApplicationService) {
+        if ($result instanceof Service) {
             if (! $result->__isExecuted()) {
                 $result->exec();
             }

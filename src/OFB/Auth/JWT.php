@@ -31,7 +31,7 @@ class JWT
      *
      * @param array $params: User defined payload
      */
-    public function issue(array $params = [])
+    public function issue(...$params)
     {
         if ($this->beforeIssue && (true === ($res = $this->beforeIssue()))) {
             exception('BeforeIssueHookFailed', compact('res'));
@@ -53,7 +53,7 @@ class JWT
             'tza' => date('T'),     // Timezone abbreviation (custom)
         ];
 
-        $payload   = $this->encode([$claims, $params]);
+        $payload   = $this->encode([$claims, unsplat(...$params)]);
         $signature = $this->sign(join('.', [$header, $payload]), $this->algo, $this->key);
 
         $token = join('.', [$header, $payload, $signature]);

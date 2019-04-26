@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework;
 
+use Throwable;
 use Dof\Framework\Facade\Annotation;
 
 /**
@@ -25,7 +26,7 @@ final class Container
     {
         $class = self::get($namespace);
         if (! ($ns = $class['namespace'] ?? false)) {
-            exception('ClassNamespaceMissing', compact('namespace', 'class'));
+            exception('MissingClassNamespace', compact('namespace', 'class'));
         }
 
         // Get class constructor definition
@@ -48,10 +49,14 @@ final class Container
         $params  = $constructor['parameters'] ?? [];
         $_params = [];    // Final parameters that $class constructor need
         foreach ($params as $param) {
-            $name = $param['name'] ?? false;
-            $type = $param['type'] ?? false;
-            if ((! $name) || (! $type)) {
+            $name = $param['name'] ?? null;
+            $type = $param['type'] ?? null;
+            if (! $name) {
                 continue;
+            }
+            if (! $type) {
+                $error = 'Unknown parameter type';
+                exception('UnInjectableDependency', compact('error', 'ns', 'name'));
             }
             if ($param['optional'] ?? false) {
                 break;
@@ -61,19 +66,22 @@ final class Container
                     $_params[] = null;
                     continue;
                 }
-                exception('UnInjectableDependency', [
-                    'error' => 'Constructor has builtin required parameter',
-                    'class' => $ns,
-                    'type'  => $type,
-                    'name'  => $name,
-                ]);
+                $error = 'Constructor has builtin required parameter';
+                exception('UnInjectableDependency', compact('error', 'ns', 'name', 'type'));
             }
             if (class_exists($type) || interface_exists($type)) {
                 $_params[] = self::di($type);
+            } else {
+                $error = 'Type Not Exists';
+                exception('UnInjectableDependency', compact('error', 'ns', 'name', 'type'));
             }
         }
 
-        return new $ns(...$_params);
+        try {
+            return new $ns(...$_params);
+        } catch (Throwable $e) {
+            exception('InjectDependencyException', compact('ns'), $e);
+        }
     }
 
     /**

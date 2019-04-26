@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Dof\Framework\OFB\Pipe;
 
-use Dof\Framework\DDD\ApplicationService;
-use Dof\Framework\Paginator;
 use Dof\Framework\DSL\IFRSN;
 use Dof\Framework\Facade\Assembler;
 

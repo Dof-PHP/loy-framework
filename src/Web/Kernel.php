@@ -27,6 +27,12 @@ final class Kernel
     const WRAPERR_HANDLER = 'wraperr';
     const PREFLIGHT_HANDLER = 'preflight';
     const HALT_FLAG = '.LOCK.WEB.DOF';
+    const ALLOW_SAPI = [
+        'fpm-fcgi' => true,
+        'cgi-fcgi' => true,
+        'cgi' => true,
+        'cli-server' => true,
+    ];
 
     private static $booted = false;
 
@@ -40,7 +46,7 @@ final class Kernel
     public static function handle(string $root)
     {
         // Deny all non-cgi calls
-        if (! in_array(PHP_SAPI, ['fpm-fcgi', 'cgi-fcgi', 'cgi', 'cli-server'])) {
+        if (! (self::ALLOW_SAPI[PHP_SAPI] ?? false)) {
             exit('RunWebKernelInNonCGI');
         }
 
@@ -110,6 +116,19 @@ final class Kernel
         try {
             $result = (new $class)->{$method}(...$params);
         } catch (Throwable $e) {
+            if (is_anonymous($e) && ($e->getMessage() === 'DofServiceException')) {
+                $previous = parse_throwable($e)['__previous'] ?? [];
+                $message = $previous['message'] ?? 'DofServiceException';
+                $context = $previous['context'] ?? [];
+
+                // Here we treat all service exception as client side error by default
+                // Coz if not there should never throw the exception named as this
+                $status  = (int) ($context['__status'] ?? 400);
+                unset($context['__status']);
+
+                Kernel::throw($message, $context, $status);
+            }
+
             Kernel::throw('ResultingResponseFailed', compact('class', 'method'), 500, $e);
         }
 
@@ -147,7 +166,10 @@ final class Kernel
                 Kernel::throw('PreflightNotExists', compact('preflight'));
             }
             if (! method_exists($preflight, self::PREFLIGHT_HANDLER)) {
-                Kernel::throw('PreflightHandlerNotExists');
+                Kernel::throw('PreflightHandlerNotExists', [
+                    'preflight' => $preflight,
+                    'handler'   => self::PREFLIGHT_HANDLER,
+                ]);
             }
 
             if (true !== ($res = call_user_func_array([singleton($preflight), self::PREFLIGHT_HANDLER], [
@@ -260,7 +282,7 @@ final class Kernel
                 Kernel::throw('PipeInClassNotExists', [
                     'port'   => Route::get('class'),
                     'method' => Route::get('method'),
-                    'pipein' => $_pipe,
+                    'pipein' => $pipe,
                 ]);
             }
             if (! method_exists($pipe, Kernel::PIPEIN_HANDLER)) {
@@ -356,7 +378,7 @@ final class Kernel
                 Kernel::throw('PipeOutClassNotExists', [
                     'port'    => Route::get('class'),
                     'method'  => Route::get('method'),
-                    'pipeout' => $_pipe,
+                    'pipeout' => $pipe,
                 ]);
             }
             if (! method_exists($pipe, Kernel::PIPEOUT_HANDLER)) {

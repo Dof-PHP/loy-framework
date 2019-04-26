@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework\Facade;
 
 use Dof\Framework\DDD\Assembler as AssembleObject;
-use Dof\Framework\DDD\ApplicationService;
+use Dof\Framework\DDD\Service;
 use Dof\Framework\Paginator;
 
 class Assembler
@@ -23,7 +23,7 @@ class Assembler
             return null;
         }
 
-        if ($result instanceof ApplicationService) {
+        if ($result instanceof Service) {
             $result = $result->__isExecuted() ? $result->__getData() : $result->execute();
         }
         if ($result instanceof Paginator) {

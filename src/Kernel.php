@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework;
 
 use Closure;
+use ErrorException;
 use Dof\Framework\Facade\Log;
 use Dof\Framework\Web\Kernel as WebKernel;
 use Dof\Framework\Cli\Kernel as CliKernel;
@@ -87,6 +88,7 @@ final class Kernel
             ];
 
             Log::log('error', $errstr, $context);
+            // throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
         });
 
         DomainManager::load(self::$root);

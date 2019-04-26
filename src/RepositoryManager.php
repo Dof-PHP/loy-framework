@@ -6,6 +6,7 @@ namespace Dof\Framework;
 
 use Dof\Framework\DDD\Entity;
 use Dof\Framework\DDD\Storage;
+use Dof\Framework\DDD\Repository;
 use Dof\Framework\Facade\Annotation;
 
 final class RepositoryManager
@@ -36,18 +37,24 @@ final class RepositoryManager
         }
         $repository = $orm['meta']['REPOSITORY'] ?? null;
         if (! $repository) {
-            exception('NoRepositoryBoundOrm', compact('repository', 'orm'));
+            exception('NoRepositoryBoundStorageOrm', compact('storage'));
         }
         $_repository = self::get($repository);
         if (! $_repository) {
             exception('RepositoryNotFound', compact('repository'));
         }
         $implementor = $_repository['IMPLEMENTOR'] ?? null;
-        $entity = $_repository['ENTITY'] ?? null;
         if ($implementor !== $storage) {
             exception('InvalidStorageImplementor', compact('repository', 'implementor', 'storage'));
         }
+        $entity = $_repository['ENTITY'] ?? null;
+        if (! $entity) {
+            exception('NoEntityBoundRepository', compact('repository'));
+        }
         $_entity  = EntityManager::get($entity);
+        if (! $_entity) {
+            exception('BadEntityWithoutAnnotation', compact('repository', 'entity'));
+        }
         $instance = new $entity;
         foreach ($result as $column => $val) {
             if (! isset($orm['columns'][$column])) {
@@ -65,9 +72,14 @@ final class RepositoryManager
             if (! TypeHint::support($type)) {
                 exception('UnsupportedEntityType', compact('type', 'attribute', 'entity'));
             }
+            $setter = 'set'.ucfirst($attribute);
+            if (! method_exists($instance, $setter)) {
+                exception('EntitySetterNotExists', compact('attribute', 'entity'));
+            }
 
-            $instance->{$attribute} = TypeHint::convert($val, $type);
+            $instance->{$setter}(TypeHint::convert($val, $type));
         }
+
         if (is_null($instance->getId())) {
             $error = 'Entity identity not exists';
             exception('ConvertEntityFailed', compact('entity', 'error', 'result'));
@@ -142,31 +154,51 @@ final class RepositoryManager
             exception('DuplicateRepositoryInterface', compact('exists'));
         }
 
+        if (! ($ofClass['doc']['ENTITY'] ?? false)) {
+            exception('RepositoryNoEntityToManage', compact('namespace'));
+        }
+        if (! ($ofClass['doc']['IMPLEMENTOR'] ?? false)) {
+            exception('RepositoryNoImplementorToStorage', compact('namespace'));
+        }
+
         self::$repositories[$namespace] = $ofClass['doc'] ?? [];
     }
 
-    public static function __annotationFilterEntity(string $entity) : string
+    public static function __annotationFilterEntity(string $entity, array $ext, string $repository) : string
     {
-        if (! class_exists($entity)) {
-            exception('EntityNotExists', compact('entity'));
+        $entity  = trim($entity);
+        $_entity = get_annotation_ns($entity, $repository);
+
+        if ((! $_entity) || (! class_exists($_entity))) {
+            exception('MissingOrEntityNotExists', compact('entity', 'repository'));
         }
-        if (! is_subclass_of($entity, Entity::class)) {
+
+        if (! is_subclass_of($_entity, Entity::class)) {
             exception('InvalidEntityClass', compact('entity'));
         }
 
-        return trim($entity);
+        return $_entity;
     }
 
-    public static function __annotationFilterImplementor(string $storage) : string
+    public static function __annotationFilterImplementor(string $storage, array $ext, string $repository) : string
     {
-        if (! class_exists($storage)) {
-            exception('StorageNotExists', compact('storage'));
+        $storage  = trim($storage);
+        $_storage = get_annotation_ns($storage, $repository);
+
+        if ((! $_storage) || (! class_exists($_storage))) {
+            exception('MissingOrStorageNotExists', compact('storage', 'repository'));
         }
-        if (! (is_subclass_of($storage, Storage::class))) {
-            exception('InvalidStorageClass', compact('storage'));
+        $__storage = Storage::class;
+        if (! (is_subclass_of($storage, $__storage))) {
+            $error = "Storage Not SubClass Of {$__storage}";
+            exception('InvalidStorageClass', compact('error', 'storage', 'repository'));
+        }
+        if (! is_subclass_of($_storage, $repository)) {
+            $error = "Storage Not SubClass Of {$repository}";
+            exception('InvalidStorageClass', compact('error', 'storage', 'repository'));
         }
 
-        return trim($storage);
+        return $_storage;
     }
 
     public static function get(string $namespace)

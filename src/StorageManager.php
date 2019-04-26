@@ -16,6 +16,7 @@ final class StorageManager
     const SUPPORT_DRIVERS = [
         'mysql' => MySQL::class,
     ];
+
     const CONN_DEFAULT = 'conn_default';
     const CONN_POOL    = 'conn_pool';
     const STORAGE_DIR  = 'Storage';
@@ -105,6 +106,12 @@ final class StorageManager
         if ($exists = (self::$orms[$namespace] ?? false)) {
             exception('DuplicateStorageClass', compact('exists'));
         }
+        if (! ($ofClass['doc']['DRIVER'] ?? false)) {
+            exception('MissingStorageDriver', compact('namespace'));
+        }
+        if (! ($ofClass['doc']['TABLE'] ?? false)) {
+            exception('MissingStorageORMTable', compact('namespace'));
+        }
 
         self::$orms[$namespace]['meta'] = $ofClass['doc'] ?? [];
         foreach ($ofProperties as $property => $attr) {
@@ -118,16 +125,20 @@ final class StorageManager
         }
     }
 
-    public static function __annotationFilterRepository(string $repository) : string
+    public static function __annotationFilterRepository(string $repository, array $ext, string $storage) : string
     {
-        if (! interface_exists($repository)) {
-            exception('RepositoryNotExists', compact('repository'));
-        }
-        if (! is_subinterface_of($repository, Repository::class)) {
-            exception('InvalidRepositoryInterface', compact('repository'));
+        $repository  = trim($repository);
+        $_repository = get_annotation_ns($repository, $storage);
+
+        if ((! $_repository) || (! interface_exists($_repository))) {
+            exception('MissingOrRepositoryNotExists', compact('repository', 'storage'));
         }
 
-        return trim($repository);
+        if (! is_subinterface_of($_repository, Repository::class)) {
+            exception('InvalidRepositoryInterface', compact('repository', 'storage'));
+        }
+
+        return $_repository;
     }
 
     /**
@@ -147,15 +158,15 @@ final class StorageManager
         $domain = DomainManager::getKeyByNamespace($namespace);
         list($ofClass, $ofProperties, ) = Annotation::parseNamespace($namespace);
         $meta   = array_change_key_case($ofClass['doc'] ?? [], CASE_LOWER);
-        $driver = $meta['storage'] ?? null;
+        $driver = $meta['driver'] ?? null;
         if (! $driver) {
-            exception('MissingORMStorage', compact('namespace'));
+            exception('UnknownORMStorageDriver', compact('namespace'));
         }
         $storage = self::SUPPORT_DRIVERS[$driver] ?? null;
         if (! $storage) {
             exception('StorageDriverNotSuppert', compact('driver'));
         }
-        $connection = $meta['connection'] ?: ConfigManager::getDomainFinalDatabaseByKey($domain, self::CONN_DEFAULT);
+        $connection = $meta['connection'] ?? ConfigManager::getDomainFinalDatabaseByKey($domain, self::CONN_DEFAULT);
         if (! $connection) {
             exception('MissingStorageConnnection', compact('domain'));
         }

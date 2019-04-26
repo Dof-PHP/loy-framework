@@ -77,8 +77,12 @@ class Response extends Facade
         return Port::get('mimeout');
     }
 
-    public static function wrapout($result, array $wrapper)
+    public static function wrapout($result, array $wrapper = null)
     {
+        if (! $wrapper) {
+            return $result;
+        }
+
         $data = [];
 
         foreach ($wrapper as $key => $default) {
@@ -100,8 +104,12 @@ class Response extends Facade
         return $data;
     }
 
-    public static function wraperr($result, array $wrapper)
+    public static function wraperr($result, array $wrapper = null)
     {
+        if (! $wrapper) {
+            return $result;
+        }
+
         $data = [];
 
         foreach ($wrapper as $key => $default) {
