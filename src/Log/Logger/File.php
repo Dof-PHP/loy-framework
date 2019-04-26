@@ -50,8 +50,8 @@ class File implements LoggerInterface
     public function save(string $log)
     {
         $user = get_php_user();
-        $path = ospath(Kernel::getRoot(), $this->directory);
-        $file = ospath($path, join('.', [$this->level, $user, PHP_SAPI, $this->suffix]));
+        $path = ospath(Kernel::getRoot(), $this->directory, $user);
+        $file = ospath($path, join('.', [$this->level, PHP_SAPI, $user, $this->suffix]));
         if (! is_dir($path)) {
             mkdir($path, $this->permission, true);
         }
@@ -61,12 +61,12 @@ class File implements LoggerInterface
             $year  = date('Y', $time);
             $month = date('m', $time);
             $day   = date('d', $time);
-            $archive = ospath($path, $this->archive, $year, $month, $day, $this->level, $user, PHP_SAPI);
+            $archive = ospath($path, $this->archive, $year, $month, $day, $user, $this->level, PHP_SAPI);
             if (! is_dir($archive)) {
                 mkdir($archive, $this->permission, true);
             }
 
-            $_archive = join('.', [$this->level, $user, PHP_SAPI, microftime('Ymd-His', '-'), $this->suffix]);
+            $_archive = join('.', [microftime('Ymd-His', '-'), $user, $this->level, PHP_SAPI, $this->suffix]);
             $_archive = ospath($archive, $_archive);
 
             rename($file, $_archive);

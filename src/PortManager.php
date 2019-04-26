@@ -268,6 +268,7 @@ final class PortManager
         if (! $title) {
             exception('MissingPortMethodTitle', compact('class', 'method'));
         }
+        $subtitle = $attrs['SUBTITLE'] ?? null;
         $auth = $attrs['AUTH'] ?? ($docClass['AUTH'] ?? '0');
         if (! in_array($auth, self::AUTH_TYPES)) {
             exception('BadAuthType', compact('class', 'method', 'auth'));
@@ -377,6 +378,7 @@ final class PortManager
             'version' => $version,
             'pipein'  => $pipeinList,
             'pipeout' => $pipeoutList,
+            'subtitle'  => $subtitle,
             'nopipein'  => $nopipeinList,
             'nopipeout' => $nopipeoutList,
             'assembler' => $assembler,
@@ -481,6 +483,7 @@ final class PortManager
                 'in'  => $mimein  ? [Request::getMimeByAlias($mimein, '?')]  : [],
                 'out' => $mimeout ? [Request::getMimeByAlias($mimeout, '?')] : [],
             ],
+            'subtitle' => $subtitle,
         ];
 
         $groups = array_merge(self::formatDocGroups($defaultGroup), self::formatDocGroups($group));
@@ -546,9 +549,16 @@ final class PortManager
                     $res[$_key] = $_val;
                 }
 
-                return get_buffer_string(function () use ($res) {
+                $res = get_buffer_string(function () use ($res) {
                     print_r($res);
                 });
+
+                $res = str_replace('[', '', $res);
+                $res = str_replace(']', '', $res);
+                $res = array_trim_from_string($res, PHP_EOL);
+                array_unset($res, 0, 1, (count($res) -1));
+
+                return join(PHP_EOL, $res);
             }
         } catch (Throwable $e) {
         }

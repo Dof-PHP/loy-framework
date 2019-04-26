@@ -978,15 +978,13 @@ if (! function_exists('is_subinterface_of')) {
 if (! function_exists('get_php_user')) {
     function get_php_user() : string
     {
-        $user = get_current_user();
-        if ($user) {
-            return $user;
-        }
-        if (! extension_loaded('posix')) {
-            return 'nobody';
+        if (extension_loaded('posix')) {
+            $user = posix_getpwuid(posix_geteuid())['name'] ?? 'nobody';
+        } else {
+            $user = get_current_user();
         }
 
-        return posix_getpwuid(posix_geteuid())['name'] ?? 'nobody';
+        return $user ? $user : 'nobody';
     }
 }
 if (! function_exists('unsplat')) {
