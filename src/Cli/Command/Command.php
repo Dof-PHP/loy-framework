@@ -315,29 +315,33 @@ class Command
      */
     public function compile($console)
     {
-        ConfigManager::compileDefault(Kernel::getRoot(), true);
+        try {
+            ConfigManager::compileDefault(Kernel::getRoot(), true);
 
-        DomainManager::compile(Kernel::getRoot(), true);
+            DomainManager::compile(Kernel::getRoot(), true);
 
-        ConfigManager::compileDomains(DomainManager::getMetas(), true);
+            ConfigManager::compileDomains(DomainManager::getMetas(), true);
 
-        $domains = DomainManager::getDirs();
+            $domains = DomainManager::getDirs();
 
-        EntityManager::compile($domains, true);
+            EntityManager::compile($domains, true);
 
-        DataModelManager::compile($domains, true);
+            DataModelManager::compile($domains, true);
 
-        StorageManager::compile($domains, true);
+            StorageManager::compile($domains, true);
 
-        RepositoryManager::compile($domains, true);
+            RepositoryManager::compile($domains, true);
 
-        CommandManager::compile($domains, true);
+            CommandManager::compile($domains, true);
 
-        WrapinManager::compile($domains, true);
+            WrapinManager::compile($domains, true);
 
-        PortManager::compile($domains, true);
+            PortManager::compile($domains, true);
 
-        $console->exit();
+            $console->exit();
+        } catch (Throwable $e) {
+            $console->exception('CompileFailed', [], $e);
+        }
     }
 
     /**

@@ -446,6 +446,7 @@ final class PortManager
                 'title' => $_doc['TITLE'] ?? null,
                 'notes' => $_doc['NOTES'] ?? null,
                 'default' => $_doc['DEFAULT'] ?? null,
+                'location' => self::formatDocParameterLocation($mimein, ($_doc['LOCATION'] ?? null)),
                 'compatibles' => $_doc['COMPATIBLE'] ?? [],
             ];
 
@@ -456,6 +457,7 @@ final class PortManager
                 'TYPE',
                 'NOTES',
                 'DEFAULT',
+                'LOCATION',
                 'COMPATIBLE'
             );
 
@@ -496,6 +498,15 @@ final class PortManager
         }
 
         self::$docs[$_version][$domainKey] = $docs;
+    }
+
+    public static function formatDocParameterLocation(string $mimein = null, string $location = null) : string
+    {
+        if ($location) {
+            return $location;
+        }
+
+        return 'Request Body/Query String';
     }
 
     public static function formatDocModel(string $model = null)
@@ -737,7 +748,7 @@ final class PortManager
         return true;
     }
 
-    public static function __annotationFilterArgument(string $val, array $params = []) : array
+    public static function __annotationFilterArgument(string $val, array $params = [], string $namespace = null) : array
     {
         $_params = [];
         $hasNeed = false;
@@ -762,8 +773,8 @@ final class PortManager
             $_params['NEED'] = null;
         }
 
-        $argvs  = array_trim_from_string($val, ',');
-        $data   = [];
+        $argvs = array_trim_from_string($val, ',');
+        $data  = [];
         foreach ($argvs as $name) {
             $data[$name] = $_params;
         }

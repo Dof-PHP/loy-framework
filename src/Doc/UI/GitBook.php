@@ -153,14 +153,22 @@ class GitBook
             );
         }
 
+        $readme = ospath($path, self::README);
+        if (is_file($readme)) {
+            unlink($readme);
+        }
         $this->save(
             $this->render($this->readme, ['version' => 'Data Model']),
-            ospath($path, self::README)
+            $readme
         );
 
+        $summary = ospath($path, self::SUMMARY);
+        if (is_file($summary)) {
+            unlink($summary);
+        }
         $this->save(
             $this->render($this->summary, ['tree' => $this->menuTree]),
-            ospath($path, self::SUMMARY)
+            $summary
         );
 
         $this->menuTree  = '';
@@ -202,14 +210,22 @@ class GitBook
             );
         }
 
+        $readme = ospath($path, self::README);
+        if (is_file($readme)) {
+            unlink($readme);
+        }
         $this->save(
             $this->render($this->readme, ['version' => 'Wrapin List']),
-            ospath($path, self::README)
+            $readme
         );
 
+        $summary = ospath($ver, self::SUMMARY);
+        if (is_file($summary)) {
+            unlink($summary);
+        }
         $this->save(
             $this->render($this->summary, ['tree' => $this->menuTree]),
-            ospath($path, self::SUMMARY)
+            $summary
         );
 
         $this->menuTree  = '';
@@ -255,13 +271,21 @@ class GitBook
                 $this->genHttpList($list, $_domain, $key);
             }
 
+            $readme = ospath($ver, self::README);
+            if (is_file($readme)) {
+                unlink($readme);
+            }
             $this->save(
                 $this->render($this->readme, ['version' => $version]),
-                ospath($ver, self::README)
+                $readme
             );
+            $summary = ospath($ver, self::SUMMARY);
+            if (is_file($summary)) {
+                unlink($summary);
+            }
             $this->save(
                 $this->render($this->summary, ['tree' => $this->menuTree]),
-                ospath($ver, self::SUMMARY)
+                $summary
             );
 
             $this->menuTree  = '';
@@ -286,14 +310,22 @@ class GitBook
 
     private function publish()
     {
+        $builder = ospath($this->output, self::BUILDER);
+        if (is_file($builder)) {
+            unlink($builder);
+        }
         $this->save(
             $this->render($this->builder, ['versions' => $this->versions, 'output' => $this->output]),
-            ospath($this->output, self::BUILDER)
+            $builder
         );
 
+        $verindex = ospath($this->output, self::VER_INDEX);
+        if (is_file($verindex)) {
+            unlink($verindex);
+        }
         $this->save(
             $this->render($this->verindex, ['default' => $this->versions[0] ?? 404]),
-            ospath($this->output, self::VER_INDEX)
+            $verindex
         );
 
         // Foramt book.json versions plugin configs with default version display logic
@@ -306,9 +338,13 @@ class GitBook
                 unset($_selects[$idx]);
                 array_unshift($_selects, $default);
             }
+            $bookjson = ospath($this->output, $_version, self::BOOK_JSON);
+            if (is_file($bookjson)) {
+                unlink($bookjson);
+            }
             $this->save(
                 $this->render($this->bookjson, ['options' => enjson($_selects)]),
-                ospath($this->output, $_version, self::BOOK_JSON)
+                $bookjson
             );
         }
     }

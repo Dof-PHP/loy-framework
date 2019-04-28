@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Cli;
 
+use Throwable;
 use Dof\Framework\Collection;
 
 class Console
@@ -112,8 +113,10 @@ class Console
         return "\033[{$_color}m{$text}\033[0m";
     }
 
-    public function exception(string $message, array $context = [])
+    public function exception(string $message, array $context = [], Throwable $previous = null)
     {
+        $context = parse_throwable($previous, $context);
+
         $this->error(json_pretty([$message, $context]), true);
     }
 

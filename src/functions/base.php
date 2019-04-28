@@ -233,7 +233,7 @@ if (! function_exists('get_namespace_of_file')) {
         }
         $cn = join('\\', [$ns, $cn]);
 
-        return (class_exists($cn) || interface_exists($cn)) ? $cn : false;
+        return (class_exists($cn) || interface_exists($cn) || trait_exists($cn)) ? $cn : false;
     }
 }
 if (! function_exists('get_used_classes')) {
@@ -804,7 +804,7 @@ if (! function_exists('exception')) {
                 $line = $last['line'] ?? '?';
 
                 $this->name = $name;
-                $this->message = "{$name}({$file}, {$line})";
+                $this->message = "{$name}: {$file}#{$line}";
                 $this->context = parse_throwable($previous, $context);
             }
             public function getContext() : array
