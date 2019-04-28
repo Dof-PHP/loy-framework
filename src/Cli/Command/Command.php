@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Cli\Command;
 
+use Throwable;
 use Dof\Framework\Kernel;
 use Dof\Framework\GWT;
 use Dof\Framework\Doc\Generator as DocGen;
@@ -53,6 +54,33 @@ class Command
     {
         // TODO
         $this->header($console);
+    }
+
+    /**
+     * @CMD(php)
+     * @Desc(Execute a standalone php script)
+     */
+    public function php($console)
+    {
+        $php = $console->getParams()[0] ?? null;
+        if (! $php) {
+            $console->fail('NoPhpScriptToRun', true);
+        }
+        if (! is_file($php)) {
+            $php = ospath(Kernel::getRoot(), $php);
+            if (! is_file($php)) {
+                $console->exception('PhpScriptNotExists', ['path' => $php]);
+            }
+        }
+
+        try {
+            require $php;
+        } catch (Throwable $e) {
+            $console->exception('FailedToExecutePhpScript', [
+                'message' => $e->getMessage(),
+                'path' => $php
+            ]);
+        }
     }
 
     /**

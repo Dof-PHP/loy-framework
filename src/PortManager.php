@@ -631,7 +631,8 @@ final class PortManager
             unset($keys[$name]);
             $data[$name]['title'] = $title;
             $data[$name]['group'] = self::dynamicAppendDocWithGroups($_data, $append, $keys);
-            $data[$name]['list']  = [];
+            $data[$name]['list']  = array_merge(($data[$name]['list'] ?? []), ($_data['list'] ?? []));
+
             return $data;
         }
     }

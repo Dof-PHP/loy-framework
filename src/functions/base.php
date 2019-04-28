@@ -760,7 +760,7 @@ if (! function_exists('parse_throwable')) {
             return $context;
         }
 
-        $_context = $throwable->context ?? [];
+        $_context = method_exists($throwable, 'getContext') ? $throwable->getContext() : [];
         $name = objectname($throwable);
         $file = $throwable->getFile();
         $line = $throwable->getLine();
@@ -768,7 +768,7 @@ if (! function_exists('parse_throwable')) {
             $previous = $throwable->getTrace()[0] ?? [];
             $file = $previous['file'] ?? null;
             $line = $previous['line'] ?? null;
-            $name = $throwable->getMessage();
+            $name = method_exists($throwable, 'getName') ? $throwable->getName() : $throwable->getMessage();
         }
         $_context['__name'] = $name;
         $_context['__info'] = $throwable->getMessage();
@@ -792,14 +792,28 @@ if (! function_exists('exception')) {
         Throwable $previous = null
     ) {
         throw new class($name, $context, $previous) extends \Exception {
-            public $context = [];
+            protected $name;
+            protected $context = [];
             public function __construct(
                 string $name,
                 array $context = [],
                 Throwable $previous = null
             ) {
-                $this->message = $name;
+                $last = debug_backtrace()[1] ?? [];
+                $file = $last['file'] ?? '?';
+                $line = $last['line'] ?? '?';
+
+                $this->name = $name;
+                $this->message = "{$name}({$file}, {$line})";
                 $this->context = parse_throwable($previous, $context);
+            }
+            public function getContext() : array
+            {
+                return $this->context;
+            }
+            public function getName()
+            {
+                return $this->name;
             }
         };
     }

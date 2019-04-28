@@ -126,7 +126,7 @@ final class Kernel
                 $status  = (int) ($context['__status'] ?? 400);
                 unset($context['__status']);
 
-                Kernel::throw($message, $context, $status);
+                Response::error($status, $message, $context);
             }
 
             Kernel::throw('ResultingResponseFailed', compact('class', 'method'), 500, $e);
@@ -195,7 +195,7 @@ final class Kernel
         $route = PortManager::find($uri, $verb, $mimes);
         if (! $route) {
             $mime = Request::getMimeShort();
-            Kernel::throw('RouteNotExists', compact('verb', 'uri', 'mime'), 404);
+            Response::error(404, 'RouteNotExists', compact('verb', 'uri', 'mime'));
         }
         $port = PortManager::get($route);
         if (! $port) {
@@ -207,10 +207,10 @@ final class Kernel
         Response::setMimeAlias(Response::mimeout());
 
         if (($mimein = Port::get('mimein')) && (! Request::isMimeAlias($mimein))) {
-            Kernel::throw('InvalidRequestMime', [
+            Response::error(400, 'InvalidRequestMime', [
                 'current' => Request::getMimeShort(),
                 'require' => Request::getMimeByAlias($mimein, '?'),
-            ], 400);
+            ]);
         }
     }
 
@@ -299,12 +299,6 @@ final class Kernel
                     Route::getInstance(),
                     Port::getInstance()
                 ]);
-                if (true !== $res) {
-                    Kernel::throw('PipeInThroughFailed', [
-                        'pipe'  => $pipe,
-                        'error' => string_literal($res),
-                    ], 400);
-                }
             } catch (Throwable $e) {
                 $error = is_anonymous($e) ? 400 : 500;
                 Kernel::throw('PipeInThroughingFailed', compact('pipe'), $error, $e);
@@ -328,13 +322,11 @@ final class Kernel
         } catch (Throwable $e) {
             $class  = Route::get('class');
             $method = Route::get('method');
-            $name = 'BuildPortParametersFailed';
-            $code = 500;
             if (is_exception($e, 'TypeHintConvertFailed')) {
-                $name = 'InvalidRouteParameter';
-                $code = 400;
+                Response::error(400, 'InvalidRouteParameter', parse_throwable($e));
             }
-            Kernel::throw($name, compact('class', 'method'), $code, $e);
+
+            Kernel::throw('BuildPortParametersFailed', compact('class', 'method'), 500, $e);
         }
     }
 

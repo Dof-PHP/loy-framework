@@ -50,6 +50,7 @@ class JWT
             // 'jti' => null,    // JWT ID
             'nbf' => $timestamp,    // Not Before
             'iat' => $timestamp,    // Issued At
+            'sid' => 1,    // TODO: JWT secret key ID
             'tza' => date('T'),     // Timezone abbreviation (custom)
         ];
 

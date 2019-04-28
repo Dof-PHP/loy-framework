@@ -25,7 +25,9 @@ class Response extends Facade
             ? [$status, $message, $context]
             : [$status, $message];
 
-        Response::new()
+        // We dont record user error coz it might be huge amount abused reqeusts
+
+        Response::getInstance()
             ->setStatus($status)
             ->setMimeAlias(self::mimeout())
             ->setError(true)
@@ -57,7 +59,8 @@ class Response extends Facade
             }
         }
 
-        Response::new()
+        Response::getInstance()
+        ->setError(true)
         ->setStatus($status)
         ->setMimeAlias('json')
         ->setBody($body)
