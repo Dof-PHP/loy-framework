@@ -183,18 +183,22 @@ if (! function_exists('port')) {
     /**
      * Get the port collection instance related to current request
      */
-    function port()
+    function port(string $annotation = null)
     {
-        return \Dof\Framework\Web\Port::getInstance();
+        $port = \Dof\Framework\Web\Port::getInstance();
+
+        return $annotation ? $port->{$annotation} : $port;
     }
 }
 if (! function_exists('route')) {
     /**
      * Get the route collection instance related to current request
      */
-    function route()
+    function route(string $annotation = null)
     {
-        return \Dof\Framework\Web\Route::getInstance();
+        $route = \Dof\Framework\Web\Route::getInstance();
+
+        return $annotation ? $route->{$annotation} : $route;
     }
 }
 if (! function_exists('get_annotation_ns')) {
@@ -239,6 +243,12 @@ if (! function_exists('get_annotation_ns')) {
         }
 
         return false;
+    }
+}
+if (! function_exists('logging')) {
+    function logging(string $level, string $message, array $context)
+    {
+        return call_user_func_array([\Dof\Framework\Facade\Log::class, $level], [$message, $context]);
     }
 }
 if (! function_exists('wrapper')) {
@@ -342,7 +352,9 @@ if (! function_exists('is_exception')) {
         }
 
         if (is_anonymous($e)) {
-            return ci_equal($e->getMessage(), $name);
+            $_name = method_exists($e, 'getName') ? $e->getName() : $e->getMessage();
+
+            return ci_equal($_name, $name);
         }
 
         return ci_equal(objectname($e), $name);

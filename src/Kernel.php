@@ -32,7 +32,10 @@ final class Kernel
     /** @var array: Callbacks registered on kernel */
     private static $callbacks = [
         'shutdown' => [],
+        'before-shutdown' => [],
     ];
+
+    private static $context = [];
 
     /**
      * Core kernel handler - The genesis of application
@@ -62,6 +65,11 @@ final class Kernel
             $error = error_get_last();
             if (! is_null($error)) {
                 Log::error('LAST_ERROR_SHUTDOWN', $error);
+            }
+            foreach (self::$callbacks['before-shutdown'] as $callback) {
+                if (is_callable($callback)) {
+                    $callback();
+                }
             }
             foreach (self::$callbacks['shutdown'] as $callback) {
                 if (is_callable($callback)) {
@@ -116,7 +124,7 @@ final class Kernel
     {
         $event = trim(strtolower($event));
 
-        if (in_array($event, ['shutdown'])) {
+        if (in_array($event, ['shutdown', 'before-shutdown'])) {
             self::$callbacks[$event][] = $callback;
         }
     }
@@ -145,6 +153,16 @@ final class Kernel
             'framework',
             join('.', [md5(join('.', $params)), self::CACHE])
         );
+    }
+
+    public static function addContext(string $key, array $context)
+    {
+        self::$context[$key] = $context;
+    }
+
+    public static function getContext() : array
+    {
+        return self::$context;
     }
 
     public static function getSapiContext() : ?array

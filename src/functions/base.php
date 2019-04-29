@@ -36,15 +36,15 @@ if (! function_exists('pt')) {
     function pt(...$vars)
     {
         $trace = debug_backtrace();
-        if ($last = $trace[0] ?? null) {
+        if ($last = ($trace[0] ?? null)) {
             extract($last);
             if ($file === __FILE__) {
-                if ($last = $trace[1] ?? null) {
-                    extract($last);
-                    print_r([sprintf('%s#%s:%s', $file, $line, $function), unsplat($vars)]);
-                }
+                $last = $trace[1] ?? null;
             }
         }
+
+        extract($last);
+        print_r([sprintf('%s#%s:%s', $file, $line, $function), unsplat($vars)]);
 
         return bomb_object();
     }
@@ -85,18 +85,18 @@ if (! function_exists('pp')) {
     function pp(...$vars)
     {
         $trace = debug_backtrace();
-        if ($last = $trace[0] ?? null) {
+        if ($last = ($trace[0] ?? null)) {
             extract($last);
             if ($file === __FILE__) {
-                if ($last = $trace[1] ?? null) {
-                    extract($last);
-                    var_dump([
-                        sprintf('%s#%s:%s', $file, $line, $function),
-                        unsplat($vars),
-                    ]);
-                }
+                $last = $trace[1] ?? null;
             }
         }
+
+        extract($last);
+        var_dump([
+            sprintf('%s#%s:%s', $file, $line, $function),
+            unsplat($vars),
+        ]);
 
         return bomb_object();
     }
@@ -442,6 +442,12 @@ if (! function_exists('subsets')) {
         return $result;
     }
 }
+if (! function_exists('array_unique_merge')) {
+    function array_unique_merge(...$arrs) : array
+    {
+        return array_unique((array) array_merge(...$arrs));
+    }
+}
 if (! function_exists('array_trim')) {
     function array_trim(array $arr, bool $preserveKeys = false) : array
     {
@@ -665,9 +671,10 @@ if (! function_exists('fdate')) {
     }
 }
 if (! function_exists('microftime')) {
-    function microftime(string $format = 'Y-m-d H:i:s', string $separate = '.') : string
+    function microftime(string $format = 'Y-m-d H:i:s', string $separate = '.', $raw = null) : string
     {
-        $mts = explode('.', (string) microtime(true));
+        $raw = $raw ? $raw : microtime(true);
+        $mts = explode('.', (string) $raw);
 
         return join($separate, [date($format, (int) $mts[0]), $mts[1]]);
     }

@@ -278,11 +278,13 @@ final class PortManager
 
         $domainTitle   = ConfigManager::getDomainByNamespace($class, 'domain.title', $domainKey);
         $globalRoute   = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.route', null);
-        $globalPipein  = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.pipein', []);
-        $globalPipeout = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.pipeout', []);
         $globalWrapin  = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wrapin', null);
         $globalWrapout = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wrapout', null);
         $globalWraperr = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wraperr', null);
+        $globalPipein  = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.pipein', []);
+        $globalPipeout = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.pipeout', []);
+        $globalHeaderIn  = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.headerin', []);
+        $globalHeaderOut = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.headerout', []);
 
         $defaultVersion = $docClass['VERSION'] ?? null;
         $defaultGroup   = $docClass['GROUP']   ?? [];
@@ -301,6 +303,8 @@ final class PortManager
         $defaultNoPipein  = $docClass['NOPIPEIN']  ?? [];
         $defaultNoPipeout = $docClass['NOPIPEOUT'] ?? [];
         $defaultArguments = $docClass['ARGUMENT']  ?? [];
+        $defaultHeaderIn  = $docClass['HEADERIN']  ?? [];
+        $defaultHeaderOut = $docClass['HEADEROUT'] ?? [];
 
         $route   = $attrs['ROUTE']   ?? null;
         $alias   = $attrs['ALIAS']   ?? null;
@@ -320,6 +324,8 @@ final class PortManager
         $wraperr = $attrs['WRAPERR'] ?? $defaultWraperr;
         $wraperr = $wraperr === '_'  ? null : $wraperr;
         $assembler = $attrs['ASSEMBLER'] ?? $defaultAssembler;
+        $headerIn  = $attrs['HEADERIN']  ?? [];
+        $headerOut = $attrs['HEADEROUT'] ?? [];
         $pipein    = $attrs['PIPEIN']    ?? [];
         $pipeout   = $attrs['PIPEOUT']   ?? [];
         $nopipein  = $attrs['NOPIPEIN']  ?? [];
@@ -338,10 +344,12 @@ final class PortManager
             return;
         }
 
-        $pipeinList    = array_unique(array_merge($globalPipein, $defaultPipein, $pipein));
-        $pipeoutList   = array_unique(array_merge($globalPipeout, $defaultPipeout, $pipeout));
-        $nopipeinList  = array_unique(array_merge($defaultNoPipein, $nopipein));
-        $nopipeoutList = array_unique(array_merge($defaultNoPipeout, $nopipeout));
+        $headerInList  = array_unique_merge($globalHeaderIn, $defaultHeaderIn, $headerIn);
+        $headerOutList = array_unique_merge($globalHeaderOut, $defaultHeaderOut, $headerOut);
+        $pipeinList    = array_unique_merge($globalPipein, $defaultPipein, $pipein);
+        $pipeoutList   = array_unique_merge($globalPipeout, $defaultPipeout, $pipeout);
+        $nopipeinList  = array_unique_merge($defaultNoPipein, $nopipein);
+        $nopipeoutList = array_unique_merge($defaultNoPipeout, $nopipeout);
         $argumentList  = array_merge($defaultArguments, $arguments);
 
         // Arguments existence check
@@ -379,6 +387,10 @@ final class PortManager
             'wraperr' => $wraperr,
             'version' => $version,
             'pipein'  => $pipeinList,
+            'headers' => [
+                'in'  => $headerInList,
+                'out' => $headerOutList,
+            ],
             'pipeout' => $pipeoutList,
             'subtitle'  => $subtitle,
             'nopipein'  => $nopipeinList,
@@ -468,6 +480,13 @@ final class PortManager
             $params[] = $param;
         }
 
+        if ($mimein) {
+            $headerInList['CONTENT-TYPE'] = join('; ', [Request::getMimeByAlias($mimein, '?'), 'charset=UTF-8']);
+        }
+        if ($mimeout) {
+            $headerOutList['CONTENT-TYPE'] = join('; ', [Request::getMimeByAlias($mimeout, '?'), 'charset=UTF-8']);
+        }
+
         $doc = [
             'route' => $urlpath,
             'auth'  => $auth,
@@ -484,8 +503,8 @@ final class PortManager
             ],
             'wrapout' => self::formatDocWrapout($wrapout),
             'headers' => [
-                'in'  => $mimein  ? [Request::getMimeByAlias($mimein, '?')]  : [],
-                'out' => $mimeout ? [Request::getMimeByAlias($mimeout, '?')] : [],
+                'in'  => $headerInList,
+                'out' => $headerOutList,
             ],
             'subtitle' => $subtitle,
         ];
@@ -915,6 +934,50 @@ final class PortManager
         return $_model;
     }
 
+    public static function __annotationFilterHeaderout(string $headersOut, array $ext, string $namespace) : array
+    {
+        $val = $ext['val'] ?? (array_keys($ext)[0] ?? null);
+        $res = [];
+        $headers = array_trim_from_string(trim($headersOut), ',');
+        foreach ($headers as $header) {
+            $res[strtoupper($header)] = $val;
+        }
+
+        return $res;
+    }
+
+    public static function __annotationMultipleHeaderout() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationMultipleMergeHeaderout()
+    {
+        return true;
+    }
+
+    public static function __annotationFilterHeaderin(string $headersIn, array $ext, string $namespace) : array
+    {
+        $val = $ext['val'] ?? (array_keys($ext)[0] ?? null);
+        $res = [];
+        $headers = array_trim_from_string(trim($headersIn), ',');
+        foreach ($headers as $header) {
+            $res[strtoupper($header)] = $val;
+        }
+
+        return $res;
+    }
+
+    public static function __annotationMultipleMergeHeaderin()
+    {
+        return true;
+    }
+
+    public static function __annotationMultipleHeaderin() : bool
+    {
+        return true;
+    }
+
     public static function __annotationFilterVerb(string $verbs, array $ext, string $namespace) : array
     {
         $verbs = array_trim_from_string(trim($verbs), ',');
@@ -1059,7 +1122,17 @@ final class PortManager
         return true;
     }
 
+    public static function __annotationMultipleMergePipeout()
+    {
+        return true;
+    }
+
     public static function __annotationMultiplePipein() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationMultipleMergePipein()
     {
         return true;
     }
@@ -1069,7 +1142,17 @@ final class PortManager
         return true;
     }
 
+    public static function __annotationMultipleMergeNopipein()
+    {
+        return true;
+    }
+
     public static function __annotationMultipleNopipeout() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationMultipleMergeNopipeout()
     {
         return true;
     }

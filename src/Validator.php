@@ -255,6 +255,11 @@ class Validator
         return $value > 0;
     }
 
+    private function validateBool(string $key)
+    {
+        return is_bool($this->data[$key] ?? null);
+    }
+
     private function validateInt(string $key)
     {
         $value = $this->data[$key] ?? null;
@@ -283,7 +288,7 @@ class Validator
     {
         $value = $this->data[$key] ?? null;
 
-        return is_string($value) && class_exists($value);
+        return IS::namespace($value);
     }
 
     private function validateNeedifhas(string $key, string $has)
@@ -312,7 +317,7 @@ class Validator
     {
         $value = $this->data[$key] ?? null;
 
-        return !is_null($value) && ($value !== '');
+        return (! is_null($value)) && ($value !== '');
     }
 
     private function validateCiin(string $key, ...$list)
@@ -352,57 +357,42 @@ class Validator
     {
         $value = $this->data[$key] ?? null;
 
-        return (false
-            || (false !== filter_var($value, FILTER_VALIDATE_DOMAIN))
-            || (false !== filter_var($value, FILTER_VALIDATE_IP))
-        );
+        return IS::host($value);
     }
 
     private function validateIpv6(string $key)
     {
         $value = $this->data[$key] ?? null;
 
-        return filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
+        return IS::ipv6($value);
     }
 
     private function validateIpv4(string $key)
     {
         $value = $this->data[$key] ?? null;
 
-        return filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
+        return IS::ipv4($value);
     }
 
     private function validateIp(string $key)
     {
         $value = $this->data[$key] ?? null;
 
-        return false !== filter_var($value, FILTER_VALIDATE_IP);
+        return IS::ip($value);
     }
 
     private function validateMobile(string $key, string $flag = 'cn')
     {
         $value = $this->data[$key] ?? null;
 
-        if ((! $value) || (! is_scalar($value))) {
-            return false;
-        }
-
-        $value = (string) $value;
-
-        switch ($flag) {
-            case 'cn':
-            default:
-                return 1 === preg_match('#^(\+86[\-\ ])?1\d{10}$#', $value);
-        }
-
-        return true;    // FIXME
+        return IS::mobile($value, $flag);
     }
 
     private function validateEmail(string $key)
     {
         $value = $this->data[$key] ?? null;
 
-        return false !== filter_var($value, FILTER_VALIDATE_EMAIL);
+        return IS::email($value);
     }
 
     private function addFail(string $fail, array $context = [])

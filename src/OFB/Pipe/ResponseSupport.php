@@ -20,11 +20,7 @@ class ResponseSupport
         }
 
         if ($result instanceof Service) {
-            if (! $result->__isExecuted()) {
-                $result->exec();
-            }
-
-            return $result->__getData();
+            return $result->execute();
         }
 
         if ($result instanceof Paginator) {

@@ -19,43 +19,64 @@ class Response extends Facade
     /**
      * It's a user level error
      */
-    public static function error(int $status, string $message, array $context = [])
+    public static function error(int $status, string $message, array $context = [], string $domain = null)
     {
-        $body = ConfigManager::getEnv('web.debug', false)
-            ? [$status, $message, $context]
-            : [$status, $message];
+        $debug = $domain
+            ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'web.debug', false)
+            : ConfigManager::getEnv('web.debug', false);
+
+        $body = $debug ? [$status, $message, $context] : [$status, $message];
 
         // We dont record user error coz it might be huge amount abused reqeusts
+
+        $wraperr = Port::get('wraperr');
+        $wraperr = $wraperr ? $wraperr : ConfigManager::getFramework('web.error.wrapper', null);
+        if ($wraperr) {
+            if (is_array($wraperr)) {
+                $body = self::wraperr($body, $wraperr);
+            } elseif (class_exists($wraperr)) {
+                try {
+                    $body = self::wraperr($body, wrapper($wraperr, 'err'));
+                } catch (Throwable $e) {
+                    // ignore if any exception thrown to avoid empty response
+                }
+            }
+        }
 
         Response::getInstance()
             ->setStatus($status)
             ->setMimeAlias(self::mimeout())
             ->setError(true)
-            ->setBody(self::wraperr($body, wrapper(Port::get('wraperr'), 'err')))
+            ->setBody($body)
             ->send();
     }
 
     /**
      * It's a system level error
      */
-    public static function exception(int $status, string $message, array $context = [])
+    public static function exception(int $status, string $message, array $context = [], string $domain = null)
     {
         $context['__request'] = Request::getContext();
         Log::log('exception', $message, $context);
         unset($context['__request']);
 
-        $body = ConfigManager::getEnv('web.debug', false)
-            ? [$status, $message, $context]
-            : [$status, $message];
+        $debug = $domain
+            ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'web.debug', false)
+            : ConfigManager::getEnv('web.debug', false);
 
-        $wraperr = ConfigManager::getFramework('web.exception.wrapper', null);
-        if (is_array($wraperr)) {
-            $body = self::wraperr($body, $wraperr);
-        } elseif (class_exists($wraperr)) {
-            try {
-                $body = self::wraperr($body, wrapper($wraperr, 'err'));
-            } catch (Throwable $e) {
-                // ignore if any exception thrown to avoid empty response
+        $body = $debug ? [$status, $message, $context] : [$status, $message];
+
+        $wraperr = Port::get('wraperr');
+        $wraperr = $wraperr ? $wraperr : ConfigManager::getFramework('web.exception.wrapper', null);
+        if ($wraperr) {
+            if (is_array($wraperr)) {
+                $body = self::wraperr($body, $wraperr);
+            } elseif (class_exists($wraperr)) {
+                try {
+                    $body = self::wraperr($body, wrapper($wraperr, 'err'));
+                } catch (Throwable $e) {
+                    // ignore if any exception thrown to avoid empty response
+                }
             }
         }
 

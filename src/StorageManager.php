@@ -7,6 +7,7 @@ namespace Dof\Framework;
 use Throwable;
 use Dof\Framework\Kernel;
 use Dof\Framework\Storage\MySQL;
+use Dof\Framework\Storage\Redis;
 use Dof\Framework\Facade\Log;
 use Dof\Framework\Facade\Annotation;
 use Dof\Framework\DDD\Repository;
@@ -15,10 +16,11 @@ final class StorageManager
 {
     const SUPPORT_DRIVERS = [
         'mysql' => MySQL::class,
+        'redis' => Redis::class,
     ];
 
-    const CONN_DEFAULT = 'conn_default';
-    const CONN_POOL    = 'conn_pool';
+    const CONN_DEFAULT = 'default';
+    const CONN_POOL    = 'pool';
     const STORAGE_DIR  = 'Storage';
 
     private static $dirs = [];
@@ -109,9 +111,6 @@ final class StorageManager
         if (! ($ofClass['doc']['DRIVER'] ?? false)) {
             exception('MissingStorageDriver', compact('namespace'));
         }
-        if (! ($ofClass['doc']['TABLE'] ?? false)) {
-            exception('MissingStorageORMTable', compact('namespace'));
-        }
 
         self::$orms[$namespace]['meta'] = $ofClass['doc'] ?? [];
         foreach ($ofProperties as $property => $attr) {
@@ -164,16 +163,16 @@ final class StorageManager
         }
         $storage = self::SUPPORT_DRIVERS[$driver] ?? null;
         if (! $storage) {
-            exception('StorageDriverNotSuppert', compact('driver'));
+            exception('StorageDriverNotSupport', compact('driver'));
         }
-        $connection = $meta['connection'] ?? ConfigManager::getDomainFinalDatabaseByKey($domain, self::CONN_DEFAULT);
+        $connection = $meta['connection'] ?? ConfigManager::getDomainFinalByKey($domain, join('.', [$driver, self::CONN_DEFAULT]));
         if (! $connection) {
             exception('MissingStorageConnnection', compact('domain'));
         }
-        $pool   = ConfigManager::getDomainFinalDatabaseByKey($domain, self::CONN_POOL);
+        $pool = ConfigManager::getDomainFinalByKey($domain, join('.', [$driver, self::CONN_POOL]));
         $config = $pool[$connection] ?? [];
         if (! $config) {
-            exception('StorageConnnectionNotFound', compact('connection', 'domain'));
+            exception('StorageConnnectionNotFound', compact('connection', 'domain', 'pool'));
         }
 
         self::$namespaces[$namespace] = $key = join(':', [$driver, $connection]);
@@ -199,6 +198,18 @@ final class StorageManager
             }
             $meta['columns'] = $columns;
             $instance->setQuery($meta);
+        }
+        if (method_exists($instance, '__logging')) {
+            Kernel::register('before-shutdown', function () use ($instance, $storage, $driver) {
+                try {
+                    Kernel::addContext($driver, $instance->__logging());
+                } catch (Throwable $e) {
+                    Log::log('exception', 'GetStorageLoggingContextFailed', [
+                        'storage' => $storage,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
+            });
         }
         if (method_exists($instance, '__cleanup')) {
             Kernel::register('shutdown', function () use ($instance, $storage) {

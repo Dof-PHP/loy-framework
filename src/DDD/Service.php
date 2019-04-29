@@ -4,27 +4,13 @@ declare(strict_types=1);
 
 namespace Dof\Framework\DDD;
 
+use Throwable;
 use Dof\Framework\Container;
 
 abstract class Service
 {
-    /** @var mixed: Service executed result data */
-    protected $__result;
-
-    /** @var bool: Whether this service's execute() method been called yet */
-    protected $__executed = false;
-
     /** @var array: A config map for custom exception status */
     protected $__status = [];
-
-    final public function exec()
-    {
-        $this->__result = $this->execute();
-
-        $this->__executed = true;
-
-        return $this;
-    }
 
     abstract public function execute();
 
@@ -42,8 +28,9 @@ abstract class Service
         return $this;
     }
 
-    final public function exception(string $message, array $context = [])
+    final public function exception(string $message, array $context = [], Throwable $previous = null)
     {
+        $context = parse_throwable($previous, $context);
         $context['__status'] = $this->__status[$message] ?? null;
 
         exception('DofServiceException', compact('message', 'context'));
@@ -72,11 +59,6 @@ abstract class Service
     final public function __toArray() : array
     {
         return get_object_vars($this);
-    }
-
-    final public function __isExecuted() : bool
-    {
-        return $this->__executed;
     }
 
     final public static function __callStatic(string $method, array $argvs = [])

@@ -12,10 +12,13 @@ use Closure;
 class JWT
 {
     /** @var int: Time of JWT token to live */
-    private $ttl = 604800;    // One week
+    private $ttl;
+
+    /** @var int: The secret id for signature */
+    private $secretId;
 
     /** @var string: The secret key for signature */
-    private $key = 'to-be-replaced';    // FIXME
+    private $secretKey;
 
     /** @var string: Name of selected hashing algorithm (hash_hmac_algos()) */
     private $algo = 'sha256';
@@ -26,14 +29,24 @@ class JWT
     private $beforeVerify;
     private $afterVerify;
 
-    /**
-     * Issue a jwt token by given params and key
-     *
-     * @param array $params: User defined payload
-     */
+    public function prepare()
+    {
+        if ((! is_int($this->ttl)) || ($this->ttl < 1)) {
+            exception('BadTokenTTLSetting', ['ttl' => $this->ttl]);
+        }
+        if ((! $this->secretId) || (! is_scalar($this->secretId))) {
+            exception('MissingOrInvalidSecretId', ['id' => $this->secretId]);
+        }
+        if ((! $this->secretKey) || (! is_string($this->secretKey))) {
+            exception('MissingOrInvalidSecretKey', ['key' => $this->secretKey]);
+        }
+    }
+
     public function issue(...$params)
     {
-        if ($this->beforeIssue && (true === ($res = $this->beforeIssue()))) {
+        $this->prepare();
+
+        if ($this->beforeIssue && (true === ($res = ($this->beforeIssue)()))) {
             exception('BeforeIssueHookFailed', compact('res'));
         }
 
@@ -41,25 +54,25 @@ class JWT
             'typ' => 'JWT',
             'alg' => $this->algo,
         ]);
-        $timestamp = time();
+        $ts = time();
         $claims = [
             'iss' => 'dof',    // Issuer
-            'exp' => $timestamp + $this->ttl,    // Expiration Time
-            // 'sub' => null,    // Subject
-            // 'aud' => null,    // Audience
-            // 'jti' => null,    // JWT ID
-            'nbf' => $timestamp,    // Not Before
-            'iat' => $timestamp,    // Issued At
-            'sid' => 1,    // TODO: JWT secret key ID
-            'tza' => date('T'),     // Timezone abbreviation (custom)
+            // 'sub' => null,  // Subject
+            // 'aud' => null,  // Audience
+            // 'jti' => null,  // JWT ID
+            'nbf' => $ts,      // Not Before
+            'iat' => $ts,      // Issued At
+            'sid' => $this->secretId,     // JWT secret key ID
+            'tza' => date('T'),           // Timezone abbreviation (custom)
+            'exp' => $ts + $this->ttl,    // Expiration Time
         ];
 
         $payload   = $this->encode([$claims, unsplat(...$params)]);
-        $signature = $this->sign(join('.', [$header, $payload]), $this->algo, $this->key);
+        $signature = $this->sign(join('.', [$header, $payload]), $this->algo, $this->secretKey);
 
         $token = join('.', [$header, $payload, $signature]);
 
-        if ($this->afterIssue && (true !== ($res = $this->afterIssue($token, $params)))) {
+        if ($this->afterIssue && (true !== ($res = ($this->afterIssue)($token, unsplat(...$params))))) {
             exception('AfterIssueHookFailed', compact('res'));
         }
 
@@ -79,7 +92,7 @@ class JWT
             exception('MissingToken');
         }
 
-        if ($this->beforeVerify && (true !== ($res = $this->beforeVerify($token)))) {
+        if ($this->beforeVerify && (true !== ($res = ($this->beforeVerify)($token)))) {
             exception('BeforeVerifyHookFailed', compact('res'));
         }
 
@@ -104,11 +117,10 @@ class JWT
         if ((! $_header) || (! is_array($_header)) || (! ($alg = ($_header['alg'] ?? false)))) {
             exception('InvalidTokenHeader', compact('_header'));
         }
-        $alg = strtolower($alg);
         if (! in_array($alg, hash_algos())) {
             exception('UnSupportedAlgorithm', compact('alg'));
         }
-        if ($signature !== $this->sign(join('.', [$header, $payload]), $alg, $this->key)) {
+        if ($signature !== $this->sign(join('.', [$header, $payload]), $alg, $this->secretKey)) {
             exception('InvalidTokenSignature', compact('signature'));
         }
         $data = $this->decode($payload, true);
@@ -125,29 +137,11 @@ class JWT
         }
 
         $params = $data[1] ?? [];
-        if ($this->afterVerify && (true !== ($res = $this->afterVerify($params)))) {
+        if ($this->afterVerify && (true !== ($res = ($this->afterVerify)($params)))) {
             exception('AfterVerifyHookFailed', compact('res'));
         }
 
         return $params;
-    }
-
-    /**
-     * Authorise a jwt token
-     *
-     * @param mixed|{Closure|string|null} $token
-     */
-    public function authorise($token = null)
-    {
-        if ($token) {
-            if (is_closure($token)) {
-                $token = $token();
-            }
-        } else {
-            $token = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
-        }
-
-        return $this->verify($token);
     }
 
     /**
@@ -217,9 +211,16 @@ class JWT
         return $this;
     }
 
-    public function setKey(string $key)
+    public function setSecretId(int $id)
     {
-        $this->key = $key;
+        $this->secretId = $id;
+
+        return $this;
+    }
+
+    public function setSecretKey(string $key)
+    {
+        $this->secretKey = $key;
 
         return $this;
     }

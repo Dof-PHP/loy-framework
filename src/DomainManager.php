@@ -204,6 +204,18 @@ final class DomainManager
             {
                 $this->key = $key;
             }
+            public function domain(string $key = null)
+            {
+                $domain = $this->__config()->get('domain');
+
+                return $key ? $domain->get($key) : $domain;
+            }
+            public function env(string $key = null)
+            {
+                $env = $this->__config()->get('env');
+
+                return $key ? $env->get($key) : $env;
+            }
             public function config(string $type = null)
             {
                 return $type ? $this->__config()->get($type) : $this->__config();

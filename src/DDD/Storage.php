@@ -31,6 +31,11 @@ class Storage implements Repository
         $this->__storage = StorageManager::init(static::class);
     }
 
+    final public function storage()
+    {
+        return $this->__storage;
+    }
+
     final public function find(int $pk) : ?Entity
     {
         $result = $this->__storage->find($pk);

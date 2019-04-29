@@ -79,7 +79,7 @@ class Command
             $console->exception('FailedToExecutePhpScript', [
                 'message' => $e->getMessage(),
                 'path' => $php
-            ]);
+            ], $e);
         }
     }
 

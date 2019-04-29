@@ -24,7 +24,7 @@ class Assembler
         }
 
         if ($result instanceof Service) {
-            $result = $result->__isExecuted() ? $result->__getData() : $result->execute();
+            $result = $result->execute();
         }
         if ($result instanceof Paginator) {
             $data = [];

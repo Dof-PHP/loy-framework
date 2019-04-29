@@ -43,10 +43,8 @@ LINK;
 <?php if ($headers['in'] ?? []) : ?>
 ### 请求头
 
-<?php foreach($headers['in'] as $header) : ?>
-<?php if ($header) : ?>
-- `Content-Type: <?= $header ?>`
-<?php endif ?>
+<?php foreach($headers['in'] as $key => $val) : ?>
+- `<?= $key ?>`: `<?= $val ?>`
 <?php endforeach ?>
 <?php endif ?>
 
@@ -87,10 +85,8 @@ LINK;
 <?php if ($headers['out'] ?? []) : ?>
 ### 响应头
 
-<?php foreach($headers['out'] as $header) : ?>
-<?php if ($header) : ?>
-- (默认) `Content-Type: <?= $header ?>`
-<?php endif ?>
+<?php foreach($headers['out'] as $key => $val) : ?>
+- `<?= $key ?>`: `<?= $val ?>`
 <?php endforeach ?>
 <?php endif ?>
 

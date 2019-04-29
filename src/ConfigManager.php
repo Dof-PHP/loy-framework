@@ -197,6 +197,48 @@ final class ConfigManager
         return self::getDomainByKey($domain, $key, $default) ?: self::getDefault($key, $default);
     }
 
+    public static function getDomainEnvByNamespace(string $ns, string $key = null, $default = null)
+    {
+        $key = 'env.'.$key;
+
+        return self::getDomainByNamespace($ns, $key, $default);
+    }
+
+    public static function getDomainEnvByFile(string $file, string $key = null, $default = null)
+    {
+        $key = 'env.'.$key;
+
+        return self::getDomainByFile($file, $key, $default);
+    }
+
+    public static function getDomainEnvByKey(string $domain, string $key = null, $default = null)
+    {
+        $key = 'env.'.$key;
+
+        return self::getDomainByKey($domain, $key, $default);
+    }
+
+    public static function getDomainDomainByNamespace(string $ns, string $key = null, $default = null)
+    {
+        $key = 'domain.'.$key;
+
+        return self::getDomainByNamespace($ns, $key, $default);
+    }
+
+    public static function getDomainDomainByFile(string $file, string $key = null, $default = null)
+    {
+        $key = 'domain.'.$key;
+
+        return self::getDomainByFile($file, $key, $default);
+    }
+
+    public static function getDomainDomainByKey(string $domain, string $key = null, $default = null)
+    {
+        $key = 'domain.'.$key;
+
+        return self::getDomainByKey($domain, $key, $default);
+    }
+
     public static function getDomainFinalEnvByNamespace(string $ns, string $key = null, $default = null)
     {
         $key = 'env.'.$key;
@@ -217,6 +259,7 @@ final class ConfigManager
 
         return self::getDomainFinalByKey($domain, $key, $default);
     }
+
     public static function getDomainFinalDomainByNamespace(string $ns, string $key = null, $default = null)
     {
         $key = 'domain.'.$key;
@@ -238,19 +281,26 @@ final class ConfigManager
         return self::getDomainFinalByKey($domain, $key, $default);
     }
 
-    public static function getDomainFinalDatabaseByNamesapce(string $ns, string $key = null, $default)
+    public static function getDomainMergeDomainByNamespace(string $ns, string $key = null, $default = null)
     {
-        return self::getDomainFinalByNamespace($ns, "database.{$key}", $default);
+        $domain = DomainManager::getKeyByNamespace($ns);
+
+        return self::getDomainMergeDomainByKey($domain, $key, $default);
     }
 
-    public static function getDomainFinalDatabaseByFile(string $file, string $key = null, $default = null)
+    public static function getDomainMergeDomainByFile(string $file, string $key = null, $default = null)
     {
-        return self::getDomainFinalByFile($file, "database.{$key}", $default);
+        $domain = DomainManager::getKeyByFile($file);
+
+        return self::getDomainMergeDomainByKey($domain, $key, $default);
     }
 
-    public static function getDomainFinalDatabaseByKey(string $domain, string $key = null, $default = null)
+    public static function getDomainMergeDomainByKey(string $domain, string $key = null, $default = null)
     {
-        return self::getDomainFinalByKey($domain, "database.{$key}", $default);
+        $global = self::getDomain($key, $default);
+        $local  = self::getDomainDomainByKey($domain, $key, $default);
+
+        return array_unique_merge($global, $local);
     }
 
     /**

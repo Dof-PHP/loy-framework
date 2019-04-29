@@ -109,9 +109,10 @@ final class Kernel
 
     public static function getContext(bool $sapi = true) : ?array
     {
-        $context  = self::$argvs;
-        array_unshift($context, get_current_user());
+        $argvs = self::$argvs;
+        array_unshift($argvs, get_current_user());
+        $argvs = ['cli' => $argvs];
 
-        return $sapi ? ['cli' => $context] : $context;
+        return $sapi ? $argvs : [$argvs, Core::getContext()];
     }
 }

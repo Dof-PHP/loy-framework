@@ -6,7 +6,6 @@ namespace Dof\Framework\Storage;
 
 use PDO;
 use Throwable;
-use Dof\Framework\Validator;
 
 class MySQL implements StorageInterface
 {
@@ -18,6 +17,9 @@ class MySQL implements StorageInterface
 
     /** @var object|null: Connection Instance */
     private $connection;
+
+    /** @var array: Sqls executed in this instance lifetime */
+    private $sqls;
 
     public function find(int $pk) : ?array
     {
@@ -57,15 +59,19 @@ class MySQL implements StorageInterface
         try {
             $sql = $this->generate($sql);
 
+            $start = microtime(true);
+
             if (is_null($params)) {
-                return $this->getConnection()->query($sql);
+                $statement = $this->getConnection()->query($sql);
+            } else {
+                $statement = $this->getConnection()->prepare($sql, [
+                    PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY,
+                ]);
+
+                $statement->execute($params);
             }
 
-            $statement = $this->getConnection()->prepare($sql, [
-                PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY,
-            ]);
-
-            $statement->execute($params);
+            $this->appendSQL($sql, $start);
 
             return $statement->fetchAll(PDO::FETCH_ASSOC);
         } catch (Throwable $e) {
@@ -78,15 +84,20 @@ class MySQL implements StorageInterface
         try {
             $sql = $this->generate($sql);
 
+            $start = microtime(true);
+
             if (is_null($params)) {
-                return $this->getConnection()->exec($sql);
+                $result = $this->getConnection()->exec($sql);
+            } else {
+                $statement = $this->getConnection()->prepare($sql);
+                $statement->execute($params);
+
+                $result = $statement->rowCount();
             }
 
-            $statement = $this->getConnection()->prepare($sql);
+            $this->appendSql($sql, $start);
 
-            $statement->execute($params);
-
-            return $statement->rowCount();
+            return $result;
         } catch (Throwable $e) {
             exception('OperationsToMySQLFailed', ['sql' => $sql], $e);
         }
@@ -174,11 +185,6 @@ class MySQL implements StorageInterface
         return "`{$prefix}{$table}`";
     }
 
-    /**
-     * Getter for conn
-     *
-     * @return PDO
-     */
     public function getConnection()
     {
         if (! $this->connection) {
@@ -205,14 +211,23 @@ class MySQL implements StorageInterface
         return $this;
     }
 
-    public function showSeesionId()
+    public function showSessionId()
     {
-        return $this->get('SELECT CONNECTION_ID()');
+        $res = $this->get('SELECT CONNECTION_ID() as session_id');
+
+        return $res[0]['session_id'] ?? '-1';
     }
 
     public function showTableLocks()
     {
         return $this->get('SHOW OPEN TABLES WHERE IN_USE >= 1');
+    }
+
+    private function appendSQL(string $sql, $start)
+    {
+        $this->sqls[] = [microftime('T Ymd His', '.', $start), $sql, microtime(true)-$start];
+
+        return $this;
     }
 
     public function __cleanup()
@@ -222,5 +237,10 @@ class MySQL implements StorageInterface
 
         // Rollback uncommited transactions
         // TODO
+    }
+
+    public function __logging()
+    {
+        return $this->sqls;
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework;
 
+use Throwable;
 use Iterator;
 use ArrayAccess;
 use Countable;
@@ -43,7 +44,7 @@ class Collection implements
         return in_array($key, $this->keys);
     }
 
-    public function get($key, $default = null)
+    public function get($key, $default = null, array $rules = null)
     {
         $val = null;
         if (is_scalar($key)) {
@@ -57,10 +58,23 @@ class Collection implements
                 : $this->origin::__collectionGet($key);
         }
 
-        return is_null($val) ? $default : $val;
+        $val = is_null($val) ? $default : $val;
+
+        if (! $rules) {
+            return $val;
+        }
+
+        $validator = validate([$key => $val], [$key => $rules]);
+        if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
+            $context = (array) $fail->value;
+
+            exception($fail->key, $context);
+        }
+
+        return $validator->getResult()[$key] ?? null;
     }
 
-    public function set(string $key = null, $value)
+    public function set($key = null, $value = null)
     {
         if (! $key) {
             return $this;
@@ -92,6 +106,11 @@ class Collection implements
     public function __get(string $key)
     {
         return $this->get($key);
+    }
+
+    public function __set($key, $value)
+    {
+        return $this->set($key, $value);
     }
     
     public function last()
