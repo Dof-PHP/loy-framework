@@ -1127,3 +1127,9 @@ if (! function_exists('get_last_trace')) {
         return $last;
     }
 }
+if (! function_exists('namespace_exists')) {
+    function namespace_exists(string $ns) : bool
+    {
+        return class_exists($ns) || interface_exists($ns) || trait_exists($ns);
+    }
+}

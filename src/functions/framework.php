@@ -208,7 +208,7 @@ if (! function_exists('get_annotation_ns')) {
             $type = gettype($annotation);
             exception('NonStringAnnotatinForNamespace', compact('annotation', 'type'));
         }
-        if (class_exists($annotation)) {
+        if (namespace_exists($annotation)) {
             return $annotation;
         }
 
@@ -216,7 +216,7 @@ if (! function_exists('get_annotation_ns')) {
             $annotation = mb_substr($annotation, 0, -7);
         }
 
-        if (class_exists($annotation)) {
+        if (namespace_exists($annotation)) {
             return $annotation;
         }
 
@@ -238,7 +238,7 @@ if (! function_exists('get_annotation_ns')) {
         $_origin = array_trim_from_string($origin, '\\');
         $_origin[count($_origin) - 1] = $annotation;
         $samens  = join('\\', $_origin);
-        if (class_exists($samens)) {
+        if (namespace_exists($samens)) {
             return $samens;
         }
 
