@@ -167,7 +167,7 @@ class GitBook
             unlink($summary);
         }
         $this->save(
-            $this->render($this->summary, ['tree' => $this->menuTree]),
+            $this->render($this->summary, ['tree' => $this->menuTree, 'readme' => true]),
             $summary
         );
 
@@ -224,7 +224,7 @@ class GitBook
             unlink($summary);
         }
         $this->save(
-            $this->render($this->summary, ['tree' => $this->menuTree]),
+            $this->render($this->summary, ['tree' => $this->menuTree, 'readme' => true]),
             $summary
         );
 
@@ -254,7 +254,7 @@ class GitBook
                 'version' => $version,
             ];
 
-            foreach ($domain as $key => $data) {
+            foreach (($domain['main'] ?? []) as $key => $data) {
                 $title = $data['title'] ?? false;
                 if (! $title) {
                     exception('MissingDocTitle');
@@ -283,8 +283,37 @@ class GitBook
             if (is_file($summary)) {
                 unlink($summary);
             }
+            $appendixes = $domain['appendixes'] ?? [];
+            if ($appendixes) {
+                $_appendixes = ospath($ver, '_appendixes');
+                if (! is_dir($_appendixes)) {
+                    mkdir($_appendixes, 0775, true);
+                }
+                foreach ($appendixes as &$appendix) {
+                    if (! ($doc = ($appendix['doc'] ?? false))) {
+                        exception('MissingAppendixDocFile');
+                    }
+                    if (! ($key = ($appendix['key'] ?? false))) {
+                        exception('MissingAppendixDocDomainKey');
+                    }
+                    $_key = ospath($_appendixes, $key);
+                    if (! is_dir($_key)) {
+                        mkdir($_key, 0775, true);
+                    }
+                    if (! ($path = ($appendix['path'] ?? false))) {
+                        exception('MissingAppendixDocDestinationPath');
+                    }
+                    if (! is_file($doc)) {
+                        exception('AppendixDocFileNotExist', compact('doc'));
+                    }
+
+                    copy($doc, ospath($_key, $path));
+
+                    $appendix['path'] = join(DIRECTORY_SEPARATOR, ['_appendixes', $key, $path]);
+                }
+            }
             $this->save(
-                $this->render($this->summary, ['tree' => $this->menuTree]),
+                $this->render($this->summary, ['tree' => $this->menuTree, 'appendixes' => $appendixes]),
                 $summary
             );
 

@@ -825,6 +825,14 @@ if (! function_exists('exception')) {
         };
     }
 }
+if (! function_exists('redirect')) {
+    function redirect(string $url, int $status = 302) : array
+    {
+        header('Location: '.$url, true, $status);
+
+        exit;
+    }
+}
 if (! function_exists('getallheaders')) {
     // For nginx, compatible with apache format
     function getallheaders() : array
@@ -1101,7 +1109,7 @@ if (! function_exists('get_buffer_string')) {
             }
 
             if ($exception) {
-                $exception();
+                $exception($e);
             }
         }
 

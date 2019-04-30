@@ -25,7 +25,7 @@
 
 ### 基础信息
 
-| 认证授权类型 | 关联数据模型 | 版本 | 资源后缀支持 | 负责人 | 最后更新时间 |
+| 认证授权类型 | 关联数据模型 | 版本 | 资源后缀支持 | 状态 | 负责人 | 最后更新时间 |
 | :--- | :--- | :--- | :--- |
 <?php
     $suffixs = array_map(function ($val) { return "`{$val}`"; }, $suffixs);
@@ -38,7 +38,7 @@ LINK;
         $_models = '-';
     }
 ?>
-| <?= $auth ?> | <?= $_models ?> | <?= $version ?> | <?= $suffixs ?> | <?= $author ?> | <?= fdate() ?> |
+| <?= $auth ?> | <?= $_models ?> | <?= $version ?> | <?= $suffixs ?> | <?= $status ?> | <?= $author ?> | <?= fdate() ?> |
 
 <?php if ($headers['in'] ?? []) : ?>
 ### 请求头
@@ -77,6 +77,7 @@ LINK;
         $rules[] = $_rule;
     }
     $rules = $rules ? join('<br>', $rules) : '-';
+    $location = join('/', $location);
 ?>
 | `<?= $name ?>` | <?= $title ?> | <?= $type ?> | <?= $location ?> | <?= $rules ?> | <?= $default ?> | <?= $compatibles ?> | <?= $notes ?: '-' ?> |
 <?php endforeach ?>
@@ -89,13 +90,25 @@ LINK;
 - `<?= $key ?>`: `<?= $val ?>`
 <?php endforeach ?>
 <?php endif ?>
+<?php if ($headers['status'] ?? null) : ?>
+- 成功响应时的 HTTP 状态码：<?= $headers['status'] ?? 200 ?>
+<?php endif ?>
 
-<?php if ($wrapout ?? []) : ?>
-### 响应结构示例
+
+<?php if ($wrapout ?? null) : ?>
+### 成功响应结构示例
 ``` php
 <?= $wrapout ?>
 ```
 <?php endif ?>
+
+<?php if ($wraperr ?? null) : ?>
+### 失败响应结构示例
+``` php
+<?= $wraperr ?>
+```
+<?php endif ?>
+
 
 <?php if ($fields['model'] ?? []) : ?>
 ### 关联数据模型
@@ -116,6 +129,7 @@ LINK;
 | `<?= $name ?>` | <?= $title ?> | <?= $type ?> | <?= $_arguments ?> | <?= $notes ?: '-' ?> |
 <?php endforeach ?>
 <?php endif ?>
+
 
 <?php if ($fields['compatibles'] ?? []) : ?>
 #### 兼容字段

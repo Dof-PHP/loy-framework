@@ -91,6 +91,9 @@ class JWT
         if (! $token) {
             exception('MissingToken');
         }
+        if (! $this->secretKey) {
+            exception('MissingTokenSecret');
+        }
 
         if ($this->beforeVerify && (true !== ($res = ($this->beforeVerify)($token)))) {
             exception('BeforeVerifyHookFailed', compact('res'));
@@ -103,7 +106,7 @@ class JWT
         }
         $header = $arr[0] ?? null;
         if (! ($header) || (! is_string($header))) {
-            exception('InvalidTokenHeader', compact('header'));
+            exception('MissingOrBadTokenHeader', compact('header'));
         }
         $payload= $arr[1] ?? null;
         if (! ($payload) || (! is_string($payload))) {

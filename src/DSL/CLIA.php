@@ -60,7 +60,9 @@ class CLIA
 
         $sidx = mb_strpos($option, '=');     // separator index
         if (false === $sidx) {
-            return [$option, []];
+            // Here 2nd value must be null if separator index not exists
+            // To avoid empty colloction object if client use collect()
+            return [$option, null];
         }
 
         $name    = mb_substr($option, 0, $sidx);

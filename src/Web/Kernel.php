@@ -62,7 +62,7 @@ final class Kernel
                     $memcost,
                     memory_get_peak_usage(),
                     count(get_included_files()),
-                ]), Kernel::getContext());
+                ]), Kernel::getContext(false));
             });
 
             Core::boot($root);
@@ -263,7 +263,7 @@ final class Kernel
         $shouldPipeInBeIgnored = function ($pipein, $noin) : bool {
             foreach ($noin as $exclude) {
                 if ((! $exclude) || (! class_exists($exclude))) {
-                    Kernel::throw('NoPipeinClassNotExists', [
+                    Kernel::throw('NoPipeInClassNotExists', [
                         'nopipein' => $_exclude,
                         'class'    => Route::get('class'),
                         'method'   => Route::get('method'),
@@ -296,7 +296,7 @@ final class Kernel
             }
 
             try {
-                $res = call_user_func_array([singleton($pipe), Kernel::PIPEIN_HANDLER], [
+                call_user_func_array([Container::di($pipe), Kernel::PIPEIN_HANDLER], [
                     Request::getInstance(),
                     Response::getInstance(),
                     Route::getInstance(),

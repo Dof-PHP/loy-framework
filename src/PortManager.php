@@ -272,9 +272,6 @@ final class PortManager
         }
         $subtitle = $attrs['SUBTITLE'] ?? null;
         $auth = $attrs['AUTH'] ?? ($docClass['AUTH'] ?? '0');
-        if (! in_array($auth, self::AUTH_TYPES)) {
-            exception('BadAuthType', compact('class', 'method', 'auth'));
-        }
 
         $domainTitle   = ConfigManager::getDomainByNamespace($class, 'domain.title', $domainKey);
         $globalRoute   = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.route', null);
@@ -285,8 +282,10 @@ final class PortManager
         $globalPipeout = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.pipeout', []);
         $globalHeaderIn  = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.headerin', []);
         $globalHeaderOut = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.headerout', []);
+        $globalHeaderStatus = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.headerstatus', []);
 
         $defaultVersion = $docClass['VERSION'] ?? null;
+        $defaultStatus  = $docClass['STATUS']  ?? null;
         $defaultGroup   = $docClass['GROUP']   ?? [];
         $defaultModels  = $docClass['MODEL']   ?? null;
         $defaultRoute   = $docClass['ROUTE']   ?? null;
@@ -305,10 +304,12 @@ final class PortManager
         $defaultArguments = $docClass['ARGUMENT']  ?? [];
         $defaultHeaderIn  = $docClass['HEADERIN']  ?? [];
         $defaultHeaderOut = $docClass['HEADEROUT'] ?? [];
+        $defaultHeaderStatus = $docClass['HEADERSTATUS'] ?? $globalHeaderStatus;
 
         $route   = $attrs['ROUTE']   ?? null;
         $alias   = $attrs['ALIAS']   ?? null;
         $group   = $attrs['GROUP']   ?? [];
+        $status  = $attrs['STATUS']  ?? $defaultStatus;
         $version = $attrs['VERSION'] ?? $defaultVersion;
         $models  = $attrs['MODEL']   ?? $defaultModels;
         $models  = $models === '_'   ? null : $models;
@@ -326,6 +327,7 @@ final class PortManager
         $assembler = $attrs['ASSEMBLER'] ?? $defaultAssembler;
         $headerIn  = $attrs['HEADERIN']  ?? [];
         $headerOut = $attrs['HEADEROUT'] ?? [];
+        $headerStatus = $attrs['HEADERSTATUS'] ?? $defaultHeaderStatus;
         $pipein    = $attrs['PIPEIN']    ?? [];
         $pipeout   = $attrs['PIPEOUT']   ?? [];
         $nopipein  = $attrs['NOPIPEIN']  ?? [];
@@ -386,10 +388,12 @@ final class PortManager
             'wrapout' => $wrapout,
             'wraperr' => $wraperr,
             'version' => $version,
+            'status'  => $status,
             'pipein'  => $pipeinList,
             'headers' => [
                 'in'  => $headerInList,
                 'out' => $headerOutList,
+                'status' => $headerStatus,
             ],
             'pipeout' => $pipeoutList,
             'subtitle'  => $subtitle,
@@ -443,7 +447,7 @@ final class PortManager
             return;
         }
 
-        $docs = self::$docs[$_version][$domainKey] ?? [
+        $docs = self::$docs[$_version]['main'][$domainKey] ?? [
             'title' => $domainTitle,
             'group' => [],
             'list'  => [],
@@ -494,6 +498,7 @@ final class PortManager
             'title' => $title,
             'models'  => self::formatDocNamespace($models),
             'author'  => $author,
+            'status'  => $status,
             'version' => $_version,
             'params'  => $params,
             'suffixs' => $suffix,
@@ -502,9 +507,11 @@ final class PortManager
                 'compatibles' => ($assembler ? singleton($assembler)->getCompatibles() : []),
             ],
             'wrapout' => self::formatDocWrapout($wrapout),
+            'wraperr' => self::formatDocWraperr($wraperr),
             'headers' => [
                 'in'  => $headerInList,
                 'out' => $headerOutList,
+                'status' => $headerStatus,
             ],
             'subtitle' => $subtitle,
         ];
@@ -516,16 +523,45 @@ final class PortManager
             $docs['list'][] = $doc;
         }
 
-        self::$docs[$_version][$domainKey] = $docs;
+        self::$docs[$_version]['main'][$domainKey] = $docs;
+        $appendixes = ConfigManager::getDomainDomainByNamespace($class, 'docs.appendixes', []);
+        if ($appendixes) {
+            self::$docs[$_version]['appendixes'] = self::formatDocAppendixes(
+                $appendixes,
+                $domainKey,
+                $domainTitle,
+                DomainManager::getByNamespace($class)
+            );
+        }
     }
 
-    public static function formatDocParameterLocation(string $mimein = null, string $location = null) : string
+    public static function formatDocAppendixes(
+        array $appendixes,
+        string $domainKey,
+        string $domainTitle,
+        string $domainRoot
+    ) : array {
+        array_walk($appendixes, function (&$item) use ($domainKey, $domainTitle, $domainRoot) {
+            $item['domain'] = $domainTitle;
+            $doc = $item['doc'] ?? null;
+            if (! $doc) {
+                return;
+            }
+
+            $item['key'] = $domainKey;
+            $item['doc'] = ospath($domainRoot, $doc);
+        });
+
+        return $appendixes;
+    }
+
+    public static function formatDocParameterLocation(string $mimein = null, string $location = null) : array
     {
         if ($location) {
-            return $location;
+            return [$location];
         }
 
-        return 'Request Body/Query String';
+        return ['Request Body', 'Query String'];
     }
 
     public static function formatDocModel(string $model = null)
@@ -557,17 +593,25 @@ final class PortManager
         ];
     }
 
-    public static function formatDocWrapout(string $wrapout = null)
+    public static function formatDocWraperr(string $wraperr = null)
     {
-        if (! $wrapout) {
-            return [];
+        if (! $wraperr) {
+            return;
+        }
+
+        return self::formatDocWrapper(singleton($wraperr)->wraperr());
+    }
+
+    public static function formatDocWrapper(array $wrapper = null)
+    {
+        if (! $wrapper) {
+            return;
         }
 
         try {
-            $arr = singleton($wrapout)->wrapout();
-            if (is_array($arr)) {
+            if (is_array($wrapper)) {
                 $res = [];
-                foreach ($arr as $key => $val) {
+                foreach ($wrapper as $key => $val) {
                     $_key = is_int($key) ? $val : $key;
                     $_val = is_int($key) ? null : $val;
                     if (in_array($_key, [
@@ -594,8 +638,15 @@ final class PortManager
             }
         } catch (Throwable $e) {
         }
+    }
 
-        return [];
+    public static function formatDocWrapout(string $wrapout = null)
+    {
+        if (! $wrapout) {
+            return;
+        }
+
+        return self::formatDocWrapper(singleton($wrapout)->wrapout());
     }
 
     public static function formatDocVersion(string $version = null)
@@ -976,6 +1027,41 @@ final class PortManager
     public static function __annotationMultipleHeaderin() : bool
     {
         return true;
+    }
+
+    public static function __annotationFilterStatus(string $status, array $ext, string $namespace) : string
+    {
+        $status = trim($status);
+
+        if (mb_strlen($status) === 0) {
+            return '1';
+        }
+
+        $notes = $ext['notes'] ?? (array_keys($ext)[0] ?? null);
+        if (! $notes) {
+            return $status;
+        }
+
+        $notes = $notes ? "({$notes})" : '';
+
+        return "{$status} {$notes}";
+    }
+
+    public static function __annotationFilterAuth(string $auth, array $ext, string $namespace) : string
+    {
+        $auth = trim($auth);
+        if (! in_array($auth, self::AUTH_TYPES)) {
+            exception('BadAuthType', compact('namespace', 'auth'));
+        }
+
+        $notes = $ext['notes'] ?? (array_keys($ext)[0] ?? null);
+        if (! $notes) {
+            return $auth;
+        }
+
+        $notes = $notes ? "({$notes})" : '';
+
+        return "{$auth} {$notes}";
     }
 
     public static function __annotationFilterVerb(string $verbs, array $ext, string $namespace) : array

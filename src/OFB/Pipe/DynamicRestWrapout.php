@@ -9,6 +9,11 @@ use Dof\Framework\OFB\Wrapper\Classic;
 
 class DynamicRestWrapout
 {
+    /**
+     * Select a wrapout according to the http verb
+     *
+     * !!! Warning: Using this pipein will not be documented
+     */
     public function pipein($request, $response, $route, $port)
     {
         $verb = $request->getMethod();

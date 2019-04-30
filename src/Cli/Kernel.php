@@ -73,7 +73,7 @@ final class Kernel
 
         $_cmd = CommandManager::get($cmd, $isDomain);
         if (! $_cmd) {
-            Kernel::throw('CommandNotFound', compact('cmd'));
+            Kernel::throw('CommandNotFound', compact('cmd', 'isDomain'));
         }
         $class = $_cmd['class'] ?? null;
         if ((! $class) || (! class_exists($class))) {

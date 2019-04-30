@@ -56,6 +56,11 @@ class IS
         );
     }
 
+    public static function url($value) : bool
+    {
+        return false !== filter_var($value, FILTER_VALIDATE_URL);
+    }
+
     public static function email($value) : bool
     {
         return false !== filter_var($value, FILTER_VALIDATE_EMAIL);

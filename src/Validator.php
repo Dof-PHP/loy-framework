@@ -353,6 +353,13 @@ class Validator
         return true;
     }
 
+    private function validateUrl(string $key)
+    {
+        $value = $this->data[$key] ?? null;
+
+        return IS::url($value);
+    }
+
     private function validateHost(string $key)
     {
         $value = $this->data[$key] ?? null;

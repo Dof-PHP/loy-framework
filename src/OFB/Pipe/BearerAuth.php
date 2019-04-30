@@ -14,6 +14,15 @@ use Dof\Framework\ConfigManager;
  */
 class BearerAuth
 {
+    /** @var string: The bearer auth token found in request */
+    protected $token;
+
+    /** @var string: The token secret used for signature, can be overwrite by subclass */
+    protected $__secret = 'bear-auth-token-secret';
+
+    /** @var string: The parameter key to store authenticated user id */
+    protected $__authid = 'uid';
+
     public function pipein($request, $response, $route, $port)
     {
         $header = trim((string) $request->getHeader('AUTHORIZATION'));
@@ -25,43 +34,48 @@ class BearerAuth
         }
 
         if (! $token) {
-            $this->abort(401, 'MissingTokenHeaderOrParameter', $port, $response);
+            $this->abort(401, 'MissingTokenHeaderOrParameter', [], $port, $response);
         }
 
-        $secret = ConfigManager::getDomainFinalEnvByNamespace($route->get('class'), 'bear-auth-token-secret');
+
+        $secret = ConfigManager::getDomainFinalEnvByNamespace($route->get('class'), $this->__secret);
         if (! $secret) {
-            $this->abort(500, 'TokenSecretMissing', $port, $response);
+            $this->abort(500, 'TokenSecretMissing', ['key' => $this->__secret], $port, $response);
         }
         $id = $secret[0] ?? null;
         if (is_null($id)) {
-            $this->abort(500, 'TokenSecretIdMissing', $port, $response);
+            $this->abort(500, 'TokenSecretIdMissing', [], $port, $response);
         }
         $key = $secret[1] ?? null;
         if (is_null($key) || (! $key)) {
-            $this->abort(500, 'TokenSecretKeyMissing', $port, $response);
+            $this->abort(500, 'TokenSecretKeyMissing', [], $port, $response);
         }
 
         try {
             $uid = JWT::setSecretId($id)->setSecretKey($key)->verify($token);
 
-            $route->params->pipe->set(__CLASS__, collect([
-                'uid' => $uid,
+            $route->params->pipe->set(static::class, collect([
+                $this->__authid => $uid,
             ]));
         } catch (Throwable $e) {
             $message = method_exists($e, 'getName') ? $e->getName() : $e->getMessage();
+            $context = [];
+            $context = parse_throwable($e, $context);
 
-            $this->abort(500, $message, $port, $response);
+            $this->abort(500, $message, $context, $port, $response);
         }
+
+        $this->token = $token;
 
         return true;
     }
 
-    private function abort($status, $body, $port, $response)
+    protected function abort($status, $message, $context, $port, $response)
     {
-        $response->setStatus($status)->setBody([$status, $this->wrap($port, $body)])->send();
+        $response->setStatus($status)->setBody($this->wrap($port, [$status, $message, $context]))->send();
     }
 
-    private function wrap($port, $body)
+    protected function wrap($port, $body)
     {
         $wraperr = $port->get('wraperr');
         $wraperr = $wraperr ? $wraperr : ConfigManager::getFramework('web.error.wrapper', null);

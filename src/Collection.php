@@ -54,8 +54,8 @@ class Collection implements
         if (is_null($val) && $this->origin && method_exists($this->origin, '__collectionGet')) {
             // $val = call_user_func_array([$this->origin, '__collectionGet'], [$key, $this]);
             $val = is_object($this->origin)
-                ? $this->origin->__collectionGet($key)
-                : $this->origin::__collectionGet($key);
+                ? $this->origin->__collectionGet($key, $this)
+                : $this->origin::__collectionGet($key, $this);
         }
 
         $val = is_null($val) ? $default : $val;
