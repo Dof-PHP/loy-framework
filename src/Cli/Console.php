@@ -125,6 +125,11 @@ class Console
         exit;
     }
 
+    public function hasOption(string $name, $default = null) : bool
+    {
+        return $this->options->has($name);
+    }
+
     public function getOption(string $name, $default = null)
     {
         return $this->options->get($name, $default);

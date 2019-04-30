@@ -27,7 +27,7 @@ class Command
      */
     public function version($console)
     {
-        if ($console->getOption('raw')) {
+        if ($console->hasOption('raw')) {
             $console->success((string) get_dof_version_raw(), true);
         }
 
