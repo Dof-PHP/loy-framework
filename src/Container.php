@@ -281,9 +281,6 @@ final class Container
             exception('ClassFileNotFound', ['class' => $namespace]);
         }
         $domain = $domain ?: DomainManager::getByFile($realpath);
-        if (! $domain) {
-            exception('DomainNotFound', ['filepath' => $realpath]);
-        }
 
         self::$filenskv[$realpath] = $namespace;
         self::$classes[$namespace] = $class = [

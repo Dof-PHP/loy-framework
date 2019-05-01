@@ -17,7 +17,7 @@
 
 <?php foreach ($appendixes as $appendix) : ?>
 <?php extract($appendix); ?>
-* [<?= $domain ?> - <?= $title ?>](<?= $path ?>)
+* [<?= $domain ?> - <?= $title ?>](<?= $href ?>)
 <?php endforeach ?>
 
 ----

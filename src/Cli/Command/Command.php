@@ -84,17 +84,30 @@ class Command
     }
 
     /**
+     * @CMD(root)
+     * @Desc(Get Dof project root)
+     */
+    public function getRoot($console)
+    {
+        return $console->success(Kernel::getRoot(), true);
+    }
+
+    /**
      * @CMD(dof)
      * @Desc(Dof default command)
      */
     public function dof($console)
     {
-        if ($console->getOption('help')) {
+        if ($console->hasOption('help')) {
             return $this->help($console);
         }
 
-        if ($console->getOption('version')) {
+        if ($console->hasOption('version')) {
             return $this->version($console);
+        }
+
+        if ($console->hasOption('root')) {
+            return $this->getRoot($console);
         }
 
         if ($console->getOptions()->count()) {

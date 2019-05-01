@@ -67,50 +67,50 @@ final class Kernel
 
             Core::boot($root);
         } catch (Throwable $e) {
-            Kernel::throw('KernelBootFailed', ['root' => $root], 500, $e);
+            Kernel::throw(ERR::KERNEL_BOOT_FAILED, ['root' => $root], 500, $e);
         }
 
         if (is_file($flag = ospath($root, Kernel::HALT_FLAG))) {
-            Kernel::throw('ServerClosed', dejson($flag, true, true), 503);
+            Kernel::throw(ERR::SERVER_CLOSED, dejson($flag, true, true), 503);
         }
 
         try {
             self::preflight();
         } catch (Throwable $e) {
-            Kernel::throw('PreflightingError', [], 500, $e);
+            Kernel::throw(ERR::PREFLIGHT_EXCEPTION, [], 500, $e);
         }
 
         try {
             self::routing();
         } catch (Throwable $e) {
-            Kernel::throw('RoutingError', [], 500, $e);
+            Kernel::throw(ERR::ROUTING_ERROR, [], 500, $e);
         }
 
         $class  = Port::get('class');
         $method = Port::get('method');
         if ((! $class) || (! class_exists($class))) {
-            Kernel::throw('PortClassNotExist', compact('class'));
+            Kernel::throw(ERR::PORT_CLASS_NOT_EXIST, compact('class'));
         }
         if ((! $method) || (! method_exists($class, $method))) {
-            Kernel::throw('PortMethodNotExist', compact('class', 'method'), 500, null, $class);
+            Kernel::throw(ERR::PORT_METHOD_NOT_EXIST, compact('class', 'method'), 500, null, $class);
         }
 
         try {
             self::pipingin();
         } catch (Throwable $e) {
-            Kernel::throw('PipinginError', [], 500, $class);
+            Kernel::throw(ERR::PIPIIN_ERROR, [], 500, $class);
         }
 
         try {
             self::validate();
         } catch (Throwable $e) {
-            Kernel::throw('RequestValidateExeception', [], 500, $e, $class);
+            Kernel::throw(ERR::REQUEST_VALIDATE_ERROR, [], 500, $e, $class);
         }
 
         try {
             $params = self::build();
         } catch (Throwable $e) {
-            Kernel::throw('BuildPortParametersError', [], 500, $e, $class);
+            Kernel::throw(ERR::BUILD_PORT_METHOD_PARAMETERS_FAILED, [], 500, $e, $class);
         }
 
         try {
@@ -123,31 +123,33 @@ final class Kernel
 
                 // Here we treat all service exception as client side error by default
                 // Coz if not there should never throw the exception named as this
-                $status  = (int) ($context['__status'] ?? 400);
+                $status = (int) ($context['__status'] ?? 400);
+                $code = (int) ($context['__code'] ?? 0);
+                $info = (int) ($context['__info'] ?? 'ok');
                 unset($context['__status']);
 
                 Response::error($status, $message, $context, $class);
             } else {
-                Kernel::throw('ResultingResponseFailed', compact('class', 'method'), 500, $e, $class);
+                Kernel::throw(ERR::RESULTING_RESPONSE_FAILED, compact('class', 'method'), 500, $e, $class);
             }
         }
 
         try {
             $result = self::pipingout($result);
         } catch (Throwable $e) {
-            Kernel::throw('PipingoutError', [], 500, $e, $class);
+            Kernel::throw(ERR::PIPEOUT_ERROR, [], 500, $e, $class);
         }
 
         try {
             $result = self::packing($result);
         } catch (Throwable $e) {
-            Kernel::throw('PackagingError', [], 500, $e, $class);
+            Kernel::throw(ERR::PACKAGE_RESULT_FAILED, [], 500, $e, $class);
         }
 
         try {
             Response::setBody($result)->send();
         } catch (Throwable $e) {
-            Kernel::throw('SendResponseFailed', [], 500, $e, $class);
+            Kernel::throw(ERR::SENDING_RESPONSE_FAILED, [], 500, $e, $class);
         }
     }
 
@@ -163,10 +165,10 @@ final class Kernel
 
         foreach ($preflights as $preflight) {
             if (! class_exists($preflight)) {
-                Kernel::throw('PreflightNotExists', compact('preflight'));
+                Kernel::throw(ERR::PREFLIGHT_NOT_EXISTS, compact('preflight'));
             }
             if (! method_exists($preflight, self::PREFLIGHT_HANDLER)) {
-                Kernel::throw('PreflightHandlerNotExists', [
+                Kernel::throw(ERR::PREFLIGHT_HANDLER_NOT_EXISTS, [
                     'preflight' => $preflight,
                     'handler'   => self::PREFLIGHT_HANDLER,
                 ]);
@@ -176,7 +178,7 @@ final class Kernel
                 Request::getInstance(),
                 Response::getInstance()
             ]))) {
-                Kernel::throw('PreflightingFailed', compact('res'));
+                Kernel::throw(ERR::PREFLIGHT_FAILED, compact('res'));
             }
         }
     }
@@ -199,7 +201,7 @@ final class Kernel
         }
         $port = PortManager::get($route);
         if (! $port) {
-            Kernel::throw('BadRouteWithoutPort', compact('route'), 500);
+            Kernel::throw(ERR::BAD_ROUTE_WITHOUT_PORT, compact('route'), 500);
         }
 
         Route::setData($route);
@@ -245,7 +247,7 @@ final class Kernel
 
             Port::getInstance()->argument = collect($validator->getResult());
         } catch (Throwable $e) {
-            Kernel::throw('ReqeustParameterValidationError', compact('wrapin'), 500, $e, Route::get('class'));
+            Kernel::throw(ERR::REQEUST_PARAMETER_VALIDATION_ERROR, compact('wrapin'), 500, $e, Route::get('class'));
         }
     }
 
@@ -263,7 +265,7 @@ final class Kernel
         $shouldPipeInBeIgnored = function ($pipein, $noin) : bool {
             foreach ($noin as $exclude) {
                 if ((! $exclude) || (! class_exists($exclude))) {
-                    Kernel::throw('NoPipeInClassNotExists', [
+                    Kernel::throw(ERR::NOPIPEIN_CLASS_NOT_EXISTS, [
                         'nopipein' => $_exclude,
                         'class'    => Route::get('class'),
                         'method'   => Route::get('method'),
@@ -282,14 +284,14 @@ final class Kernel
                 continue;
             }
             if ((! $pipe) || (! class_exists($pipe))) {
-                Kernel::throw('PipeInClassNotExists', [
+                Kernel::throw(ERR::PIPEIN_CLASS_NOT_EXISTS, [
                     'port'   => Route::get('class'),
                     'method' => Route::get('method'),
                     'pipein' => $pipe,
                 ], 500, null, Route::get('class'));
             }
             if (! method_exists($pipe, Kernel::PIPEIN_HANDLER)) {
-                Kernel::throw('PipeInHandlerNotExists', [
+                Kernel::throw(ERR::PIPEIN_HANDLER_NOT_EXISTS, [
                     'pipein'  => $pipe,
                     'hanlder' => Kernel::PIPEIN_HANDLER
                 ], 500, null, Route::get('class'));
@@ -304,7 +306,7 @@ final class Kernel
                 ]);
             } catch (Throwable $e) {
                 $error = is_anonymous($e) ? 400 : 500;
-                Kernel::throw('PipeInThroughingFailed', compact('pipe'), $error, $e, Route::get('class'));
+                Kernel::throw(ERR::PIPEIN_THROUGH_FAILED, compact('pipe'), $error, $e, Route::get('class'));
             }
         }
     }
@@ -329,7 +331,7 @@ final class Kernel
                 Response::error(400, 'InvalidRouteParameter', parse_throwable($e), $class);
             }
 
-            Kernel::throw('BuildPortParametersFailed', compact('class', 'method'), 500, $e, $class);
+            Kernel::throw(ERRO::BUILD_PORT_METHOD_PARAMETERS_FAILED, compact('class', 'method'), 500, $e, $class);
         }
     }
 
@@ -350,7 +352,7 @@ final class Kernel
         $shouldPipeOutBeIgnored = function ($pipeout, $noout) : bool {
             foreach ($noout as $exclude) {
                 if ((! $exclude) || (! class_exists($exclude))) {
-                    Kernel::throw('NoPipeOutClassNotExists', [
+                    Kernel::throw(ERR::NOPIPEOUT_CLASS_NOT_EXISTS, [
                         'nopipeout' => $_exclude,
                         'class'     => Route::get('class'),
                         'method'    => Route::get('method'),
@@ -370,14 +372,14 @@ final class Kernel
                 continue;
             }
             if ((! $pipe) || (! class_exists($pipe))) {
-                Kernel::throw('PipeOutClassNotExists', [
+                Kernel::throw(ERR::PIPEOUT_CLASS_NOT_EXISTS, [
                     'port'    => Route::get('class'),
                     'method'  => Route::get('method'),
                     'pipeout' => $pipe,
                 ], 500, null, Route::get('class'));
             }
             if (! method_exists($pipe, Kernel::PIPEOUT_HANDLER)) {
-                Kernel::throw('PipeOutHandlerNotExists', [
+                Kernel::throw(ERR::PIPEOUT_HANDLER_NOT_EXISTS, [
                     'pipeout' => $pipe,
                     'hanlder' => Kernel::PIPEOUT_HANDLER
                 ], 500, null, Route::get('class'));
@@ -389,7 +391,7 @@ final class Kernel
                     [$_result, Route::getInstance(), Port::getInstance(), Request::getInstance(), Response::getInstance()]
                 );
             } catch (Throwable $e) {
-                Kernel::throw('PipeOutThroughFailed', compact('pipe'), 500, $e, Route::get('class'));
+                Kernel::throw(ERR::PIPEOUT_THROUGH_FAILED, compact('pipe'), 500, $e, Route::get('class'));
             }
         }
 
@@ -426,13 +428,13 @@ final class Kernel
      * @return null
      */
     public static function throw(
-        string $name,
+        array $error,
         array $context = [],
         int $status = 500,
         Throwable $previous = null,
         $domain = null
     ) {
-        Response::exception($status, $name, parse_throwable($previous, $context), $domain);
+        Response::exception($status, $error, parse_throwable($previous, $context), $domain);
     }
 
     public static function isBooted() : bool

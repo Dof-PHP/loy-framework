@@ -438,7 +438,8 @@ final class PortManager
         }
 
         // Formatting doc data
-        if (! ConfigManager::getEnv('web.docs.compile', false)) {
+        // Check docs compile enable status fisrt due to it's time wasting
+        if (! ConfigManager::getEnv('PORT_DOCS_COMPILE', false)) {
             return;
         }
 
@@ -543,13 +544,13 @@ final class PortManager
     ) : array {
         array_walk($appendixes, function (&$item) use ($domainKey, $domainTitle, $domainRoot) {
             $item['domain'] = $domainTitle;
-            $doc = $item['doc'] ?? null;
-            if (! $doc) {
+            $path = $item['path'] ?? null;
+            if (! $path) {
                 return;
             }
 
-            $item['key'] = $domainKey;
-            $item['doc'] = ospath($domainRoot, $doc);
+            $item['key']  = $domainKey;
+            $item['path'] = ospath($domainRoot, $path);
         });
 
         return $appendixes;
@@ -818,35 +819,37 @@ final class PortManager
         return true;
     }
 
-    public static function __annotationFilterArgument(string $val, array $params = [], string $namespace = null) : array
+    public static function __annotationFilterArgument(string $arg, array $ext = [], string $namespace = null) : array
     {
-        $_params = [];
+        $params = [];
         $hasNeed = false;
-        foreach ($params as $rule => $error) {
+        foreach ($ext as $rule => $error) {
             $arr = array_trim_from_string($rule, ':');
             $_rule = $arr[0] ?? false;
             unset($arr[0]);
-            $ext = join('', $arr);
+            $_ext = join('', $arr);
             if (! $_rule) {
                 continue;
             }
             $_rule = strtoupper($_rule);
-            if ($_rule === 'NEED') {
+            if (($_rule === 'NEED') && ($_ext != '0')) {
                 $hasNeed = true;
             }
-            $ext = $ext ? ":{$ext}": '';
-            $_params[$_rule.$ext] = $error;
+            $_ext = $_ext ? ":{$_ext}": '';
+            $params[$_rule.$_ext] = $error;
         }
 
         // Add default NEED rule for saving definitions
-        if (! $hasNeed) {
-            $_params['NEED'] = null;
+        if ($hasNeed) {
+            $params['NEED'] = null;
+        } else {
+            unset($params['NEED']);
         }
 
-        $argvs = array_trim_from_string($val, ',');
+        $argvs = array_trim_from_string($arg, ',');
         $data  = [];
         foreach ($argvs as $name) {
-            $data[$name] = $_params;
+            $data[$name] = $params;
         }
 
         return $data;
@@ -987,7 +990,7 @@ final class PortManager
 
     public static function __annotationFilterHeaderout(string $headersOut, array $ext, string $namespace) : array
     {
-        $val = $ext['val'] ?? (array_keys($ext)[0] ?? null);
+        $val = $ext['notes'] ?? (array_keys($ext)[0] ?? null);
         $res = [];
         $headers = array_trim_from_string(trim($headersOut), ',');
         foreach ($headers as $header) {
@@ -1009,7 +1012,7 @@ final class PortManager
 
     public static function __annotationFilterHeaderin(string $headersIn, array $ext, string $namespace) : array
     {
-        $val = $ext['val'] ?? (array_keys($ext)[0] ?? null);
+        $val = $ext['notes'] ?? (array_keys($ext)[0] ?? null);
         $res = [];
         $headers = array_trim_from_string(trim($headersIn), ',');
         foreach ($headers as $header) {
@@ -1025,6 +1028,23 @@ final class PortManager
     }
 
     public static function __annotationMultipleHeaderin() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationMultipleMergeHeaderStatus()
+    {
+        return true;
+    }
+
+    public static function __annotationFilterHeaderstatus(string $headerStatus, array $ext, string $namespace) : array
+    {
+        $val = $ext['notes'] ?? (array_keys($ext)[0] ?? null);
+
+        return [trim($headerStatus) => $val];
+    }
+
+    public static function __annotationMultipleHeaderstatus() : bool
     {
         return true;
     }

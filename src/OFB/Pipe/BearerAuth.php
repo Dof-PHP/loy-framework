@@ -18,19 +18,26 @@ class BearerAuth
     protected $token;
 
     /** @var string: The token secret used for signature, can be overwrite by subclass */
-    protected $__secret = 'bear-auth-token-secret';
+    protected $secret = 'bear-auth-token-secret';
 
     /** @var string: The parameter key to store authenticated user id */
-    protected $__authid = 'uid';
+    protected $authid = 'uid';
+
+    /** @var array: The parameter names will be checked in request when AUTHORIZATION header not found */
+    protected $allowTokenParameters = ['token', 'bearer_token', 'auth_token'];
 
     public function pipein($request, $response, $route, $port)
     {
         $header = trim((string) $request->getHeader('AUTHORIZATION'));
         if ($header) {
+            if (! ci_equal(mb_substr($header, 0, 7), 'Bearer ')) {
+                $this->abort(400, 'InvalidBearerToken', [], $port, $response);
+            }
+
             $token = mb_substr($header, 7);
-        } else {
+        } elseif ($this->allowTokenParameters) {
             $key   = null;
-            $token = $request->match(['token', 'bearer_token'], $key);
+            $token = $request->match($this->allowTokenParameters, $key);
         }
 
         if (! $token) {
@@ -38,9 +45,12 @@ class BearerAuth
         }
 
 
-        $secret = ConfigManager::getDomainFinalEnvByNamespace($route->get('class'), $this->__secret);
+        $secret = ConfigManager::getDomainFinalEnvByNamespace($route->get('class'), $this->secret);
         if (! $secret) {
-            $this->abort(500, 'TokenSecretMissing', ['key' => $this->__secret], $port, $response);
+            $this->abort(500, 'TokenSecretMissing', [
+                'key' => $this->secret,
+                'ns'  => static::class,
+            ], $port, $response);
         }
         $id = $secret[0] ?? null;
         if (is_null($id)) {
@@ -55,14 +65,15 @@ class BearerAuth
             $uid = JWT::setSecretId($id)->setSecretKey($key)->verify($token);
 
             $route->params->pipe->set(static::class, collect([
-                $this->__authid => $uid,
+                $this->authid => $uid,
+                'token' => $token,
             ]));
         } catch (Throwable $e) {
             $message = method_exists($e, 'getName') ? $e->getName() : $e->getMessage();
             $context = [];
             $context = parse_throwable($e, $context);
 
-            $this->abort(500, $message, $context, $port, $response);
+            $this->abort(400, $message, $context, $port, $response);
         }
 
         $this->token = $token;

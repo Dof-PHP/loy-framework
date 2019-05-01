@@ -90,23 +90,39 @@ LINK;
 - `<?= $key ?>`: `<?= $val ?>`
 <?php endforeach ?>
 <?php endif ?>
+
+
 <?php if ($headers['status'] ?? null) : ?>
-- 成功响应时的 HTTP 状态码：<?= $headers['status'] ?? 200 ?>
+### 响应状态码
+
+<?php foreach($headers['status'] as $code => $info) : ?>
+<?php if ($info) : ?>
+- `<?= $code ?>`: <?= $info ?>
+<?php else : ?>
+- `<?= $code ?>`
+<?php endif ?>
+<?php endforeach ?>
 <?php endif ?>
 
 
+<?php if (($wrapout ?? false) || ($wraperr ?? false)) : ?>
+### 响应结构示例
+
 <?php if ($wrapout ?? null) : ?>
-### 成功响应结构示例
+- 成功情况
+
 ``` php
 <?= $wrapout ?>
 ```
 <?php endif ?>
 
 <?php if ($wraperr ?? null) : ?>
-### 失败响应结构示例
+- 失败情况
+
 ``` php
 <?= $wraperr ?>
 ```
+<?php endif ?>
 <?php endif ?>
 
 

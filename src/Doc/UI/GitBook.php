@@ -290,8 +290,11 @@ class GitBook
                     mkdir($_appendixes, 0775, true);
                 }
                 foreach ($appendixes as &$appendix) {
-                    if (! ($doc = ($appendix['doc'] ?? false))) {
+                    if (! ($path = ($appendix['path'] ?? false))) {
                         exception('MissingAppendixDocFile');
+                    }
+                    if (! is_file($path)) {
+                        exception('AppendixDocFileNotExist', compact('path'));
                     }
                     if (! ($key = ($appendix['key'] ?? false))) {
                         exception('MissingAppendixDocDomainKey');
@@ -300,16 +303,10 @@ class GitBook
                     if (! is_dir($_key)) {
                         mkdir($_key, 0775, true);
                     }
-                    if (! ($path = ($appendix['path'] ?? false))) {
-                        exception('MissingAppendixDocDestinationPath');
-                    }
-                    if (! is_file($doc)) {
-                        exception('AppendixDocFileNotExist', compact('doc'));
-                    }
+                    $href = basename($path);
+                    copy($path, ospath($_key, $href));
 
-                    copy($doc, ospath($_key, $path));
-
-                    $appendix['path'] = join(DIRECTORY_SEPARATOR, ['_appendixes', $key, $path]);
+                    $appendix['href'] = join(DIRECTORY_SEPARATOR, ['_appendixes', $key, $href]);
                 }
             }
             $this->save(

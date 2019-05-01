@@ -216,7 +216,7 @@ class Annotation
                         $val = array_flip($val);
                     }
 
-                    $val = array_merge($_val, $val);
+                    $val = $_val ? array_merge($_val, $val) : $val;    // avoid merge([], ['k1' => 'v1']) resulted unexpected array
                 } else {
                     $_val[] = $val;
                     $val = $_val;

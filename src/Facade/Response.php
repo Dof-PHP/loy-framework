@@ -22,8 +22,8 @@ class Response extends Facade
     public static function error(int $status, string $message, array $context = [], string $domain = null)
     {
         $debug = $domain
-            ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'web.debug', false)
-            : ConfigManager::getEnv('web.debug', false);
+            ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_DEBUG', false)
+            : ConfigManager::getEnv('HTTP_DEBUG', false);
 
         $body = $debug ? [$status, $message, $context] : [$status, $message];
 
@@ -53,18 +53,27 @@ class Response extends Facade
 
     /**
      * It's a system level error
+     *
+     * @param int $status: HTTP response status
+     * @param array $error: Error code with message
+     * @param array $context: Exception context
+     * @param string $domain: Domain class namespace
      */
-    public static function exception(int $status, string $message, array $context = [], string $domain = null)
+    public static function exception(int $status, array $error, array $context = [], string $domain = null)
     {
         $context['__request'] = Request::getContext();
-        Log::log('exception', $message, $context);
+        Log::log('exception', join('-', $error), $context);
         unset($context['__request']);
 
-        $debug = $domain
-            ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'web.debug', false)
-            : ConfigManager::getEnv('web.debug', false);
+        $code = (int) $error[0] ?? -1;
+        $info = (string) $error[1] ?? -1;
 
-        $body = $debug ? [$status, $message, $context] : [$status, $message];
+        $debug = $domain
+            ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_DEBUG', false)
+            : ConfigManager::getEnv('HTTP_DEBUG', false);
+
+        $code = ($code === -1) ? $status : $code;
+        $body = $debug ? [$code, $info, $context] : [$code, $info];
 
         $wraperr = Port::get('wraperr');
         $wraperr = $wraperr ? $wraperr : ConfigManager::getFramework('web.exception.wrapper', null);
