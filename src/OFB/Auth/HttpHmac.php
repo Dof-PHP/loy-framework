@@ -6,6 +6,8 @@ namespace Dof\Framework\OFB\Auth;
 
 class HttpHmac extends HMAC
 {
+    protected $implementor = 'dof-php-http-hmac';
+
     /** @var array: Request Headers */
     private $headers = [];
 
@@ -40,16 +42,17 @@ class HttpHmac extends HMAC
         return join(PHP_EOL, [
             $this->version,
             $this->implementor,
+            $this->algorithm,
             $this->realm,
             $this->client,
-            $this->nonce,
             $this->timestamp,
-            $this->stringify($this->parameters),
-            $this->stringify($this->meta),
-            $this->stringify($this->headers),
+            $this->nonce,
             $this->verb,
             $this->host,
             $this->path,
+            $this->stringify($this->parameters),
+            $this->stringify($this->headers),
+            $this->stringify($this->more),
         ]);
     }
 

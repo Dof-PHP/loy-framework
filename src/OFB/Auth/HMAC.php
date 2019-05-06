@@ -33,8 +33,8 @@ class HMAC
     /** @var array: The biz parameters */
     protected $parameters = [];
 
-    /** @var array: The meta parameters */
-    protected $meta = [];
+    /** @var array: The extra parameters */
+    protected $more = [];
 
     /** @var string: The secret key for signature */
     protected $secret = 'to-be-replaced';
@@ -106,12 +106,13 @@ class HMAC
         return join(PHP_EOL, [
             $this->version,
             $this->implementor,
+            $this->algorithm,
             $this->realm,
             $this->client,
-            $this->nonce,
             $this->timestamp,
+            $this->nonce,
             $this->stringify($this->parameters),
-            $this->stringify($this->meta),
+            $this->stringify($this->more),
         ]);
     }
 
@@ -120,8 +121,12 @@ class HMAC
      *
      * @param array $data
      */
-    public function stringify(array $data)
+    public function stringify(array $data) : string
     {
+        if (! $data) {
+            return '';
+        }
+
         $data = array_change_key_case($data, CASE_LOWER);
 
         ksort($data);
@@ -151,6 +156,19 @@ class HMAC
     public function getVersion(): string
     {
         return $this->version;
+    }
+
+    /**
+     * Setter for version
+     *
+     * @param string $version
+     * @return HMAC
+     */
+    public function setVersion(string $version)
+    {
+        $this->version = $version;
+    
+        return $this;
     }
 
     /**
@@ -323,24 +341,24 @@ class HMAC
     }
 
     /**
-     * Getter for meta
+     * Getter for more
      *
      * @return array
      */
-    public function getMeta(): array
+    public function getMore(): array
     {
-        return $this->meta;
+        return $this->more;
     }
     
     /**
-     * Setter for meta
+     * Setter for more
      *
-     * @param array $meta
+     * @param array $more
      * @return HMAC
      */
-    public function setMeta(array $meta)
+    public function setMore(array $more)
     {
-        $this->meta = $meta;
+        $this->more = $more;
     
         return $this;
     }
