@@ -10,34 +10,34 @@ namespace Dof\Framework\OFB\Auth;
 class HMAC
 {
     /** @var string: The version string of hmac */
-    protected $version = '1.0';
+    protected $version = '1.0';    // #1
 
     /** @var string: The key of implementor of HMAC */
-    protected $implementor = 'dof-php-hmac';
+    protected $implementor = 'dof-php-hmac';    // #2
 
     /** @var string: Name of selected hashing algorithm (hash_hmac_algos()) */
-    protected $algorithm = 'sha256';
+    protected $algorithm = 'sha256';    // #3
 
     /** @var string: Key of Message provider */
-    protected $realm;
+    protected $realm;    // #4
 
     /** @var string: The unique identifier or acceess key of client  */
-    protected $client;
-
-    /** @var string: The Nonce string of the message */
-    protected $nonce;
+    protected $client;     // #5
 
     /** @var string: The timestamp generated message signature */
-    protected $timestamp;
+    protected $timestamp;    // #6
  
+    /** @var string: The Nonce string of the message */
+    protected $nonce;    // #7
+
     /** @var array: The biz parameters */
-    protected $parameters = [];
+    protected $parameters = [];    // #8
 
     /** @var array: The extra parameters */
-    protected $more = [];
+    protected $more = [];    // #9
 
     /** @var string: The secret key for signature */
-    protected $secret = 'to-be-replaced';
+    protected $secret;
 
     /** @var string: The message signature raw string */
     protected $signature;
@@ -47,7 +47,7 @@ class HMAC
      *
      * @return bool
      */
-    public function validate() : bool
+    public function verify() : bool
     {
         if (! $this->signature) {
             exception('MissingSignatureToValidate');
@@ -63,6 +63,8 @@ class HMAC
      */
     public function sign() : string
     {
+        $this->prepare();
+
         return hash_hmac($this->algorithm, $this->build(), $this->secret);
     }
 
@@ -101,9 +103,7 @@ class HMAC
      */
     public function build()
     {
-        $this->prepare();
-
-        return join(PHP_EOL, [
+        return join("\n", [
             $this->version,
             $this->implementor,
             $this->algorithm,

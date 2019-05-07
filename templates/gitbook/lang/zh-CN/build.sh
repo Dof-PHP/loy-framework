@@ -30,6 +30,7 @@ fi
 <?php if ($deploy ?? true) : ?>
 if [ -d "$GIT_DIR" ]; then
     cd __site
+    git add -A
     git commit -a -m 'auto updated'
     git push origin master
 fi

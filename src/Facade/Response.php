@@ -16,16 +16,29 @@ class Response extends Facade
     protected static $singleton = true;
     protected static $namespace = Instance::class;
 
+    public static function abort(int $status, array $error, array $context = [], string $domain = null)
+    {
+        return self::error($status, $error, $context, $domain);
+    }
+
     /**
      * It's a user level error
+     *
+     * @param int $status: HTTP response status
+     * @param array $error: Error code with message
+     * @param array $context: Error context
+     * @param string $domain: Domain class namespace
      */
-    public static function error(int $status, string $message, array $context = [], string $domain = null)
+    public static function error(int $status, array $error, array $context = [], string $domain = null)
     {
+        $code = (int) ($error[0] ?? -1);
+        $info = (string) ($error[1] ?? -1);
+
         $debug = $domain
             ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_DEBUG', false)
             : ConfigManager::getEnv('HTTP_DEBUG', false);
 
-        $body = $debug ? [$status, $message, $context] : [$status, $message];
+        $body = $debug ? [$code, $info, $context] : [$code, $info];
 
         // We dont record user error coz it might be huge amount abused reqeusts
 
@@ -65,14 +78,13 @@ class Response extends Facade
         Log::log('exception', join('-', $error), $context);
         unset($context['__request']);
 
-        $code = (int) $error[0] ?? -1;
-        $info = (string) $error[1] ?? -1;
+        $code = (int) ($error[0] ?? -1);
+        $info = (string) ($error[1] ?? -1);
 
         $debug = $domain
             ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_DEBUG', false)
             : ConfigManager::getEnv('HTTP_DEBUG', false);
 
-        $code = ($code === -1) ? $status : $code;
         $body = $debug ? [$code, $info, $context] : [$code, $info];
 
         $wraperr = Port::get('wraperr');

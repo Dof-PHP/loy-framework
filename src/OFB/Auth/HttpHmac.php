@@ -8,17 +8,17 @@ class HttpHmac extends HMAC
 {
     protected $implementor = 'dof-php-http-hmac';
 
-    /** @var array: Request Headers */
-    private $headers = [];
+    /** @var string: Request host */
+    private $host;    #10
 
     /** @var string: Request verb */
-    private $verb;
-
-    /** @var string: Request host */
-    private $host;
+    private $verb;    #11
 
     /** @var string: Request path */
-    private $path;
+    private $path;    #12
+
+    /** @var array: Request Headers */
+    private $headers = [];    #13
 
     public function prepare()
     {
@@ -39,7 +39,7 @@ class HttpHmac extends HMAC
     {
         $this->prepare();
 
-        return join(PHP_EOL, [
+        return join("\n", [
             $this->version,
             $this->implementor,
             $this->algorithm,
@@ -47,12 +47,12 @@ class HttpHmac extends HMAC
             $this->client,
             $this->timestamp,
             $this->nonce,
-            $this->verb,
-            $this->host,
-            $this->path,
             $this->stringify($this->parameters),
-            $this->stringify($this->headers),
             $this->stringify($this->more),
+            $this->host,
+            $this->verb,
+            $this->path,
+            $this->stringify($this->headers),
         ]);
     }
 

@@ -177,32 +177,71 @@ class Command
     }
 
     /**
+     * @CMD(test)
+     * @Desc(Run all domain tests)
+     */
+    public function test($console)
+    {
+        $domains = DomainManager::getDirs();
+        foreach ($domains as $domain) {
+            $console->title("---- Domain Root: {$domain} ----");
+            $this->__test($console, ospath($domain, 'tests'));
+            $console->line();
+        }
+    }
+
+    /**
      * @CMD(test.domain)
      * @Desc(Run domain tests)
      */
     public function testDomain($console)
     {
+        $domain = $console->first('domain');
+        if (! $domain) {
+            $console->fail('MissingDomainName', true);
+        }
+
+        $_domain = DomainManager::getByKey($domain);
+        if (! $_domain) {
+            $console->exception('DomainNotFound', compact('domain'));
+        }
+
+        $this->__test($console, ospath($_domain, 'tests'));
     }
 
     /**
-     * @CMD(test.framework)
-     * @Desc(Run framework tests)
+     * @CMD(test.dir)
+     * @Desc(Run Dof GWT test cases by directory)
      */
-    public function testFramework($console)
+    public function testDir($console)
     {
-        $tests = ospath(__DIR__.'/../../..', ['tests']);
+        if (! $console->hasOption('path')) {
+            $console->fail('MissingTestsPath', true);
+        }
+
+        $path = $console->getOption('path');
+        if (! is_dir($path)) {
+            $path = ospath(Kernel::getRoot(), $path);
+            if (! is_dir($path)) {
+                $console->exception('TestsPathNotExists', compact('path'));
+            }
+        }
+
+        $this->__test($console, $path);
+    }
+
+    private function __test($console, string $dir, array $excludes = [])
+    {
+        GWT::reset();
         $start = microtime(true);
-        run_gwt_tests($tests, [
-            ospath($tests, 'run.php'),
-            ospath($tests, 'data'),
-        ]);
+        GWT::run($dir, $excludes);
+        $end = microtime(true);
         $success  = GWT::getSuccess();
         $_success = count($success);
         $failure  = GWT::getFailure();
         $_failure = count($failure);
         $exception  = GWT::getException();
         $_exception = count($exception);
-        $end = microtime(true);
 
         $console->info('-- Time Taken: '.($end-$start).' s');
         $console->info('-- Memory Used: '.format_bytes(memory_get_usage()));
@@ -216,6 +255,19 @@ class Command
         if ($_exception > 0) {
             $console->warning(json_pretty($exception));
         }
+    }
+
+    /**
+     * @CMD(test.framework)
+     * @Desc(Run framework tests)
+     */
+    public function testFramework($console)
+    {
+        $tests = ospath(__DIR__.'/../../..', ['tests']);
+        $this->__test($console, $tests, [
+            ospath($tests, 'run.php'),
+            ospath($tests, 'data'),
+        ]);
     }
 
     /**

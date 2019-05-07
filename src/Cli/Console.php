@@ -57,9 +57,14 @@ class Console
         echo stringify($result);
     }
 
+    public function title(string $text)
+    {
+        $this->line($this->render($text, 'LIGHT_BLUE'));
+    }
+
     public function info(string $text, bool $exit = false)
     {
-        $this->line($this->render($text, 'BLUE'));
+        $this->line($this->render($text, 'LIGHT_GRAY'));
 
         if ($exit) {
             $this->exit();
@@ -123,6 +128,18 @@ class Console
     public function exit()
     {
         exit;
+    }
+
+    /**
+     * Get the first parameter or option value by name
+     */
+    public function first(string $option = null)
+    {
+        if ($option && $this->hasOption($option)) {
+            return $this->getOption($option);
+        }
+
+        return $this->getParams()[0] ?? null;
     }
 
     public function hasOption(string $name, $default = null) : bool

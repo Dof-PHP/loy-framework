@@ -12,6 +12,7 @@ use Dof\Framework\WrapinManager;
 use Dof\Framework\ConfigManager;
 use Dof\Framework\TypeHint;
 use Dof\Framework\Validator;
+use Dof\Framework\DDD\Service;
 use Dof\Framework\Facade\Log;
 use Dof\Framework\Facade\Request;
 use Dof\Framework\Facade\Response;
@@ -116,19 +117,24 @@ final class Kernel
         try {
             $result = (new $class)->{$method}(...$params);
         } catch (Throwable $e) {
-            if (is_anonymous($e) && (is_exception($e, 'DofServiceException'))) {
+            if (is_anonymous($e) && (is_exception($e, Service::EXCEPTION_NAME))) {
                 $previous = parse_throwable($e)['__previous'] ?? [];
-                $message = $previous['message'] ?? 'DofServiceException';
+                $message = $previous['message'] ?? null;
                 $context = $previous['context'] ?? [];
 
                 // Here we treat all service exception as client side error by default
                 // Coz if not there should never throw the exception named as this
-                $status = (int) ($context['__status'] ?? 400);
-                $code = (int) ($context['__code'] ?? 0);
-                $info = (int) ($context['__info'] ?? 'ok');
-                unset($context['__status']);
+                $errors = $context['__errors'] ?? [];
+                $error  = ERR::DOF_SERVICE_EXCEPTION;
+                $status = 400;
+                if ($_error = ($errors[$message] ?? null)) {
+                    $error  = [($_error[0] ?? -1), $message];
+                    $status = $_error[1] ?? 400;
+                }
 
-                Response::error($status, $message, $context, $class);
+                unset($context['__errors']);
+
+                Response::error($status, $error, $context, $class);
             } else {
                 Kernel::throw(ERR::RESULTING_RESPONSE_FAILED, compact('class', 'method'), 500, $e, $class);
             }
@@ -197,7 +203,7 @@ final class Kernel
         $route = PortManager::find($uri, $verb, $mimes);
         if (! $route) {
             $mime = Request::getMimeShort();
-            Response::error(404, 'RouteNotExists', compact('verb', 'uri', 'mime'));
+            Response::error(404, ERR::ROUTE_NOT_EXISTS, compact('verb', 'uri', 'mime'));
         }
         $port = PortManager::get($route);
         if (! $port) {
@@ -209,7 +215,7 @@ final class Kernel
         Response::setMimeAlias(Response::mimeout());
 
         if (($mimein = Port::get('mimein')) && (! Request::isMimeAlias($mimein))) {
-            Response::error(400, 'InvalidRequestMime', [
+            Response::error(400, ERR::INVALID_REQUEST_MIME, [
                 'current' => Request::getMimeShort(),
                 'require' => Request::getMimeByAlias($mimein, '?'),
             ], Route::get('class'));
@@ -237,12 +243,12 @@ final class Kernel
                 : WrapinManager::execute($arguments, Route::get('class'));
 
             if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
-                $context = (array) $fail->value;
+                $context = $fail->toArray();
                 if ($wrapin) {
                     $context['wrapins'][] = $wrapin;
                 }
 
-                Response::error(400, $fail->key, $context, Route::get('class'));
+                Response::error(400, ERR::WRAPIN_FAILED, $context, Route::get('class'));
             }
 
             Port::getInstance()->argument = collect($validator->getResult());
@@ -328,10 +334,10 @@ final class Kernel
             $class  = Route::get('class');
             $method = Route::get('method');
             if (is_exception($e, 'TypeHintConvertFailed')) {
-                Response::error(400, 'InvalidRouteParameter', parse_throwable($e), $class);
+                Response::error(400, ERR::INVALID_ROUTE_PARAMETER, parse_throwable($e), $class);
             }
 
-            Kernel::throw(ERRO::BUILD_PORT_METHOD_PARAMETERS_FAILED, compact('class', 'method'), 500, $e, $class);
+            Kernel::throw(ERR::BUILD_PORT_METHOD_PARAMETERS_FAILED, compact('class', 'method'), 500, $e, $class);
         }
     }
 

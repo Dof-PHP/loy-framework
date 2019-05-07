@@ -268,7 +268,7 @@ final class DomainManager
 
     public static function getByKey(string $key = null) : ?string
     {
-        return self::$keys[$key] ?? null;
+        return self::$keys[strtolower((string) $key)] ?? null;
     }
 
     public static function getByFile(string $path = null) : ?string

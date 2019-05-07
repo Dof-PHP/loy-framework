@@ -9,8 +9,10 @@ use Dof\Framework\Container;
 
 abstract class Service
 {
-    /** @var array: A config map for custom exception status */
-    protected $__status = [];
+    const EXCEPTION_NAME = 'DofServiceException';
+
+    /** @var array: A config map for custom exception */
+    protected $__errors = [];
 
     abstract public function execute();
 
@@ -21,9 +23,11 @@ abstract class Service
         return $this;
     }
 
-    final public function status(string $message, int $status)
+    final public function error(array $error, int $status)
     {
-        $this->__status[$message] = $status;
+        $code = $error[0] ?? -1;
+        $info = $error[1] ?? -1;
+        $this->__errors[$info] = [$code, $status];
 
         return $this;
     }
@@ -31,9 +35,9 @@ abstract class Service
     final public function exception(string $message, array $context = [], Throwable $previous = null)
     {
         $context = parse_throwable($previous, $context);
-        $context['__status'] = $this->__status[$message] ?? null;
+        $context['__errors'] = $this->__errors[$message] ?? null;
 
-        exception('DofServiceException', compact('message', 'context'));
+        exception(self::EXCEPTION_NAME, compact('message', 'context'));
     }
 
     final public static function init()

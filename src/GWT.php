@@ -13,6 +13,13 @@ final class GWT
     private static $failure = [];
     private static $exception = [];
 
+    public static function reset()
+    {
+        self::$success = [];
+        self::$failure = [];
+        self::$exception = [];
+    }
+
     /**
      * Run GWT test cases by directory and exclude for some files
      *

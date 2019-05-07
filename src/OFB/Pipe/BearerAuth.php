@@ -7,7 +7,7 @@ namespace Dof\Framework\OFB\Pipe;
 use Throwable;
 use Dof\Framework\Facade\JWT;
 use Dof\Framework\Facade\Response;
-use Dof\Framework\ConfigManager;
+use Dof\Framework\Web\ERR;
 
 /**
  * AUTHORIZATION: Bearer {token}
@@ -31,7 +31,7 @@ class BearerAuth
         $header = trim((string) $request->getHeader('AUTHORIZATION'));
         if ($header) {
             if (! ci_equal(mb_substr($header, 0, 7), 'Bearer ')) {
-                $this->abort(400, 'InvalidBearerToken', [], $port, $response);
+                Response::abort(401, ERR::INVALID_BEARER_TOKEN, [], $port->get('class'));
             }
 
             $token = mb_substr($header, 7);
@@ -41,24 +41,24 @@ class BearerAuth
         }
 
         if (! $token) {
-            $this->abort(401, 'MissingTokenHeaderOrParameter', [], $port, $response);
+            Response::abort(401, ERR::MISSING_TOKEN_HEADER_OR_PARAMETER, [], $port->get('class'));
         }
 
 
         $secret = ConfigManager::getDomainFinalEnvByNamespace($route->get('class'), $this->secret);
         if (! $secret) {
-            $this->abort(500, 'TokenSecretMissing', [
+            Response::abort(500, ERR::TOKEN_SECRET_MISSING, [
                 'key' => $this->secret,
                 'ns'  => static::class,
-            ], $port, $response);
+            ], $port->get('class'));
         }
         $id = $secret[0] ?? null;
         if (is_null($id)) {
-            $this->abort(500, 'TokenSecretIdMissing', [], $port, $response);
+            Response::abort(500, ERR::TOKEN_SECRET_ID_MISSING, [], $port->get('class'));
         }
         $key = $secret[1] ?? null;
         if (is_null($key) || (! $key)) {
-            $this->abort(500, 'TokenSecretKeyMissing', [], $port, $response);
+            Response::abort(500, ERR::TOKEN_SECRET_KEY_MISSING, [], $port->get('class'));
         }
 
         try {
@@ -72,38 +72,13 @@ class BearerAuth
             $message = method_exists($e, 'getName') ? $e->getName() : $e->getMessage();
             $context = [];
             $context = parse_throwable($e, $context);
+            $context['__error'] = $message;
 
-            $this->abort(400, $message, $context, $port, $response);
+            Response::abort(400, ERR::JWT_TOKEN_VERIFY_FAEILD, $context, $port->get('class'));
         }
 
         $this->token = $token;
 
         return true;
-    }
-
-    protected function abort($status, $message, $context, $port, $response)
-    {
-        $response->setStatus($status)->setBody($this->wrap($port, [$status, $message, $context]))->send();
-    }
-
-    protected function wrap($port, $body)
-    {
-        $wraperr = $port->get('wraperr');
-        $wraperr = $wraperr ? $wraperr : ConfigManager::getFramework('web.error.wrapper', null);
-        if (! $wraperr) {
-            return $body;
-        }
-
-        if (is_array($wraperr)) {
-            $body = Response::wraperr($body, $wraperr);
-        } elseif (class_exists($wraperr)) {
-            try {
-                $body = Response::wraperr($body, wrapper($wraperr, 'err'));
-            } catch (Throwable $e) {
-                // ignore if any exception thrown to avoid empty response
-            }
-        }
-
-        return $body;
     }
 }
