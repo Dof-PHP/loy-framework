@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Dof\OFB\Pipe;
+namespace Dof\Framework\OFB\Pipe;
 
 use Throwable;
 use Dof\Framework\Facade\Response;
@@ -18,7 +18,7 @@ abstract class HttpHmacAuth
     {
         $header = trim((string) $request->getHeader('AUTHORIZATION'));
         if (! $header) {
-            Response::abort(401, ERR::MISSING_AUTH_TOKEN_HEADER);
+            Response::abort(401, ERR::MISSING_HTTP_HMAC_TOKEN_HEADER);
         }
         if (! ci_equal(mb_substr($header, 0, 10), 'http-hmac ')) {
             Response::abort(401, ERR::INVALID_HTTP_HMAC_TOKEN, [], $port->get('class'));
@@ -31,12 +31,12 @@ abstract class HttpHmacAuth
 
         $data = base64_decode($token);
         if (! is_string($data)) {
-            Response::abort(401, ERR::INVALID_TOKEN_IN_HEADER, ['type' => 1], $port->get('class'));
+            Response::abort(401, ERR::INVALID_TOKEN_IN_HEADER, ['err' => 'Non-string token raw'], $port->get('class'));
         }
-        $data = array_trim_from_string($data, "\n");
+        $data = explode("\n", $data);
         $data = array_values($data);
         if (count($data) !== 10) {
-            Response::abort(401, ERR::INVALID_TOKEN_IN_HEADER, ['type' => 2], $port->get('class'));
+            Response::abort(401, ERR::INVALID_TOKEN_IN_HEADER, ['err' => 'Params count mis-match'], $port->get('class'));
         }
         list(
             $version,
@@ -57,10 +57,17 @@ abstract class HttpHmacAuth
         $verb = $route->get('verb');
         $host = $request->getHost();
         $path = $request->getUriRaw();
+        $params = $request->all();
+
+        $_more = [];
+        parse_str(urldecode($more), $_more);
+        $_headers = [];
+        parse_str(urldecode($headers), $_headers);
 
         try {
-            $result = singleton(HttpHmac::class)::setSignature($signature)
-                ->setSecret($this->getSecret($client, $port->get('class')))
+            $result = singleton(HttpHmac::class)
+                ->setSignature($signature)
+                ->setSecret($this->getSecret($realm, $client, $port->get('class')))
                 ->setVersion($version)
                 ->setImplementor($implementor)
                 ->setAlgorithm($algorithm)
@@ -68,21 +75,34 @@ abstract class HttpHmacAuth
                 ->setClient($client)
                 ->setTimestamp($timestamp)
                 ->setNonce($nonce)
-                ->setParameters($parameters)
-                ->setMore($more)
+                ->setParameters($params)
+                ->setMore($_more)
                 ->setHost($host)
                 ->setVerb($verb)
                 ->setPath($path)
-                ->setHeaders($headers)
+                ->setHeaders($_headers)
                 ->verify();
 
             if ($result !== true) {
-                Response::abort(401, ERR::INVALID_TOKEN_SIGNATURE, [], $port->get('class'));
+                Response::abort(401, ERR::INVALID_HTTP_HMAC_TOKEN_SIGNATURE, [], $port->get('class'));
             }
+
+            return true;
         } catch (Throwable $e) {
-            Response::abort(401, ERR::HTTP_HMAC_TOKEN_VEFIY_FAILED, [], $port->get('class'));
+            $context = [];
+            $context = parse_throwable($e, $context);
+            Response::abort(401, ERR::HTTP_HMAC_TOKEN_VEFIY_FAILED, $context, $port->get('class'));
         }
     }
 
-    abstract public function getSecret(string $client, $domain) : string;
+    /**
+     * Get Http Hmac auth client secret
+     *
+     * @param string $relam: Client Realm
+     * @param string $client: AppId
+     * @param string $domain: domain class namespace
+     *
+     * @return string : AppKey
+     */
+    abstract public function getSecret(string $realm, string $client, string $domain) : string;
 }

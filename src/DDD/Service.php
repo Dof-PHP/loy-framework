@@ -16,26 +16,43 @@ abstract class Service
 
     abstract public function execute();
 
-    final public function __status(array $map)
-    {
-        $this->__status = array_merge($this->__status, $map);
-
-        return $this;
-    }
-
-    final public function error(array $error, int $status)
+    final public function error(array $error, int $status = null)
     {
         $code = $error[0] ?? -1;
         $info = $error[1] ?? -1;
+
         $this->__errors[$info] = [$code, $status];
 
         return $this;
     }
 
+    /**
+     * Re-Throw the exception throwed by other services
+     */
+    final public function throw(Throwable $previous)
+    {
+        if (is_anonymous($previous) && (is_exception($previous, self::EXCEPTION_NAME))) {
+            $context = [];
+            $context = parse_throwable($previous, $context);
+            $context = $context['__previous'] ?? [];
+            $message = $context['message'] ?? null;
+            if ($message) {
+                $context = $context['context'];
+                unset($context['__errors']);
+                return $this->exception($message, $context);
+            }
+        }
+
+        throw $previous;
+    }
+
+    /**
+     * Throw an exception in a serivce
+     */
     final public function exception(string $message, array $context = [], Throwable $previous = null)
     {
         $context = parse_throwable($previous, $context);
-        $context['__errors'] = $this->__errors[$message] ?? null;
+        $context['__errors'] = $this->__errors;
 
         exception(self::EXCEPTION_NAME, compact('message', 'context'));
     }

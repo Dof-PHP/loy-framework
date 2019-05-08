@@ -17,6 +17,7 @@ class GitBook
     const DOC_API = 'doc.api';
     const DOC_WRAPIN = 'doc.wrapin';
     const DOC_MODEL  = 'doc.model';
+    const DOC_ERROR  = 'errors.md';
     const BOOK_JSON = 'book.json';
     const VER_INDEX = 'index.html';
     const WRAPIN_OUTPUT = '_wrapin';
@@ -33,6 +34,9 @@ class GitBook
 
     /** @var array: Data model templates data */
     private $modelData = [];
+
+    /** @var array: Errors templates data */
+    private $errorData = [];
 
     /** @var string: Templates directory */
     private $templates;
@@ -64,8 +68,11 @@ class GitBook
     /** @var string: Data Model Doc template path */
     private $docModel;
 
+    /** @var string: Errors Doc template path */
+    private $docError;
+
     /** @var string: Doc menus tree */
-    private $menuTree  = '';
+    private $menuTree = '';
 
     /** @var int: Doc menus depth */
     private $menuDepth = 0;
@@ -107,6 +114,10 @@ class GitBook
         if (! is_file($docModel)) {
             exception('DataModelDocTemplateNotFound', compact('docModel'));
         }
+        $docError = ospath($template, self::DOC_ERROR);
+        if (! is_file($docError)) {
+            exception('ErrorDocTemplateNotFound', compact('docError'));
+        }
         $verindex = ospath($template, self::VER_INDEX);
         if (! is_file($verindex)) {
             exception('DocVersionSelectIndexNotFound', compact('verindex'));
@@ -120,6 +131,7 @@ class GitBook
         $this->verindex = $verindex;
         $this->docApi    = $docApi;
         $this->docModel  = $docModel;
+        $this->docError  = $docError;
         $this->docWrapin = $docWrapin;
     }
 
@@ -283,6 +295,14 @@ class GitBook
             if (is_file($summary)) {
                 unlink($summary);
             }
+            $error = ospath($ver, self::DOC_ERROR);
+            if (is_file($error)) {
+                unlink($error);
+            }
+            $this->save(
+                $this->render($this->docError, ['errors' => $this->errorData]),
+                $error
+            );
             $appendixes = $domain['appendixes'] ?? [];
             if ($appendixes) {
                 $_appendixes = ospath($ver, '_appendixes');
@@ -310,7 +330,11 @@ class GitBook
                 }
             }
             $this->save(
-                $this->render($this->summary, ['tree' => $this->menuTree, 'appendixes' => $appendixes]),
+                $this->render($this->summary, [
+                    'tree' => $this->menuTree,
+                    'appendixes' => $appendixes,
+                    'errors' => true,
+                ]),
                 $summary
             );
 
@@ -592,6 +616,19 @@ class GitBook
     public function setModelData(array $modelData)
     {
         $this->modelData = $modelData;
+    
+        return $this;
+    }
+
+    /**
+     * Setter for errorData
+     *
+     * @param array $errorData
+     * @return GitBook
+     */
+    public function setErrorData(array $errorData)
+    {
+        $this->errorData = $errorData;
     
         return $this;
     }

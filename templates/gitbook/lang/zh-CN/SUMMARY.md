@@ -5,6 +5,10 @@
 
 * [必读](README.md)
 
+<?php if ($errors ?? false) : ?>
+* [接口错误码列表](errors.md)
+<?php endif ?>
+
 ----
 <?php endif ?>
 

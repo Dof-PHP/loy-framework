@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework\Doc;
 
 use Dof\Framework\PortManager;
+use Dof\Framework\ErrorManager;
 use Dof\Framework\EntityManager;
 use Dof\Framework\DataModelManager;
 use Dof\Framework\WrapinManager;
@@ -50,6 +51,7 @@ final class Generator
             ->setApiData(PortManager::getDocs())
             ->setWrapinData(WrapinManager::getWrapins())
             ->setModelData(self::getDataModels())
+            ->setErrorData([ErrorManager::getDefault(), ErrorManager::getDomains()])
             ->buildAll();
     }
 
@@ -86,6 +88,7 @@ final class Generator
             ->setLanguage($lang)
             ->setOutput($save)
             ->setApiData(PortManager::getDocs())
+            ->setErrorData([ErrorManager::getDefault(), ErrorManager::getDomains()])
             ->buildHttp(true);
     }
 }

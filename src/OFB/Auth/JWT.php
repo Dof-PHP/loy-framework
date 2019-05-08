@@ -124,7 +124,7 @@ class JWT
             exception('UnSupportedAlgorithm', compact('alg'));
         }
         if ($signature !== $this->sign(join('.', [$header, $payload]), $alg, $this->secretKey)) {
-            exception('InvalidTokenSignature', compact('signature'));
+            exception('InvalidJwtTokenSignature', compact('signature'));
         }
         $data = $this->decode($payload, true);
         $tza = $data[0]['tza'] ?? null;

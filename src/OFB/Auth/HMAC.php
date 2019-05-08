@@ -239,7 +239,7 @@ class HMAC
      */
     public function setRealm(string $realm)
     {
-        $this->realm = $realm;
+        $this->realm = urlencode($realm);
     
         return $this;
     }
@@ -262,7 +262,7 @@ class HMAC
      */
     public function setClient(string $client)
     {
-        $this->client = $client;
+        $this->client = urlencode($client);
     
         return $this;
     }
@@ -285,7 +285,7 @@ class HMAC
      */
     public function setNonce(string $nonce)
     {
-        $this->nonce = $nonce;
+        $this->nonce = urlencode($nonce);
     
         return $this;
     }

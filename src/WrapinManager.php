@@ -13,6 +13,7 @@ final class WrapinManager
     const WRAPIN_DIR = ['Http', 'Wrapper', 'In'];
     const RESERVE_KEYS = [
         'COMPATIBLE' => 1,
+        'LOCATION' => 1,
         // 'WRAPIN'  => 1,
         '__ext__' => 1,
         'TITLE' => 1,

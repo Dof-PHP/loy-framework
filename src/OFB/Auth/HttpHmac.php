@@ -106,7 +106,7 @@ class HttpHmac extends HMAC
      */
     public function setVerb(string $verb)
     {
-        $this->verb = $verb;
+        $this->verb = urlencode($verb);
     
         return $this;
     }
@@ -129,7 +129,7 @@ class HttpHmac extends HMAC
      */
     public function setHost(string $host)
     {
-        $this->host = $host;
+        $this->host = urlencode($host);
     
         return $this;
     }
@@ -152,7 +152,7 @@ class HttpHmac extends HMAC
      */
     public function setPath(string $path)
     {
-        $this->path = $path;
+        $this->path = urlencode($path);
     
         return $this;
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework\OFB\Pipe;
 
 use Throwable;
+use Dof\Framework\ConfigManager;
 use Dof\Framework\Facade\JWT;
 use Dof\Framework\Facade\Response;
 use Dof\Framework\Web\ERR;
@@ -40,10 +41,10 @@ class BearerAuth
             $token = $request->match($this->allowTokenParameters, $key);
         }
 
+        $token = trim($token);
         if (! $token) {
             Response::abort(401, ERR::MISSING_TOKEN_HEADER_OR_PARAMETER, [], $port->get('class'));
         }
-
 
         $secret = ConfigManager::getDomainFinalEnvByNamespace($route->get('class'), $this->secret);
         if (! $secret) {
@@ -74,7 +75,7 @@ class BearerAuth
             $context = parse_throwable($e, $context);
             $context['__error'] = $message;
 
-            Response::abort(400, ERR::JWT_TOKEN_VERIFY_FAEILD, $context, $port->get('class'));
+            Response::abort(400, ERR::JWT_TOKEN_VERIFY_FAILED, $context, $port->get('class'));
         }
 
         $this->token = $token;

@@ -12,7 +12,7 @@ use Dof\Framework\RepositoryManager;
  * Storage is the persistence layer implementations
  * In Dof, it's also the configuration of ORM
  */
-class Storage implements Repository
+abstract class Storage implements Repository
 {
     /**
      * @Column(id)

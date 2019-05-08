@@ -122,14 +122,16 @@ final class Kernel
                 $message = $previous['message'] ?? null;
                 $context = $previous['context'] ?? [];
 
-                // Here we treat all service exception as client side error by default
-                // Coz if not there should never throw the exception named as this
                 $errors = $context['__errors'] ?? [];
                 $error  = ERR::DOF_SERVICE_EXCEPTION;
+                // Here we treat all service exception as client side error by default
+                // Coz if not there should never throw the exception named as this
                 $status = 400;
                 if ($_error = ($errors[$message] ?? null)) {
                     $error  = [($_error[0] ?? -1), $message];
                     $status = $_error[1] ?? 400;
+                } else {
+                    $context['__info'] = $message;
                 }
 
                 unset($context['__errors']);
@@ -248,7 +250,7 @@ final class Kernel
                     $context['wrapins'][] = $wrapin;
                 }
 
-                Response::error(400, ERR::WRAPIN_FAILED, $context, Route::get('class'));
+                Response::error(400, ERR::WRAPIN_VALIDATE_FAILED, $context, Route::get('class'));
             }
 
             Port::getInstance()->argument = collect($validator->getResult());

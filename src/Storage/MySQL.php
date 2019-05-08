@@ -49,6 +49,15 @@ class MySQL implements StorageInterface
 
     public function raw(string $sql)
     {
+        $start = microtime(true);
+
+        $statement = $this->getConnection()->query($sql);
+
+        $result = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        $this->appendSQL($sql, $start);
+
+        return $result;
     }
 
     /**

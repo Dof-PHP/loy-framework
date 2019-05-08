@@ -40,7 +40,7 @@ class GraphQLAlike
 
     private function findAndSetFeilds($request, $route, bool $exception)
     {
-        $fields = $request->get($this->getFieldsParameterName());
+        $fields = $request->all($this->getFieldsParameterName());
         if (! $fields) {
             return $exception ? exception('MissingGraphQLFields') : null;
         }

@@ -118,6 +118,8 @@ final class Kernel
         WrapinManager::load($domains);
 
         PortManager::load($domains);
+
+        // ErrorManager::load($domains);
     }
 
     public static function register(string $event, Closure $callback)
