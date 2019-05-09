@@ -832,7 +832,7 @@ final class PortManager
                 continue;
             }
             $_rule = strtoupper($_rule);
-            if (($_rule === 'NEED') && ($_ext != '0')) {
+            if (($_rule === 'NEED') && ($_ext == '0')) {
                 $neednot = true;
             }
             $_ext = $_ext ? ":{$_ext}": '';
