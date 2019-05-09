@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace Dof\Framework\OFB\Wrapper;
 
-class Classic
+class Full
 {
     public function wraperr()
     {
-        return ['code', 'info', 'more'];
+        return [
+            '__DATA__' => 'data',
+            'code' => 0,
+            'info' => 'ok',
+            'more',
+            'meta'
+        ];
     }
 
     public function wrapout()
@@ -18,6 +24,7 @@ class Classic
             'code' => 0,
             'info' => 'ok',
             'more',
+            'meta'
         ];
     }
 }

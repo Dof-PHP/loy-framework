@@ -1034,7 +1034,7 @@ final class PortManager
 
     public static function __annotationMultipleMergeHeaderStatus()
     {
-        return true;
+        return 'assoc';
     }
 
     public static function __annotationFilterHeaderstatus(string $headerStatus, array $ext, string $namespace) : array

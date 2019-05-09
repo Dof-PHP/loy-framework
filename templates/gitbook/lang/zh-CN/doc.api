@@ -97,9 +97,13 @@ LINK;
 
 <?php foreach($headers['status'] as $code => $info) : ?>
 <?php if ($info) : ?>
+
 - `<?= $code ?>`: <?= $info ?>
+
 <?php else : ?>
+
 - `<?= $code ?>`
+
 <?php endif ?>
 <?php endforeach ?>
 <?php endif ?>

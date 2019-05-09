@@ -27,7 +27,7 @@ class ResponseSupport
             $meta = $result->getMeta();
             $response->addWrapout('paginator', $meta);
 
-            // Should not return $result->getList() for customizing paginator later
+            // Should not return $result->getList() coz we may customize paginator later
             // Paginator is special, here we're not convert it into array
             return $result;
         }
