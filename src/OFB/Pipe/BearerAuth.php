@@ -39,6 +39,8 @@ class BearerAuth
         } elseif ($this->allowTokenParameters) {
             $key   = null;
             $token = $request->match($this->allowTokenParameters, $key);
+        } else {
+            $token = '';
         }
 
         $token = trim($token);
