@@ -11,23 +11,27 @@ class CORS
 {
     public function preflight($request, $response)
     {
-        if (ci_equal($request->getMethod(), 'OPTIONS')) {
-            $headers = [
-                'Access-Control-Allow-Origin'   => join(',', $this->getAccessControlAllowOrigin()),
-                'Access-Control-Expose-Headers' => join(',', $this->getAccessControlExposeHeaders()),
-                'Access-Control-Allow-Methods'  => join(',', $this->getAccessControlAllowMethods()),
-                'Access-Control-Allow-Headers'  => join(',', $this->getAccessControlAllowHeaders()),
-                'Access-Control-Max-Age'        => $this->getAccessControlMaxAge(),
-            ];
+        // NOTES: It's might not working if your web server has limited reqeust methods before php
+        $headers = [
+            'Access-Control-Allow-Origin'   => join(',', $this->getAccessControlAllowOrigin()),
+            'Access-Control-Expose-Headers' => join(',', $this->getAccessControlExposeHeaders()),
+            'Access-Control-Allow-Methods'  => join(',', $this->getAccessControlAllowMethods()),
+            'Access-Control-Allow-Headers'  => join(',', $this->getAccessControlAllowHeaders()),
+            'Access-Control-Max-Age' => $this->getAccessControlMaxAge(),
+            'Access-Control-Allow-Credentials' => 'true',
+        ];
 
+        if (ci_equal($request->getMethod(), 'OPTIONS')) {
             return $response
                 ->setMimeAlias('text')
                 ->setBody(null)
-                ->setStatus(200)
+                ->setStatus(204)
                 ->setError(false)
                 ->setHeaders($headers)
                 ->send();
         }
+
+        $response->setHeaders($headers);
 
         return true;
     }
