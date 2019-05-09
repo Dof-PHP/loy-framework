@@ -213,6 +213,9 @@ final class DomainManager
             public function env(string $key = null)
             {
                 $env = $this->__config()->get('env');
+                if (! $env) {
+                    return null;
+                }
 
                 return $key ? $env->get($key) : $env;
             }

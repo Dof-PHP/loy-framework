@@ -185,7 +185,12 @@ class Command
         $domains = DomainManager::getDirs();
         foreach ($domains as $domain) {
             $console->title("---- Domain Root: {$domain} ----");
-            $this->__test($console, ospath($domain, 'tests'));
+            $tests = ospath($domain, 'tests');
+            if (! is_dir($tests)) {
+                continue;
+            }
+
+            $this->__test($console, $tests);
             $console->line();
         }
     }
