@@ -72,7 +72,7 @@ class Redis implements StorageInterface
 
     private function appendCMD(...$params)
     {
-        $this->cmds[] = join(' ', $params);
+        $this->cmds[] = fixed_string(join(' ', $params), 255);
 
         return $this;
     }

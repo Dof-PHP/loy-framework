@@ -111,13 +111,15 @@ GWT('Test dexml() #1: assoc array', '<?xml version="1.0" encoding="utf-8"?><xml>
     return $tester->assertArrayEqual(['a' => ['b' => ['d' => 1024]]], $result);
 });
 
-/* FIXME
 GWT('Test dexml() #1: index array', '<?xml version="1.0" encoding="utf-8"?><xml><0>1</0><1>2</1><2>3</2><3>4</3></xml>', function ($given) {
-    return dexml($given);
+    try {
+        return dexml($given);    // StartTag: invalid element name
+    } catch (\Exception $e) {
+        return method_exists($e, 'getName') ? $e->getName() : false;
+    }
 }, function ($result, $tester) {
-    return $tester->assertArrayEqual([1, 2, 3, 4], $result);
+    return $result === 'IllegalXMLformat';
 });
- */
 
 GWT('Test is_xml(): #1', '123456', function ($given) {
     return is_xml($given);
@@ -171,4 +173,10 @@ GWT('Test fdate(): #1', [strtotime('2019/01/02 10:10:10'), 'm/d/y H:i:s'], funct
     return fdate(...$given);
 }, function ($result, $tester) {
     return $result === '01/02/19 10:10:10';
+});
+
+GWT('Test fixed_string(): #1', ['abcdefghijklmnopqrstuvwxyz1234567890', 15], function ($given) {
+    return fixed_string(...$given);
+}, function ($result, $tester) {
+    return mb_strlen($result) === 15;
 });

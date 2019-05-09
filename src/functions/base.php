@@ -369,8 +369,7 @@ if (! function_exists('dexml')) {
         );
         if (($error = libxml_get_last_error()) && isset($error->message)) {
             libxml_clear_errors();
-            // exception('IllegalXMLformat', ['xml' => $xml, 'error' => $error->message]);
-            return [];
+            exception('IllegalXMLformat', ['xml' => $xml, 'error' => $error->message]);
         }
 
         return dejson(enjson($xml), true);
@@ -385,18 +384,6 @@ if (! function_exists('json_pretty')) {
 if (! function_exists('enjson')) {
     function enjson($data)
     {
-        if (is_object($data)) {
-            if (method_exists($data, '__toArray')) {
-                $data = $data->__toArray();
-            } elseif (method_exists($data, 'toArray')) {
-                $data = $data->toArray();
-            }
-
-            if (! is_array($data)) {
-                return '';
-            }
-        }
-
         $json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         return $json ?: '';
@@ -573,7 +560,7 @@ if (! function_exists('stringify')) {
             if (method_exists($value, '__toArray')) {
                 $res = $value->__toArray();
                 if (is_array($res)) {
-                    return ensjson($res);
+                    return enjson($res);
                 }
             }
 
@@ -1141,5 +1128,35 @@ if (! function_exists('get_class_consts')) {
         }
 
         return (new \ReflectionClass($ns))->getConstants();
+    }
+}
+if (! function_exists('fixed_string')) {
+    function fixed_string(string $raw, int $limit, string $fill = ' ...... ')
+    {
+        $len = mb_strlen($fill);
+        if ($limit < 1) {
+            return '';
+        }
+        if ($limit < $len) {
+            return mb_substr($raw, 0, $limit);
+        }
+
+        $length = mb_strlen($raw);
+        if ($length <= ($len-2)) {
+            return $raw;
+        }
+        if ($length <= $limit) {
+            return $raw;
+        }
+
+        $limit = $limit - $len;
+
+        $half = intval(abs(floor($limit/2)));
+
+        $res  = mb_substr($raw, 0, $limit - $half);
+        $res .= $fill;
+        $res .= mb_substr($raw, -($half), $half);
+
+        return $res;
     }
 }
