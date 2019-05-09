@@ -30,6 +30,7 @@ class BearerAuth
     public function pipein($request, $response, $route, $port)
     {
         $header = trim((string) $request->getHeader('AUTHORIZATION'));
+        $token  = '';
         if ($header) {
             if (! ci_equal(mb_substr($header, 0, 7), 'Bearer ')) {
                 Response::abort(401, ERR::INVALID_BEARER_TOKEN, [], $port->get('class'));
@@ -38,9 +39,7 @@ class BearerAuth
             $token = mb_substr($header, 7);
         } elseif ($this->allowTokenParameters) {
             $key   = null;
-            $token = $request->match($this->allowTokenParameters, $key);
-        } else {
-            $token = '';
+            $token = (string) $request->match($this->allowTokenParameters, $key);
         }
 
         $token = trim($token);
