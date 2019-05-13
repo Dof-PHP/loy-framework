@@ -34,6 +34,7 @@ class Redis implements StorageInterface
         $host = $this->config->get('host', '', ['need', 'string']);
         $port = $this->config->get('port', 6379, ['uint']);
         $pswd = $auth ? $this->config->get('password', null, ['need', 'string']) : null;
+        $dbnum = $this->config->get('database', 15, ['uint']);
         $timeout = $this->config->get('timeout', 3, ['int', 'min:0']);
 
         try {
@@ -41,6 +42,9 @@ class Redis implements StorageInterface
             $this->connection->connect($host, $port, $timeout);
             if ($auth) {
                 $this->connection->auth($pswd);
+            }
+            if ($dbnum) {
+                $this->connection->select($dbnum);
             }
 
             return $this->connection;
