@@ -19,7 +19,7 @@ class MySQL implements StorageInterface
     private $connection;
 
     /** @var array: Sqls executed in this instance lifetime */
-    private $sqls;
+    private $sqls = [];
 
     public function find(int $pk) : ?array
     {

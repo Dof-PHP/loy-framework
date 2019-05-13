@@ -64,7 +64,24 @@ class BearerAuth
         }
 
         try {
-            $uid = JWT::setSecretId($id)->setSecretKey($key)->verify($token);
+            $jwt = JWT::setSecretId($id)->setSecretKey($key);
+            if (method_exists($this, 'beforeTokenVerify')) {
+                $jwt->setBeforeVerify(function ($token) {
+                    $this->beforeTokenVerify($token);
+                });
+            }
+            if (method_exists($this, 'afterTokenVerify')) {
+                $jwt->setAfterVerify(function ($params, $token) {
+                    $this->afterTokenVerify($params, $token);
+                });
+            }
+            if (method_exists($this, 'onTokenVerifyExpired')) {
+                $jwt->setOnTokenVerifyExpired(function ($token, $params) {
+                    $this->onTokenVerifyExpired($token, $params);
+                });
+            }
+
+            $uid = $jwt->verify($token);
 
             $route->params->pipe->set(static::class, collect([
                 $this->authid => $uid,
@@ -76,7 +93,7 @@ class BearerAuth
             $context = parse_throwable($e, $context);
             $context['__error'] = $message;
 
-            Response::abort(400, ERR::JWT_TOKEN_VERIFY_FAILED, $context, $port->get('class'));
+            Response::abort(401, ERR::JWT_TOKEN_VERIFY_FAILED, $context, $port->get('class'));
         }
 
         $this->token = $token;

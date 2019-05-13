@@ -17,7 +17,7 @@ class Redis implements StorageInterface
     private $connection;
 
     /** @var array: Commands executed in this instance lifetime */
-    private $cmds;
+    private $cmds = [];
     
     public function __construct(array $config = [])
     {

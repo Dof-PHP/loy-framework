@@ -157,9 +157,11 @@ final class Kernel
         );
     }
 
-    public static function addContext(string $key, array $context)
+    public static function addContext(string $key, array $context = null)
     {
-        self::$context[$key] = $context;
+        if ($context) {
+            self::$context[$key] = $context;
+        }
     }
 
     public static function getContext() : array

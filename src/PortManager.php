@@ -296,7 +296,7 @@ final class PortManager
         $defaultWrapin  = $docClass['WRAPIN']  ?? $globalWrapin;
         $defaultWrapin  = (($docClass['WRAPIN'] ?? null) === '') ? null : $defaultWrapin;
         $defaultWrapout = $docClass['WRAPOUT'] ?? $globalWrapout;
-        $defaultWrapout = (($docClass['WRAPOUT']) === '_') ? null : $defaultWrapout;
+        $defaultWrapout = (($docClass['WRAPOUT'] ?? null) === '_') ? null : $defaultWrapout;
         $defaultWraperr = $docClass['WRAPERR'] ?? $globalWraperr;
         $defaultWraperr = (($docClass['WRAPERR'] ?? null) === '_') ? null : $defaultWraperr;
         $defaultAssembler = $docClass['ASSEMBLER'] ?? null;

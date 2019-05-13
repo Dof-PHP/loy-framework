@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework\OFB\Auth;
 
 use Closure;
+use Throwable;
 
 /**
  * Json Web Token
@@ -26,8 +27,10 @@ class JWT
     private $beforeIssue;
     private $afterIssue;
 
+    // callbacks
     private $beforeVerify;
     private $afterVerify;
+    private $onTokenVerifyExpired;
 
     public function prepare()
     {
@@ -72,8 +75,12 @@ class JWT
 
         $token = join('.', [$header, $payload, $signature]);
 
-        if ($this->afterIssue && (true !== ($res = ($this->afterIssue)($token, unsplat(...$params))))) {
-            exception('AfterIssueHookFailed', compact('res'));
+        if ($this->afterIssue) {
+            try {
+                $res = ($this->afterIssue)($token, unsplat(...$params));
+            } catch (Throwable $e) {
+                exception('AfterIssueHookFailed', compact('res'), $e);
+            }
         }
 
         return $token;
@@ -135,13 +142,25 @@ class JWT
         if ((! $exp) || (! is_timestamp($exp))) {
             exception('InvalidTokenExpireTime', compact('exp'));
         }
+        $params = $data[1] ?? null;
         if (time() > $exp) {
+            if ($this->onTokenVerifyExpired) {
+                try {
+                    ($this->onTokenVerifyExpired)($token, $params);
+                } catch (Throwable $e) {
+                    exception('onTokenVerifyExpiredCallbackException', [], $e);
+                }
+            }
+
             exception('ExpiredToken', compact('exp', 'tza'));
         }
 
-        $params = $data[1] ?? [];
-        if ($this->afterVerify && (true !== ($res = ($this->afterVerify)($params)))) {
-            exception('AfterVerifyHookFailed', compact('res'));
+        if ($this->afterVerify) {
+            try {
+                $res = ($this->afterVerify)($params, $token);
+            } catch (Throwable $e) {
+                exception('AfterVerifyHookFailed', compact('res'), $e);
+            }
         }
 
         return $params;
@@ -184,6 +203,13 @@ class JWT
     public function encode(array $data)
     {
         return enbase64(json_encode($data), true);
+    }
+
+    public function setOnTokenVerifyExpired(Closure $hook)
+    {
+        $this->onTokenVerifyExpired = $hook;
+
+        return $this;
     }
 
     public function setAfterVerify(Closure $hook)

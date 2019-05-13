@@ -43,11 +43,9 @@ class ERR
     const INVALID_REQUEST_MIME = [40000001, 'InvalidRequestMime'];
     const WRAPIN_VALIDATE_FAILED = [40000002, 'WrapinValidateFailed'];
     const INVALID_ROUTE_PARAMETER = [40000003, 'InvalidRouteParameter'];
-    const JWT_TOKEN_VERIFY_FAILED = [40000004, 'JwtTokenVerifyFailed'];
-    const INVALID_AUTH_CLIENT_ID = [40000005, 'InvalidAuthClientId'];
+    const INVALID_AUTH_CLIENT_ID = [40000004, 'InvalidAuthClientId'];
     const INVALID_AUTH_CLIENT_REALM = [40000006, 'InvalidAuthClientRealm'];
     const MISSING_TOKEN_HEADER_OR_PARAMETER = [40100000, 'MissingTokenHeaderOrParameter'];
-    const MISSING_HTTP_HMAC_TOKEN_HEADER = [40100000, 'MissingHttpHmacTokenHeader'];
     const INVALID_BEARER_TOKEN = [40100001, 'InvalidBearerToken'];
     const INVALID_HTTP_HMAC_TOKEN = [40100002, 'InvalidHttpHmacToken'];
     const MISSING_TOKEN_IN_HEADER = [40100003, 'MissingTokenInHeader'];
@@ -55,6 +53,8 @@ class ERR
     const MISSING_SIGNATURE_IN_TOKEN = [40100005, 'MissingSignatureInToken'];
     const INVALID_HTTP_HMAC_TOKEN_SIGNATURE = [40100006, 'InvalidHttpHmacTokenSignature'];
     const HTTP_HMAC_TOKEN_VEFIY_FAILED = [40100007, 'HttpHmacTokenVefiyFailed'];
+    const JWT_TOKEN_VERIFY_FAILED = [40100008, 'JwtTokenVerifyFailed'];
     const INVALID_USER_CREDENTIALS = [40100009, 'InvalidUserCredentials'];
+    const MISSING_HTTP_HMAC_TOKEN_HEADER = [40100010, 'MissingHttpHmacTokenHeader'];
     const ROUTE_NOT_EXISTS = [40400000, 'RouteNotExists'];
 }
