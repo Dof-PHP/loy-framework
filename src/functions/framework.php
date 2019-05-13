@@ -399,3 +399,21 @@ if (! function_exists('run_gwt_tests')) {
         \Dof\Framework\GWT::run($dir, $excludes);
     }
 }
+if (! function_exists('array_get')) {
+    function array_get($data, string $key, $default = null, array $rules = null)
+    {
+        $val = ($data[$key] ?? null) ?? $default;
+        if (! $rules) {
+            return $val;
+        }
+
+        $validator = validate([$key => $val], [$key => $rules]);
+        if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
+            $context = (array) $fail->value;
+
+            exception($fail->key, $context);
+        }
+
+        return $validator->getResult()[$key] ?? null;
+    }
+}

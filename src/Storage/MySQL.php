@@ -42,6 +42,21 @@ class MySQL implements StorageInterface
         return $this->exec($sql, [$pk]);
     }
 
+    public function count() : int
+    {
+        $sql = 'SELECT count(*) as `total` FROM #{TABLE}';
+        $res = $this->get($sql);
+
+        return intval($res[0]['total'] ?? 0);
+    }
+
+    public function paginate(int $page, int $size) : array
+    {
+        $sql = 'SELECT #{COLUMNS} FROM #{TABLE} LIMIT ?, ?';
+
+        return $this->get($sql, [($page - 1) * $size, $size]);
+    }
+
     public function __construct(array $config = [])
     {
         $this->config = collect($config);
@@ -77,7 +92,13 @@ class MySQL implements StorageInterface
                     PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY,
                 ]);
 
-                $statement->execute($params);
+                $idx = 0;
+                foreach ($params as $key => $val) {
+                    $_key = is_int($key) ? ++$idx : $key;
+                    $statement->bindValue($_key, $val, $this->getPDOValueConst($val));
+                }
+
+                $statement->execute();
             }
 
             $this->appendSQL($sql, $start);
@@ -85,6 +106,21 @@ class MySQL implements StorageInterface
             return $statement->fetchAll(PDO::FETCH_ASSOC);
         } catch (Throwable $e) {
             exception('QueryMySQLFailed', ['sql' => $sql, 'params' => $params], $e);
+        }
+    }
+
+    public function getPDOValueConst($val)
+    {
+        switch (gettype($val)) {
+            case 'integer':
+                return PDO::PARAM_INT;
+            case 'boolean':
+                return PDO::PARAM_BOOL;
+            case 'NULL':
+                return PDO::PARAM_NULL;
+            case 'string':
+            default:
+                return PDO::PARAM_STR;
         }
     }
 

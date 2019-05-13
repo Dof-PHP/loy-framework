@@ -14,7 +14,7 @@ class Pagination
             'code' => 0,
             'info' => 'ok',
             'more',
-            'meta'
+            // 'meta'
         ];
     }
 }

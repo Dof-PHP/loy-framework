@@ -16,38 +16,56 @@ class Paginate
         if ($paginate) {
             $paginate = sprintf('paginate(%s)', $paginate);
             $paginate = IFRSN::parse($paginate);
-            $paginate = $paginate['paginate']['fields'] ?? false;
+            $paginate = $paginate['paginate']['fields'] ?? null;
             if ($paginate) {
-                $size = intval($paginate['size'] ?? $this->getPaginateDefaultSize());
-                $size = $size < 0 ? $this->getPaginateDefaultSize() : $size;
-                $page = intval($paginate['page'] ?? 1);
-                $page = $page < 1 ? 1 : $page;
+                $size = $paginate['size'] ?? $this->getPaginateDefaultSize();
+                $page = $paginate['page'] ?? 1;
             }
         }
 
-        $paginateSize = $request->get('__paginate_size', null, 'uint');
-        if ($paginateSize && ($paginateSize > 0)) {
+        if ($paginateSize = $request->get('__paginate_size', null)) {
             $size = $paginateSize;
         }
-        $paginatePage = $request->get('__paginate_page', null, 'unit');
-        if ($paginatePage && ($paginatePage > 0)) {
+        if ($paginatePage = $request->get('__paginate_page', null)) {
             $page = $paginatePage;
         }
 
         $route->params->pipe->set(__CLASS__, collect([
-            'size' => $size,
-            'page' => $page,
+            'size' => $this->validateSize($size),
+            'page' => $this->validatePage($page),
         ]));
 
         return true;
     }
 
-    private function getPaginateDefaultSize() : int
+    private function validateSize($size) : int
     {
-        return 20;
+        $size = intval($size);
+        $size = $size < 0 ? $this->getPaginateDefaultSize() : $size;
+        $size = $size > $this->getPaginateMaxSize() ? $this->getPaginateMaxSize() : $size;
+
+        return $size;
     }
 
-    private function getPaginateParameterName() : string
+    private function validatePage($page) : int
+    {
+        $page = intval($page);
+        $page = $page < 1 ? 1 : $page;
+
+        return $page;
+    }
+
+    protected function getPaginateMaxSize() : int
+    {
+        return 50;
+    }
+
+    protected function getPaginateDefaultSize() : int
+    {
+        return 10;
+    }
+
+    protected function getPaginateParameterName() : string
     {
         return '__paginate';
     }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dof\Framework\DDD;
 
+use Dof\Framework\Paginator;
+
 /**
  * The repository abstract persistence access, whatever storage it is. That is its purpose.
  * THe fact that you're using a db or xml files or an ORM doesn't matter.
@@ -38,4 +40,13 @@ interface Repository
      * @return int|null: Number of rows affected or null on failed
      */
     public function remove($entity) : ?int;
+
+    /**
+     * Get pagination list of current entities
+     *
+     * @param int $page
+     * @param int $size
+     * @return array
+     */
+    public function paginate(int $page, int $size) : Paginator;
 }

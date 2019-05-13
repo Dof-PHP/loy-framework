@@ -12,7 +12,7 @@ class Paginator
     /** @var int: Total rows */
     private $total = 0;
 
-    /** @var int: Current data length */
+    /** @var int: Current list length */
     private $count = 0;
 
     /** @var int: Current page number */
@@ -23,8 +23,7 @@ class Paginator
 
     public function __construct(array $list = [], array $params = [])
     {
-        $this->setList($list);
-        $this->setParams($list);
+        $this->setList($list)->setParams($params);
     }
 
     /**

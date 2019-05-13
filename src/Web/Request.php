@@ -8,17 +8,6 @@ class Request
 {
     use HttpTrait;
 
-    public function input(string $key = null)
-    {
-        $input = $this->getInput();
-
-        if (is_array($input)) {
-            return $key ? ($input[$key] ?? null) : $input;
-        }
-
-        return $key ? null : $input;
-    }
-
     /**
      * Match a list of field and return if found the first one
      *
@@ -41,20 +30,6 @@ class Request
         }
 
         return null;
-    }
-
-    public function all(string $key = null)
-    {
-        $all = $this->getOrSet('all', function () {
-            $input = $this->getInput();
-            if (is_array($input)) {
-                return array_merge($_REQUEST, $input);
-            }
-
-            return $_REQUEST;
-        });
-
-        return $key ? ($all[$key] ?? null) : $all;
     }
 
     public function only(...$keys) : array
@@ -97,18 +72,24 @@ class Request
         return $this->getVerb() === 'POST';
     }
 
-    public function post(string $key, $default = null)
+    public function all(string $key = null, $default = null, array $rules = null)
     {
-        $post = $this->getPost();
-
-        return $post[$key] ?? $default;
+        return array_get($this->getAll(), $key, $default, $rules);
     }
 
-    public function get(string $key, $default = null)
+    public function input(string $key = null, $default = null, array $rules = null)
     {
-        $get = $this->getGet();
+        return array_get((array) $this->getInput(), $key, $default, $rules);
+    }
 
-        return $get[$key] ?? $default;
+    public function post(string $key, $default = null, array $rules = null)
+    {
+        return array_get((array) $this->getPost(), $key, $default, $rules);
+    }
+
+    public function get($key, $default = null, array $rules = null)
+    {
+        return array_get($this->getGet(), $key, $default, $rules);
     }
 
     public function getInput()
@@ -124,6 +105,18 @@ class Request
     {
         return $this->getOrSet('inputRaw', function () {
             return urldecode(trim((string) file_get_contents('php://input')));
+        });
+    }
+
+    public function getAll()
+    {
+        return $this->getOrSet('all', function () {
+            $input = $this->getInput();
+            if (is_array($input)) {
+                return array_merge($_REQUEST, $input);
+            }
+
+            return $_REQUEST;
         });
     }
 

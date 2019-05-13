@@ -7,6 +7,7 @@ namespace Dof\Framework\DDD;
 use Throwable;
 use Dof\Framework\StorageManager;
 use Dof\Framework\RepositoryManager;
+use Dof\Framework\Paginator;
 
 /**
  * Storage is the persistence layer implementations
@@ -86,5 +87,24 @@ abstract class Storage implements Repository
         } catch (Throwable $e) {
             exception('RemoveEntityFailed', ['pk' => $pk, 'class' => static::class], $e);
         }
+    }
+
+    public function paginate(int $page, int $size) : Paginator
+    {
+        if (method_exists($this->__storage, 'paginate')) {
+            $total = $this->__storage->count();
+            $list = $this->__storage->paginate($page, $size);
+            foreach ($list as &$item) {
+                $item = $this->convert($item);
+            }
+
+            return paginator($list, [
+                'page' => $page,
+                'size' => $size,
+                'total' => $total,
+            ]);
+        }
+
+        return [];
     }
 }
