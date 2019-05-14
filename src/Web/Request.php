@@ -79,7 +79,9 @@ class Request
 
     public function input(string $key = null, $default = null, array $rules = null)
     {
-        return $key ? array_get((array) $this->getInput(), $key, $default, $rules) : $this->getInput();
+        $input = $this->getInput();
+
+        return $key ? (is_array($input) ? array_get($input, $key, $default, $rules) : null) : $input;
     }
 
     public function post(string $key, $default = null, array $rules = null)
@@ -92,13 +94,13 @@ class Request
         return $key ? array_get($this->getGet(), $key, $default, $rules) : $this->getGet();
     }
 
-    public function getInput() : array
+    public function getInput()
     {
         return $this->getOrSet('input', function () {
             $input = $this->getInputRaw();
             $mime  = $this->getMimeAlias();
 
-            return (array) $this->convertStringAsMime($input, $mime);
+            return $this->convertStringAsMime($input, $mime);
         });
     }
 
