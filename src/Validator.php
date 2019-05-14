@@ -242,7 +242,20 @@ class Validator
         return is_array($this->data[$key] ?? null);
     }
 
-    private function validateUint(string $key) : bool
+    private function validateNint(string $key) : bool
+    {
+        $value = $this->data[$key] ?? null;
+
+        if (! TypeHint::isInt($value)) {
+            return false;
+        }
+
+        $this->result[$key] = $value = TypeHint::convertToInt($value);
+
+        return $value < 0;
+    }
+
+    private function validatePint(string $key) : bool
     {
         $value = $this->data[$key] ?? null;
 
@@ -253,6 +266,19 @@ class Validator
         $this->result[$key] = $value = TypeHint::convertToInt($value);
 
         return $value > 0;
+    }
+
+    private function validateUint(string $key) : bool
+    {
+        $value = $this->data[$key] ?? null;
+
+        if (! TypeHint::isInt($value)) {
+            return false;
+        }
+
+        $this->result[$key] = $value = TypeHint::convertToInt($value);
+
+        return $value >= 0;
     }
 
     private function validateBool(string $key)

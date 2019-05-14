@@ -6,12 +6,10 @@ namespace Dof\Framework\Storage;
 
 use PDO;
 use Throwable;
+use Dof\Framework\Collection;
 
 class MySQL implements StorageInterface
 {
-    /** @var \Dof\Framework\Collection: Configuration collection instance */
-    private $config = [];
-
     /** @var \Dof\Framework\Collection: SQL Query used data, collection instance */
     private $query = [];
 
@@ -20,6 +18,43 @@ class MySQL implements StorageInterface
 
     /** @var array: Sqls executed in this instance lifetime */
     private $sqls = [];
+
+    public function update(int $pk, array $data) : int
+    {
+        if (! $data) {
+            return 0;
+        }
+
+        $parmas = [];
+        $columns = [];
+        foreach ($data as $key => $val) {
+            $columns[] = "`{$key}` = ?";
+            $params[] = $val;
+        }
+
+        $columns = join(', ', $columns);
+        $params[] = $pk;
+
+        $sql = "UPDATE #{TABLE} SET {$columns} WHERE `id` = ?";
+
+        return $this->exec($sql, $params);
+    }
+
+    public function add(array $data) : int
+    {
+        $columns = array_keys($data);
+        $values = array_values($data);
+        $count = count($values);
+        $_values = join(',', array_fill(0, $count, '?'));
+
+        $columns = join(',', array_map(function ($column) {
+            return "`{$column}`";
+        }, $columns));
+
+        $sql = "INSERT INTO #{TABLE} ({$columns}) VALUES ({$_values})";
+
+        return (int) $this->insert($sql, $values);
+    }
 
     public function find(int $pk) : ?array
     {
@@ -124,6 +159,31 @@ class MySQL implements StorageInterface
         }
     }
 
+    public function insert(string $sql, array $params)
+    {
+        try {
+            $this->getConnection()->beginTransaction();
+
+            $sql = $this->generate($sql);
+
+            $start = microtime(true);
+
+            $this->appendSql($sql, $start);
+            $statement = $this->getConnection()->prepare($sql);
+            $statement->execute($params);
+
+            $id = $this->getConnection()->lastInsertId();
+
+            $this->getConnection()->commit();
+
+            return $id;
+        } catch (Throwable $e) {
+            $this->getConnection()->rollBack();
+
+            exception('InsertToMySQLFailed', ['sql' => $sql], $e);
+        }
+    }
+
     public function exec(string $sql, array $params = null)
     {
         try {
@@ -155,34 +215,6 @@ class MySQL implements StorageInterface
         $this->exec($sql);
 
         return $this;
-    }
-
-    public function connect()
-    {
-        $host = (string) $this->config->get('host');
-        $port = (int) $this->config->get('port', 3306);
-        $user = (string) $this->config->get('user');
-        $pswd = (string) $this->config->get('passwd');
-        $charset = (string) $this->config->get('charset', 'utf8mb4');
-        $dbname  = (string) $this->config->get('dbname');
-
-        $dsn = "mysql:host={$host};port={$port};charset={$charset}";
-        if ($dbname) {
-            $dsn .= ";dbname={$dbname}";
-        }
-
-        try {
-            $this->connection = new PDO($dsn, $user, $pswd, [
-                PDO::ATTR_PERSISTENT => true,
-                // PDO::ATTR_TIMEOUT    => 3,
-            ]);
-            $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            // $this->conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-
-            return $this->connection;
-        } catch (Throwable $e) {
-            exception('ConnectionToMySQLFailed', compact('dsn'), $e);
-        }
     }
 
     /**
@@ -230,13 +262,25 @@ class MySQL implements StorageInterface
         return "`{$prefix}{$table}`";
     }
 
+    public function setConnection($connection)
+    {
+        $this->connection = $connection;
+    }
+
     public function getConnection()
     {
         if (! $this->connection) {
-            $this->connect();
+            exception('MissingMySQLConnection');
         }
 
         return $this->connection;
+    }
+
+    public function callbackOnConnected(Collection $config)
+    {
+        if ($db = $config->get('database', null)) {
+            $this->appendSql("USE {$db}", 0);
+        }
     }
 
     /**

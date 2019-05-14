@@ -69,12 +69,30 @@ size => 10
 
 ### 接口返回字段的查询参数
 
-如果接口文档没有特殊说明，均为 `__fields`。
+如果接口文档没有特殊说明，均为 `__fields`。`__fields` 指明的字段列表将从接口关联的数据模型中取。
 
-举例，假如我们只需要获取 ID 为 1 的用户姓名和手机号这两个字段，则请求返回字段的查询参数格式如下：
+举例，假如我们只需要获取 ID 为 1 的用户姓名、手机号和注册时间这三个个字段，则请求返回字段的查询参数格式如下：
 
 ``` http
-POST /users/1?__fields=name,mobile
+POST /users/1?__fields=name,mobile,createdAt{format:1}
+```
+
+其中，`createdAt{format:1}` 表示字段 `createdAt` 接受附加的字段参数 `format`，并会根据该参数的值改变该字段的最终返回值。
+
+字段可以接受的参数详情参考具体的数据模型文档中的「可接受参数」说明。
+
+### 列表查询接口的分页参数
+
+- `__paginate` （默认；优先级最高）
+
+``` http
+GET /v1/users?__paginate=size{10},page{1}
+```
+
+- `__paginate_size` 和 `__paginate_page`
+
+``` http
+GET /v1/users?__paginate_size=20&__paginate_page=2
 ```
 
 ## HTTP 响应错误码编码规范提案

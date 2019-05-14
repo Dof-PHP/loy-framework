@@ -61,8 +61,66 @@ abstract class Storage implements Repository
         return $this->__storage->get(...$params);
     }
 
-    final public function add(Entity $entity) : ?int
+    final public function save(Entity $entity) : Entity
     {
+        $annotation = StorageManager::get(static::class);
+        $columns = $annotation['columns'] ?? [];
+        if (! $columns) {
+            exception('NoColumnsOnStorageToUpdate', ['storage' => static::class]);
+        }
+
+        unset($columns['id']);
+
+        $data = [];
+        foreach ($columns as $column => $property) {
+            $getter = 'get'.ucfirst($property);
+            if (method_exists($entity, $getter)) {
+                $data[$column] = $entity->{$getter}();
+            }
+        }
+
+        if (! $data) {
+            exception('NoDataForStorageToUpdate', [
+                'storage' => static::class,
+                'entity'  => get_class($entity),
+            ]);
+        }
+
+        $this->__storage->update($entity->getId(), $data);
+
+        return $entity;
+    }
+
+    final public function add(Entity $entity) : Entity
+    {
+        $annotation = StorageManager::get(static::class);
+        $columns = $annotation['columns'] ?? [];
+        if (! $columns) {
+            exception('NoColumnsOnStorageToAdd', ['storage' => static::class]);
+        }
+
+        unset($columns['id']);
+
+        $data = [];
+        foreach ($columns as $column => $property) {
+            $getter = 'get'.ucfirst($property);
+            if (method_exists($entity, $getter)) {
+                $data[$column] = $entity->{$getter}();
+            }
+        }
+
+        if (! $data) {
+            exception('NoDataForStorageToAdd', [
+                'storage' => static::class,
+                'entity'  => get_class($entity),
+            ]);
+        }
+
+        $id = $this->__storage->add($data);
+
+        $entity->setId($id);
+
+        return $entity;
     }
 
     final public function remove($entity) : ?int

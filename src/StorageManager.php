@@ -8,6 +8,7 @@ use Throwable;
 use Dof\Framework\Kernel;
 use Dof\Framework\Storage\MySQL;
 use Dof\Framework\Storage\Redis;
+use Dof\Framework\Storage\Connection;
 use Dof\Framework\Facade\Log;
 use Dof\Framework\Facade\Annotation;
 use Dof\Framework\DDD\Repository;
@@ -26,11 +27,8 @@ final class StorageManager
     private static $dirs = [];
     private static $orms = [];
 
-    /** @var array: Namespace <=> Connection Key KV */
+    /** @var array: ORM Namespace <=> Storage Instance */
     private static $namespaces = [];
-
-    /** @var array: Connection Key <=> Storage Instance KV */
-    private static $connections = [];
 
     /**
      * Compile storages among domain directories with cache management
@@ -111,6 +109,12 @@ final class StorageManager
         if (! ($ofClass['doc']['DRIVER'] ?? false)) {
             exception('MissingStorageDriver', compact('namespace'));
         }
+        // Require database annotation here coz Dof\Framework\Storage\Connection will keep the first db name
+        // When first connect to driver server and if other storages have different db name
+        // Then it will coz table not found kind of errors
+        if (! ($ofClass['doc']['DATABASE'] ?? false)) {
+            exception('MissingStorageDatabaseName', compact('namespace'));
+        }
 
         self::$orms[$namespace]['meta'] = $ofClass['doc'] ?? [];
         foreach ($ofProperties as $property => $attr) {
@@ -148,7 +152,7 @@ final class StorageManager
      */
     public static function init(string $namespace)
     {
-        $instance = self::$connections[self::$namespaces[$namespace] ?? null] ?? null;
+        $instance = self::$namespaces[$namespace] ?? null;
         if ($instance) {
             return $instance;
         }
@@ -156,7 +160,7 @@ final class StorageManager
         // Find storage driver from orm annotation (first) and domain database config (second)
         $domain = DomainManager::getKeyByNamespace($namespace);
         list($ofClass, $ofProperties, ) = Annotation::parseNamespace($namespace);
-        $meta   = array_change_key_case($ofClass['doc'] ?? [], CASE_LOWER);
+        $meta = array_change_key_case($ofClass['doc'] ?? [], CASE_LOWER);
         $driver = $meta['driver'] ?? null;
         if (! $driver) {
             exception('UnknownORMStorageDriver', compact('namespace'));
@@ -175,18 +179,45 @@ final class StorageManager
             exception('StorageConnnectionNotFound', compact('connection', 'domain', 'pool'));
         }
 
-        self::$namespaces[$namespace] = $key = join(':', [$driver, $connection]);
-        $instance = self::$connections[$key] ?? null;
-        if ($instance && ($instance instanceof $storage)) {
-            return $instance;
-        }
-
         // Merge configurations from annotation and config file
         // And allow annotations replace file configs
         // So $meta must be the 2nd parameter of array_merge()
-        $config   = array_merge($config, $meta);
-        $instance = singleton($storage, $config);
+        $config = array_merge($config, $meta);
+        $instance = new $storage;
+        $hook = method_exists($instance, 'callbackOnConnected')
+        ? function ($config) use ($instance) {
+            $instance->callbackOnConnected($config);
+        }
+        : null;
 
+        $instance->setConnection(Connection::get($driver, $connection, $config, $hook));
+
+        if (method_exists($instance, '__logging')) {
+            Kernel::register('before-shutdown', function () use ($instance, $storage, $driver, $namespace) {
+                try {
+                    Kernel::appendContext($driver, $instance->__logging(), $namespace);
+                } catch (Throwable $e) {
+                    Log::log('exception', 'GetStorageLoggingContextFailed', [
+                            'storage' => $storage,
+                            'message' => $e->getMessage(),
+                        ]);
+                }
+            });
+        }
+        if (method_exists($instance, '__cleanup')) {
+            Kernel::register('shutdown', function () use ($instance, $storage) {
+                try {
+                    $instance->__cleanup();
+                } catch (Throwable $e) {
+                    Log::log('exception', 'CleanUpStorageFailed', [
+                            'storage' => $storage,
+                            'message' => $e->getMessage(),
+                        ]);
+                }
+            });
+        }
+
+        // This should be executed for every storage class
         if (method_exists($instance, 'setQuery')) {
             $columns = [];
             foreach ($ofProperties as $property) {
@@ -199,32 +230,8 @@ final class StorageManager
             $meta['columns'] = $columns;
             $instance->setQuery($meta);
         }
-        if (method_exists($instance, '__logging')) {
-            Kernel::register('before-shutdown', function () use ($instance, $storage, $driver) {
-                try {
-                    Kernel::addContext($driver, $instance->__logging());
-                } catch (Throwable $e) {
-                    Log::log('exception', 'GetStorageLoggingContextFailed', [
-                        'storage' => $storage,
-                        'message' => $e->getMessage(),
-                    ]);
-                }
-            });
-        }
-        if (method_exists($instance, '__cleanup')) {
-            Kernel::register('shutdown', function () use ($instance, $storage) {
-                try {
-                    $instance->__cleanup();
-                } catch (Throwable $e) {
-                    Log::log('exception', 'CleanUpStorageFailed', [
-                        'storage' => $storage,
-                        'message' => $e->getMessage(),
-                    ]);
-                }
-            });
-        }
 
-        return self::$connections[$key] = $instance;
+        return self::$namespaces[$namespace] = $instance;
     }
 
     public static function get(string $namespace)

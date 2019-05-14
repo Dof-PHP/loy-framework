@@ -26,6 +26,9 @@ final class Kernel
     /** @var float: Kernel boot time */
     private static $uptime;
 
+    /** @var bool: Inner error happened or not */
+    private static $error;
+
     /** @var int: Kernel memory usage at beginning */
     private static $upmemory;
 
@@ -64,6 +67,7 @@ final class Kernel
         register_shutdown_function(function () {
             $error = error_get_last();
             if (! is_null($error)) {
+                self::$error = true;
                 Log::error('LAST_ERROR_SHUTDOWN', $error);
             }
             foreach (self::$callbacks['before-shutdown'] as $callback) {
@@ -146,6 +150,11 @@ final class Kernel
         return self::$root;
     }
 
+    public static function getError()
+    {
+        return self::$error;
+    }
+
     public static function formatCacheFile(...$params) : string
     {
         return ospath(
@@ -157,11 +166,21 @@ final class Kernel
         );
     }
 
-    public static function addContext(string $key, array $context = null)
+    public static function appendContext(string $key, array $context = null, string $_key = null)
     {
-        if ($context) {
-            self::$context[$key] = $context;
+        if (! $context) {
+            return;
         }
+        if ($_key) {
+            self::$context[$key][$_key] = $context;
+        } else {
+            self::$context[$key][] = $context;
+        }
+    }
+
+    public static function setContext(string $key, array $context = null)
+    {
+        self::$context[$key] = $context;
     }
 
     public static function getContext() : array

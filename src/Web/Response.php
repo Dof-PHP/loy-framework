@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Web;
 
+use Dof\Framework\Kernel;
+
 class Response
 {
     use HttpTrait;
@@ -294,6 +296,6 @@ class Response
             $this->getStatus(),
             $this->getMimeAlias(),
             $this->getError(),
-        ] : [200, 'html', false];
+        ] : [Kernel::getError() ? 500 : 200, 'html', false];
     }
 }

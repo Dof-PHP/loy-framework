@@ -212,12 +212,14 @@ class Annotation
                     && method_exists($origin, $multipleFormatMergeCallback)
                     && ($merge = call_user_func_array([$origin, $multipleFormatMergeCallback], [$namespace]))
                 ) {
-                    if (is_string($merge) && ci_equal($merge, 'kv')) {
+                    if ($merge === 'kv') {
                         $val = array_flip($val);
                     }
 
-                    $val += $_val;
-                // $val = $_val ? array_merge($_val, $val) : $val;    // avoid merge([], ['k1' => 'v1']) resulted unexpected array
+                    if ($_val) {
+                        // avoid merge([], ['k1' => 'v1']) resulted unexpected array
+                        $val = ($merge === 'index') ? array_merge($_val, $val) : $val + $_val;
+                    }
                 } else {
                     $_val[] = $val;
                     $val = $_val;

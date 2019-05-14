@@ -12,31 +12,15 @@ abstract class Entity
      */
     protected $id;
 
-    /**
-     * Update entity self
-     */
-    final public function save()
-    {
-        // Callback onSaved
-    }
-
-    /**
-     * Delete entity self
-     */
-    final public function delete()
-    {
-        // Callback onDeleted
-    }
-
-    public function onSaved()
-    {
-    }
-
-    public function onDeleted()
+    public function onCreated()
     {
     }
 
     public function onUpdated()
+    {
+    }
+
+    public function onDeleted()
     {
     }
 
@@ -52,10 +36,29 @@ abstract class Entity
         return $this->id ?? null;
     }
 
+    final public function get(string $attr)
+    {
+        if (property_exists($this, $attr)) {
+            $val = $this->{$attr} ?? null;
+            if (! is_null($val)) {
+                return $val;
+            }
+            $getter = 'get'.ucfirst($attr);
+            if (method_exists($this, $getter)) {
+                return $this->{$getter}();
+            }
+        }
+    }
+
     final public function set(string $attr, $val)
     {
         if (property_exists($this, $attr)) {
-            $this->{$attr} = $val;
+            $setter = 'set'.ucfirst($attr);
+            if (method_exists($this, $setter)) {
+                $this->{$setter}($val);
+            } else {
+                $this->{$attr} = $val;
+            }
         }
 
         return $this;
@@ -63,16 +66,12 @@ abstract class Entity
 
     final public function __get(string $attr)
     {
-        if (property_exists($this, $attr)) {
-            return $this->{$attr};
-        }
+        return $this->get($attr);
     }
 
-    final public function __set(string $attr, $value)
+    final public function __set(string $attr, $val)
     {
-        if (property_exists($this, $attr)) {
-            $this->{$attr} = $value;
-        }
+        $this->set($attr, $val);
     }
 
     final public function __call(string $method, array $params = [])
@@ -80,20 +79,15 @@ abstract class Entity
         if (0 === strpos($method, 'get')) {
             if ('get' !== $method) {
                 $attr = lcfirst(substr($method, 3));
-                if (property_exists($this, $attr)) {
-                    return $this->{$attr};
-                }
+                return $this->get($attr);
             }
         }
 
         if (0 === strpos($method, 'set')) {
             if ('set' !== $method) {
                 $attr = lcfirst(substr($method, 3));
-                if (property_exists($this, $attr)) {
-                    $this->{$attr} = $value[0] ?? null;
 
-                    return $this;
-                }
+                return $this->set($attr, ($params[0] ?? null));
             }
         }
     }

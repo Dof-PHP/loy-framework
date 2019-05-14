@@ -5,54 +5,18 @@ declare(strict_types=1);
 namespace Dof\Framework\Storage;
 
 use Throwable;
-use Redis as RedisProxy;
+use Dof\Framework\Collection;
 
 /**
  * API docs: <https://github.com/phpredis/phpredis/blob/develop/README.markdown>
  */
 class Redis implements StorageInterface
 {
-    private $config;
-
     private $connection;
 
     /** @var array: Commands executed in this instance lifetime */
     private $cmds = [];
     
-    public function __construct(array $config = [])
-    {
-        if (! extension_loaded('redis')) {
-            exception('RedisExtensionNotEnabled');
-        }
-
-        $this->config = collect($config);
-    }
-
-    public function connect()
-    {
-        $auth = $this->config->get('auth', false, ['in:0,1']);
-        $host = $this->config->get('host', '', ['need', 'string']);
-        $port = $this->config->get('port', 6379, ['uint']);
-        $pswd = $auth ? $this->config->get('password', null, ['need', 'string']) : null;
-        $dbnum = $this->config->get('database', 15, ['uint']);
-        $timeout = $this->config->get('timeout', 3, ['int', 'min:0']);
-
-        try {
-            $this->connection = new RedisProxy;
-            $this->connection->connect($host, $port, $timeout);
-            if ($auth) {
-                $this->connection->auth($pswd);
-            }
-            if ($dbnum) {
-                $this->connection->select($dbnum);
-            }
-
-            return $this->connection;
-        } catch (Throwable $e) {
-            exception('ConnectionToRedisFailed', compact('host', 'port'), $e);
-        }
-    }
-
     public function __call(string $method, array $params = [])
     {
         $this->appendCMD($method, ...$params);
@@ -65,10 +29,24 @@ class Redis implements StorageInterface
         return $this->cmds;
     }
 
+    public function setConnection($connection)
+    {
+        $this->connection = $connection;
+
+        return $this;
+    }
+
+    public function callbackOnConnected(Collection $config)
+    {
+        if ($db = $config->get('database', null)) {
+            $this->appendCMD('select', $db);
+        }
+    }
+
     public function getConnection()
     {
         if (! $this->connection) {
-            $this->connect();
+            exception('MissingRedisConnection');
         }
 
         return $this->connection;

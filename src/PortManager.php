@@ -375,7 +375,7 @@ final class PortManager
             }
         }
 
-        $verbs = array_unique(array_merge(($attrs['VERB'] ?? []), $defaultVerbs));
+        $verbs = array_unique_merge(($attrs['VERB'] ?? []), $defaultVerbs);
 
         // Formatting ports data
         self::$ports[$class][$method] = [
@@ -659,7 +659,7 @@ final class PortManager
             $version = trim($version);
         }
         if (! $version) {
-            return 'v0';
+            return 'vX';
         }
 
         return $version;
@@ -1089,7 +1089,7 @@ final class PortManager
 
     public static function __annotationFilterVerb(string $verbs, array $ext, string $namespace) : array
     {
-        $verbs = array_trim_from_string(trim($verbs), ',');
+        $verbs = array_trim_from_string($verbs, ',');
         foreach ($verbs as &$_verb) {
             $verb  = $_verb;
             $_verb = strtoupper($_verb);
@@ -1221,9 +1221,9 @@ final class PortManager
         return true;
     }
 
-    public static function __annotationMultipleMergeVerb() : bool
+    public static function __annotationMultipleMergeVerb()
     {
-        return true;
+        return 'index';
     }
 
     public static function __annotationMultiplePipeout() : bool
