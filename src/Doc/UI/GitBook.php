@@ -281,6 +281,7 @@ class GitBook
                 $this->genHttpGroup($group, $_domain, $key);
                 $this->menuDepth = 1;
                 $this->genHttpList($list, $_domain, $key);
+                $this->menuDepth = 0;
             }
 
             $readme = ospath($ver, self::README);

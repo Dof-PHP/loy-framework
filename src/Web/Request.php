@@ -74,30 +74,31 @@ class Request
 
     public function all(string $key = null, $default = null, array $rules = null)
     {
-        return array_get($this->getAll(), $key, $default, $rules);
+        return $key ? array_get($this->getAll(), $key, $default, $rules) : $this->getAll();
     }
 
     public function input(string $key = null, $default = null, array $rules = null)
     {
-        return array_get((array) $this->getInput(), $key, $default, $rules);
+        return $key ? array_get((array) $this->getInput(), $key, $default, $rules) : $this->getInput();
     }
 
     public function post(string $key, $default = null, array $rules = null)
     {
-        return array_get((array) $this->getPost(), $key, $default, $rules);
+        return $key ? array_get((array) $this->getPost(), $key, $default, $rules) : $this->getPost();
     }
 
     public function get($key, $default = null, array $rules = null)
     {
-        return array_get($this->getGet(), $key, $default, $rules);
+        return $key ? array_get($this->getGet(), $key, $default, $rules) : $this->getGet();
     }
 
-    public function getInput()
+    public function getInput() : array
     {
         return $this->getOrSet('input', function () {
             $input = $this->getInputRaw();
             $mime  = $this->getMimeAlias();
-            return $this->convertStringAsMime($input, $mime);
+
+            return (array) $this->convertStringAsMime($input, $mime);
         });
     }
 
@@ -108,7 +109,7 @@ class Request
         });
     }
 
-    public function getAll()
+    public function getAll() : array
     {
         return $this->getOrSet('all', function () {
             $input = $this->getInput();
