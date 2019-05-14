@@ -38,7 +38,7 @@ class Paginate
         return true;
     }
 
-    private function validateSize($size) : int
+    protected function validateSize($size) : int
     {
         $size = intval($size);
         $size = $size < 0 ? $this->getPaginateDefaultSize() : $size;
@@ -47,7 +47,7 @@ class Paginate
         return $size;
     }
 
-    private function validatePage($page) : int
+    protected function validatePage($page) : int
     {
         $page = intval($page);
         $page = $page < 1 ? 1 : $page;
