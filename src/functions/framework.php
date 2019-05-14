@@ -400,8 +400,11 @@ if (! function_exists('run_gwt_tests')) {
     }
 }
 if (! function_exists('array_get')) {
-    function array_get($data, string $key, $default = null, array $rules = null)
+    function array_get($data, string $key = null, $default = null, array $rules = null)
     {
+        if (! $key) {
+            return null;
+        }
         $val = ($data[$key] ?? null) ?? $default;
         if (! $rules) {
             return $val;
