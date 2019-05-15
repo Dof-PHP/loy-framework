@@ -63,7 +63,8 @@ final class Kernel
         if (! $cmd) {
             $cmd = 'dof';
         }
-        $isDomain = strtolower($cmd) === 'domain';
+        $cmd = strtolower($cmd);
+        $isDomain = $cmd === 'domain';
         if ($isDomain) {
             $cmd = array_shift($params);
             if (is_null($cmd)) {

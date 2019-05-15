@@ -19,10 +19,34 @@ abstract class Storage implements Repository
      * @Column(id)
      * @Type(int)
      * @Length(10)
-     * @Primary(1)
+     * @PrimaryKey(1)
      * @Notnull(1)
      */
     protected $id;
+
+    /**
+     * @Column(created_at)
+     * @Type(int)
+     * @Length(10)
+     * @Notnull(1)
+     */
+    protected $createdAt;
+
+    /**
+     * @Column(updated_at)
+     * @Type(int)
+     * @Length(10)
+     * @Notnull(0)
+     */
+    protected $updatedAt;
+
+    /**
+     * @Column(deleted_at)
+     * @Type(int)
+     * @Length(10)
+     * @Notnull(0)
+     */
+    protected $deletedAt;
 
     /** @var Storage Instance */
     protected $__storage;
@@ -47,6 +71,13 @@ abstract class Storage implements Repository
     final public function convert(array $result = null)
     {
         return RepositoryManager::convert(static::class, $result);
+    }
+
+    final public function count(...$params)
+    {
+        $res = $this->__storage->get(...$params);
+
+        return intval($res[0]['cnt'] ?? 0);
     }
 
     final public function first(...$params)

@@ -128,6 +128,42 @@ final class StorageManager
         }
     }
 
+    public static function __annotationFilterUnique(string $index, array $ext, string $storage) : array
+    {
+        return self::__annotationFilterIndex();
+    }
+
+    public static function __annotationFilterIndex(string $index, array $ext, string $storage) : array
+    {
+        $fields = array_keys($ext)[0] ?? '';
+        $fields = array_trim_from_string($fields, ',');
+        if (count($fields) < 1) {
+            exception('MissingIndexFields', compact('index'));
+        }
+
+        return [trim($index) => $fields];
+    }
+
+    public static function __annotationMultipleMergeIndex()
+    {
+        return 'assoc';
+    }
+
+    public static function __annotationMultipleMergeUnique()
+    {
+        return 'assoc';
+    }
+
+    public static function __annotationMultipleUnique() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationMultipleIndex() : bool
+    {
+        return true;
+    }
+
     public static function __annotationFilterRepository(string $repository, array $ext, string $storage) : string
     {
         $repository  = trim($repository);

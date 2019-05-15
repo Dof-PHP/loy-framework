@@ -111,7 +111,7 @@ final class CommandManager
                 $_options[$name] = $option;
             }
 
-            self::$commands[$type][$command] = [
+            self::$commands[$type][strtolower($command)] = [
                 'class'   => $namespace,
                 'method'  => $method,
                 'comment' => $comment,

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dof\Framework;
 
+use Closure;
+
 /**
  * Rules about domain:
  * - One domain CAN NOT contains others, domains are peers
@@ -299,9 +301,20 @@ final class DomainManager
         return self::$namespaces[$ns] ?? null;
     }
 
-    public static function getNamespaces() : array
+    public static function getNamespaces(Closure $filter = null) : array
     {
-        return self::$namespaces;
+        if (! $filter) {
+            return self::$namespaces;
+        }
+
+        $data = [];
+        foreach (self::$namespaces as $ns => $domain) {
+            if ($filter($domain, $ns)) {
+                $data[] = $ns;
+            }
+        }
+
+        return $data;
     }
 
     public static function getFiles() : array

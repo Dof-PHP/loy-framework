@@ -8,6 +8,8 @@ use Throwable;
 use Dof\Framework\Kernel;
 use Dof\Framework\GWT;
 use Dof\Framework\Doc\Generator as DocGen;
+use Dof\Framework\DDD\Storage;
+use Dof\Framework\Storage\StorageSchema;
 use Dof\Framework\ConfigManager;
 use Dof\Framework\DomainManager;
 use Dof\Framework\DataModelManager;
@@ -451,6 +453,78 @@ class Command
     */
     public function complieDomain($console)
     {
+    }
+
+    /**
+     * @CMD(storage.sync)
+     * @Desc(Sync from storage ORM annotations to storage driver schema)
+     */
+    public function storageSync($console)
+    {
+        $params = $console->getParams();
+        $options = $console->getOptions();
+        $force = $console->hasOption('force');
+
+        $syncSingle = function ($single) use ($console, $force) {
+            if (class_exists($single)) {
+                if (! is_subclass_of($single, Storage::class)) {
+                    $console->exception('SingleClassNotAStorage', compact('single'));
+                }
+
+                $res = StorageSchema::sync($single, $force);
+                $console->render("Syncing {$single} ... ", $console::INFO_COLOR, true);
+                $res ? $console->success('OK') : $console->fail('FAILED', true);
+            }
+
+            if (is_file($single)) {
+                $class = get_namespace_of_file($single, true);
+                if ((! $class) || (! is_subclass_of($class, Storage::class))) {
+                    $console->exception('InvalidSingleStorageFile', compact('single', 'class'));
+                }
+                $res = StorageSchema::sync($class, $force);
+                $console->render("Syncing {$single} ... ", $console::INFO_COLOR, true);
+                $res ? $console->success('OK') : $console->fail('FAILED', true);
+            }
+        };
+
+        if ((count($params) === 0) && (count($options) === 0)) {
+            $orms = DomainManager::getNamespaces(function ($key, $ns) {
+                return true
+                    && is_subclass_of($ns, Storage::class)
+                    && ci_equal(mb_substr($ns, -3, 3), 'ORM');
+            });
+
+            foreach ($orms as $orm) {
+                $syncSingle($orm);
+            }
+        } elseif ($console->hasOption('single')) {
+            $single = $console->getOption('single');
+            if (! $single) {
+                $console->exception('MissingSingleTarget');
+            }
+
+            $syncSingle($single);
+        } elseif ($console->hasOption('domain')) {
+            $domain = $console->getOption('domain');
+            if (! $domain) {
+                $console->exception('MissingStorageDomainToInit');
+            }
+
+            $orms = DomainManager::getNamespaces(function ($key, $ns) use ($domain) {
+                return true
+                    && ci_equal($key, $domain)
+                    && is_subclass_of($ns, Storage::class)
+                    && ci_equal(mb_substr($ns, -3, 3), 'ORM');
+            });
+
+            foreach ($orms as $orm) {
+                $syncSingle($orm);
+            }
+        } elseif ($params) {
+            foreach ($params as $single) {
+                $syncSingle($single);
+            }
+        }
     }
 
     /**

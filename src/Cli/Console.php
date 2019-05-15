@@ -9,6 +9,12 @@ use Dof\Framework\Collection;
 
 class Console
 {
+    const INFO_COLOR = 'LIGHT_GRAY';
+    const FAIL_COLOR = 'RED';
+    const SUCCESS_COLOR = 'GREEN';
+    const WARNING_COLOR = 'YELLOW';
+    const ERROR_COLOR = 'LIGHT_RED';
+
     /** @var string: Entry of command */
     private $entry;
 
@@ -64,7 +70,7 @@ class Console
 
     public function info(string $text, bool $exit = false)
     {
-        $this->line($this->render($text, 'LIGHT_GRAY'));
+        $this->line($this->render($text, self::INFO_COLOR));
 
         if ($exit) {
             $this->exit();
@@ -73,7 +79,7 @@ class Console
 
     public function warning(string $text, bool $exit = false)
     {
-        $this->line($this->render($text, 'YELLOW'));
+        $this->line($this->render($text, self::WARNING_COLOR));
 
         if ($exit) {
             $this->exit();
@@ -82,7 +88,7 @@ class Console
 
     public function success(string $text, bool $exit = false)
     {
-        $this->line($this->render($text, 'GREEN'));
+        $this->line($this->render($text, self::SUCCESS_COLOR));
 
         if ($exit) {
             $this->exit();
@@ -91,7 +97,7 @@ class Console
 
     public function error(string $text, bool $exit = false)
     {
-        $this->line($this->render($text, 'LIGHT_RED'));
+        $this->line($this->render($text, self::ERROR_COLOR));
 
         if ($exit) {
             $this->exit();
@@ -100,14 +106,14 @@ class Console
 
     public function fail(string $text, bool $exit = false)
     {
-        $this->line($this->render($text, 'RED'));
+        $this->line($this->render($text, FAIL_COLOR));
 
         if ($exit) {
             $this->exit();
         }
     }
 
-    public function render(string $text, string $color) : string
+    public function render(string $text, string $color, bool $output = false) : ?string
     {
         if (! isset($this->colors[$color])) {
             $this->exception('ConsoleColorNotFound', compact('color'));
@@ -115,7 +121,12 @@ class Console
 
         $_color = $this->colors[$color];
 
-        return "\033[{$_color}m{$text}\033[0m";
+        $text = "\033[{$_color}m{$text}\033[0m";
+        if ($output) {
+            return $this->output($text);
+        }
+
+        return $text;
     }
 
     public function exception(string $message, array $context = [], Throwable $previous = null)

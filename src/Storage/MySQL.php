@@ -13,7 +13,7 @@ class MySQL implements StorageInterface
     /** @var \Dof\Framework\Collection: SQL Query used data, collection instance */
     private $query = [];
 
-    /** @var object|null: Connection Instance */
+    /** @var object|null: PDO Connection Instance */
     private $connection;
 
     /** @var array: Sqls executed in this instance lifetime */
@@ -136,7 +136,7 @@ class MySQL implements StorageInterface
                 $statement->execute();
             }
 
-            $this->appendSQL($sql, $start);
+            $this->appendSQL($sql, $start, $params);
 
             return $statement->fetchAll(PDO::FETCH_ASSOC);
         } catch (Throwable $e) {
@@ -168,7 +168,7 @@ class MySQL implements StorageInterface
 
             $start = microtime(true);
 
-            $this->appendSql($sql, $start);
+            $this->appendSql($sql, $start, $params);
             $statement = $this->getConnection()->prepare($sql);
             $statement->execute($params);
 
@@ -200,7 +200,7 @@ class MySQL implements StorageInterface
                 $result = $statement->rowCount();
             }
 
-            $this->appendSql($sql, $start);
+            $this->appendSql($sql, $start, $params);
 
             return $result;
         } catch (Throwable $e) {
@@ -312,9 +312,11 @@ class MySQL implements StorageInterface
         return $this->get('SHOW OPEN TABLES WHERE IN_USE >= 1');
     }
 
-    private function appendSQL(string $sql, $start)
+    private function appendSQL(string $sql, $start, array $params = null)
     {
-        $this->sqls[] = [microftime('T Ymd His', '.', $start), $sql, microtime(true)-$start];
+        $sql = trim($sql);
+
+        $this->sqls[] = [microftime('T Ymd His', '.', $start), $sql, $params, microtime(true)-$start];
 
         return $this;
     }
