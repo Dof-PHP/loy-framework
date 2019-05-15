@@ -106,7 +106,7 @@ class Console
 
     public function fail(string $text, bool $exit = false)
     {
-        $this->line($this->render($text, FAIL_COLOR));
+        $this->line($this->render($text, self::FAIL_COLOR));
 
         if ($exit) {
             $this->exit();
