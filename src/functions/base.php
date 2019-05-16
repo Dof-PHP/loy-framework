@@ -620,6 +620,20 @@ if (! function_exists('ci_equal')) {
         return strtolower($b) === strtolower($a);
     }
 }
+if (! function_exists('ciin_array')) {
+    function ciin_array($value, array $list) : bool
+    {
+        if (! is_scalar($value)) {
+            return false;
+        }
+
+        $value = strtolower((string) $value);
+
+        return in_array($value, array_map(function ($item) {
+            return strtolower((string) $item);
+        }, $list));
+    }
+}
 if (! function_exists('objectname')) {
     function objectname($object) : ?string
     {

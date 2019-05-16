@@ -350,15 +350,7 @@ class Validator
     {
         $value = $this->data[$key] ?? null;
 
-        if (! is_scalar($value)) {
-            return false;
-        }
-
-        $value = strtolower((string) $value);
-
-        return in_array($value, array_map(function ($item) {
-            return strtolower((string) $item);
-        }, $list));
+        return IS::ciin($value, $list);
     }
 
     private function validateIn(string $key, ...$list)

@@ -9,8 +9,8 @@ use Dof\Framework\Kernel;
 use Dof\Framework\Storage\MySQL;
 use Dof\Framework\Storage\Redis;
 use Dof\Framework\Storage\Connection;
-use Dof\Framework\Facade\Log;
 use Dof\Framework\Facade\Annotation;
+use Dof\Framework\Facade\Log;
 use Dof\Framework\DDD\Repository;
 
 final class StorageManager
@@ -184,8 +184,8 @@ final class StorageManager
      * Initialize storage driver instance for storage class
      *
      * @param string $namespace: Namespace of storage class
-     * @param bool $database: Set database for connection from config or annotations or not
-     * @return Storage Instance
+     * @param bool $database: Set database for connection from config and annotations or not
+     * @return \Dof\Framework\Storage\StorageInterface
      */
     public static function init(string $namespace, bool $database = true)
     {
@@ -196,8 +196,12 @@ final class StorageManager
 
         // Find storage driver from orm annotation (first) and domain database config (second)
         $domain = DomainManager::getKeyByNamespace($namespace);
-        list($ofClass, $ofProperties, ) = Annotation::parseNamespace($namespace);
-        $meta = array_change_key_case($ofClass['doc'] ?? [], CASE_LOWER);
+        if (! $domain) {
+            exception('BadStorageWithOutDomain');
+        }
+
+        $annotations = self::get($namespace);
+        $meta = array_change_key_case($annotations['meta'] ?? [], CASE_LOWER);
         $driver = $meta['driver'] ?? null;
         if (! $driver) {
             exception('UnknownORMStorageDriver', compact('namespace'));
@@ -213,14 +217,15 @@ final class StorageManager
         $pool = ConfigManager::getDomainFinalByKey($domain, join('.', [$driver, self::CONN_POOL]));
         $config = $pool[$connection] ?? [];
         if (! $config) {
-            exception('StorageConnnectionNotFound', compact('connection', 'domain', 'pool'));
+            exception('StorageConnnectionConfigMissing', compact('connection', 'domain', 'pool'));
         }
+        $config = array_change_key_case($config, CASE_LOWER);
 
         // Merge configurations from annotation and config file
         // And allow annotations replace file configs
         // So $meta must be the 2nd parameter of array_merge()
         $config = array_merge($config, $meta);
-        $instance = new $storage;
+        $instance = new $storage($annotations);
         $hook = method_exists($instance, 'callbackOnConnected')
         ? function ($config) use ($instance) {
             $instance->callbackOnConnected($config);
@@ -256,20 +261,6 @@ final class StorageManager
                         ]);
                 }
             });
-        }
-
-        // This should be executed for every storage class
-        if (method_exists($instance, 'setQuery')) {
-            $columns = [];
-            foreach ($ofProperties as $property) {
-                $column = $property['doc']['COLUMN'] ?? false;
-                if (! $column) {
-                    continue;
-                }
-                $columns[] = $column;
-            }
-            $meta['columns'] = $columns;
-            $instance->setQuery($meta);
         }
 
         return self::$namespaces[$namespace] = $instance;

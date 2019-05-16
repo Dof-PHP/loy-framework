@@ -11,7 +11,6 @@ use Dof\Framework\Paginator;
 
 /**
  * Storage is the persistence layer implementations
- * In Dof, it's also the configuration of ORM
  */
 abstract class Storage implements Repository
 {
@@ -23,70 +22,52 @@ abstract class Storage implements Repository
         $this->__storage = StorageManager::init(static::class);
     }
 
+    final public static function init()
+    {
+        return new static;
+    }
+
     final public function storage()
     {
         return $this->__storage;
     }
 
-    final public function find(int $pk) : ?Entity
-    {
-        $result = $this->__storage->find($pk);
-
-        return RepositoryManager::convert(static::class, $result);
-    }
-
+    /**
+     * Convert an array result data
+     */
     final public function convert(array $result = null)
     {
         return RepositoryManager::convert(static::class, $result);
     }
 
-    final public function count(...$params)
+    /**
+     * Convert a list of results or a paginator instance
+     */
+    final public function converts($result = null)
     {
-        $res = $this->__storage->get(...$params);
-
-        return intval($res[0]['cnt'] ?? 0);
-    }
-
-    final public function first(...$params)
-    {
-        $res = $this->__storage->get(...$params);
-
-        return $res[0] ?? null;
-    }
-
-    final public function get(...$params)
-    {
-        return $this->__storage->get(...$params);
-    }
-
-    final public function save(Entity $entity) : Entity
-    {
-        $annotation = StorageManager::get(static::class);
-        $columns = $annotation['columns'] ?? [];
-        if (! $columns) {
-            exception('NoColumnsOnStorageToUpdate', ['storage' => static::class]);
+        if (! $result) {
+            return;
         }
 
-        unset($columns['id']);
-
-        $data = [];
-        foreach ($columns as $column => $property) {
-            $getter = 'get'.ucfirst($property);
-            if (method_exists($entity, $getter)) {
-                $data[$column] = $entity->{$getter}();
+        if ($result instanceof Paginator) {
+            $list = $result->getList();
+            foreach ($list as &$item) {
+                $item = RepositoryManager::convert(static::class, $item);
             }
+            $result->setList($list);
+
+            return $result;
         }
 
-        if (! $data) {
-            exception('NoDataForStorageToUpdate', [
-                'storage' => static::class,
-                'entity'  => get_class($entity),
-            ]);
+        if (! is_array($result)) {
+            exception('UnconvertableEntityOrigin', compact('result'));
         }
 
-        $this->__storage->update($entity->getId(), $data);
+        foreach ($result as &$item) {
+            $item = RepositoryManager::convert(static::class, $item);
+        }
 
-        return $entity;
+        return $result;
     }
 
     final public function add(Entity $entity) : Entity
@@ -145,22 +126,40 @@ abstract class Storage implements Repository
         }
     }
 
-    public function paginate(int $page, int $size) : Paginator
+    final public function save(Entity $entity) : Entity
     {
-        if (method_exists($this->__storage, 'paginate')) {
-            $total = $this->__storage->count();
-            $list = $this->__storage->paginate($page, $size);
-            foreach ($list as &$item) {
-                $item = $this->convert($item);
-            }
+        $annotation = StorageManager::get(static::class);
+        $columns = $annotation['columns'] ?? [];
+        if (! $columns) {
+            exception('NoColumnsOnStorageToUpdate', ['storage' => static::class]);
+        }
 
-            return paginator($list, [
-                'page' => $page,
-                'size' => $size,
-                'total' => $total,
+        unset($columns['id']);
+
+        $data = [];
+        foreach ($columns as $column => $property) {
+            $getter = 'get'.ucfirst($property);
+            if (method_exists($entity, $getter)) {
+                $data[$column] = $entity->{$getter}();
+            }
+        }
+
+        if (! $data) {
+            exception('NoDataForStorageToUpdate', [
+                'storage' => static::class,
+                'entity'  => get_class($entity),
             ]);
         }
 
-        return [];
+        $this->__storage->update($entity->getId(), $data);
+
+        return $entity;
+    }
+
+    final public function find(int $pk) : ?Entity
+    {
+        $result = $this->__storage->find($pk);
+
+        return RepositoryManager::convert(static::class, $result);
     }
 }

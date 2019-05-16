@@ -180,3 +180,9 @@ GWT('Test fixed_string(): #1', ['abcdefghijklmnopqrstuvwxyz1234567890', 15], fun
 }, function ($result, $tester) {
     return mb_strlen($result) === 15;
 });
+
+GWT('Test ciin_array(): #1', 'IN', function ($given) {
+    return ciin_array($given, ['in', 'not in']);
+}, function ($result, $tester) {
+    return $result === true;
+});

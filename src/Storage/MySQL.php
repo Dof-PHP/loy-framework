@@ -10,94 +10,108 @@ use Dof\Framework\Collection;
 
 class MySQL implements StorageInterface
 {
-    /** @var \Dof\Framework\Collection: SQL Query used data, collection instance */
-    private $query = [];
+    /** @var \Dof\Framework\Collection: Data used for SQL querying */
+    private $annotations = [];
 
     /** @var object|null: PDO Connection Instance */
     private $connection;
 
+    /** @var \Dof\Framework\Storage\MySQLBuilder: Query builder based on table */
+    private $builder;
+
+    /** @var bool: Used database or not */
+    private $database;
+
     /** @var array: Sqls executed in this instance lifetime */
     private $sqls = [];
 
-    public function update(int $pk, array $data) : int
+    public function builder() : MySQLBuilder
     {
-        if (! $data) {
-            return 0;
-        }
-
-        $parmas = [];
-        $columns = [];
-        foreach ($data as $key => $val) {
-            $columns[] = "`{$key}` = ?";
-            $params[] = $val;
-        }
-
-        $columns = join(', ', $columns);
-        $params[] = $pk;
-
-        $sql = "UPDATE #{TABLE} SET {$columns} WHERE `id` = ?";
-
-        return $this->exec($sql, $params);
+        return singleton(MySQLBuilder::class)->reset()->setOrigin($this);
     }
 
+    /**
+     * Add a single record and return primary key
+     */
     public function add(array $data) : int
     {
-        $columns = array_keys($data);
-        $values = array_values($data);
-        $count = count($values);
-        $_values = join(',', array_fill(0, $count, '?'));
-
-        $columns = join(',', array_map(function ($column) {
-            return "`{$column}`";
-        }, $columns));
-
-        $sql = "INSERT INTO #{TABLE} ({$columns}) VALUES ({$_values})";
-
-        return (int) $this->insert($sql, $values);
+        return $this->builder()->add($data);
     }
 
-    public function find(int $pk) : ?array
+    /**
+     * Insert a single record and return parimary key
+     */
+    public function insert(string $sql, array $values) : int
     {
-        $sql = 'SELECT #{COLUMNS} FROM #{TABLE} WHERE `id` = ?';
-        $res = $this->get($sql, [$pk]);
+        try {
+            $this->getConnection()->beginTransaction();
 
-        return $res[0] ?? null;
+            $sql = $this->generate($sql);
+
+            $start = microtime(true);
+
+            $this->appendSql($sql, $start, $values);
+            $statement = $this->getConnection()->prepare($sql);
+            $statement->execute($values);
+
+            $id = $this->getConnection()->lastInsertId();
+
+            $this->getConnection()->commit();
+
+            return (int) $id;
+        } catch (Throwable $e) {
+            $this->getConnection()->rollBack();
+
+            exception('InsertToMySQLFailed', compact('sql', 'value'), $e);
+        }
+    }
+
+    public function deletes(...$pks) : int
+    {
+        return $this->builder()->where('id', $pks, 'in')->delete();
     }
 
     /**
      * Delete a record by primary key
-     *
-     * @param int $pk: Primary ke of table
-     * @return int: Number of rows affected
      */
     public function delete(int $pk) : int
     {
-        $sql = 'DELETE FROM #{TABLE} WHERE `id` = ?';
-
-        return $this->exec($sql, [$pk]);
+        return $this->builder()->where('id', $pk)->delete();
     }
 
-    public function count() : int
+    /**
+     * Update a single record by primary key
+     */
+    public function update(int $pk, array $data) : int
     {
-        $sql = 'SELECT count(*) as `total` FROM #{TABLE}';
-        $res = $this->get($sql);
-
-        return intval($res[0]['total'] ?? 0);
+        return $this->builder()->where('id', $pk)->update($data);
     }
 
-    public function paginate(int $page, int $size) : array
+    /**
+     * Find a single record by primary key
+     */
+    public function find(int $pk) : ?array
     {
-        $sql = 'SELECT #{COLUMNS} FROM #{TABLE} LIMIT ?, ?';
-
-        return $this->get($sql, [($page - 1) * $size, $size]);
+        return $this->builder()->where('id', $pk)->first();
     }
 
-    public function __construct(array $config = [])
+    public function __construct(array $annotations)
     {
-        $this->config = collect($config);
+        $this->annotations = collect($annotations);
     }
 
-    public function raw(string $sql)
+    public function rawExec(string $sql)
+    {
+        $start = microtime(true);
+
+        $result = $this->getConnection()->exec($sql);
+
+        $this->appendSQL($sql, $start);
+
+        return $result;
+    }
+
+    public function rawGet(string $sql)
     {
         $start = microtime(true);
 
@@ -144,46 +158,6 @@ class MySQL implements StorageInterface
         }
     }
 
-    public function getPDOValueConst($val)
-    {
-        switch (gettype($val)) {
-            case 'integer':
-                return PDO::PARAM_INT;
-            case 'boolean':
-                return PDO::PARAM_BOOL;
-            case 'NULL':
-                return PDO::PARAM_NULL;
-            case 'string':
-            default:
-                return PDO::PARAM_STR;
-        }
-    }
-
-    public function insert(string $sql, array $params)
-    {
-        try {
-            $this->getConnection()->beginTransaction();
-
-            $sql = $this->generate($sql);
-
-            $start = microtime(true);
-
-            $this->appendSql($sql, $start, $params);
-            $statement = $this->getConnection()->prepare($sql);
-            $statement->execute($params);
-
-            $id = $this->getConnection()->lastInsertId();
-
-            $this->getConnection()->commit();
-
-            return $id;
-        } catch (Throwable $e) {
-            $this->getConnection()->rollBack();
-
-            exception('InsertToMySQLFailed', ['sql' => $sql], $e);
-        }
-    }
-
     public function exec(string $sql, array $params = null)
     {
         try {
@@ -210,6 +184,8 @@ class MySQL implements StorageInterface
 
     public function use(string $dbname)
     {
+        $this->database = $dbname;
+
         $sql = "USE `{$dbname}`";
 
         $this->exec($sql);
@@ -218,7 +194,7 @@ class MySQL implements StorageInterface
     }
 
     /**
-     * Generate sql statement from sql template
+     * Generate base sql statement from sql template
      *
      * @param string $sql
      * @return string
@@ -240,7 +216,7 @@ class MySQL implements StorageInterface
 
     public function getSelectColumns() : ?string
     {
-        $columns = $this->query->columns->getData();
+        $columns = array_keys($this->annotations->columns->getData());
         if (! $columns) {
             return '*';
         }
@@ -252,14 +228,29 @@ class MySQL implements StorageInterface
 
     public function getFullTable() : ?string
     {
-        $prefix = (string) $this->query->prefix;
-        $table  = (string) $this->query->table;
+        $prefix = $this->annotations->meta->get('PREFIX', '', ['string']);
+        $table  = $this->annotations->meta->get('TABLE', null, ['need', 'string']);
 
         if ((! $prefix) && (! $table)) {
             return null;
         }
 
         return "`{$prefix}{$table}`";
+    }
+
+    public function getPDOValueConst($val)
+    {
+        switch (gettype($val)) {
+            case 'integer':
+                return PDO::PARAM_INT;
+            case 'boolean':
+                return PDO::PARAM_BOOL;
+            case 'NULL':
+                return PDO::PARAM_NULL;
+            case 'string':
+            default:
+                return PDO::PARAM_STR;
+        }
     }
 
     public function setConnection($connection)
@@ -273,6 +264,11 @@ class MySQL implements StorageInterface
             exception('MissingMySQLConnection');
         }
 
+        if (! $this->database) {
+            $dbname = $this->annotations->meta->get('DATABASE', null, ['need', 'string']);
+            $this->use($dbname);
+        }
+
         return $this->connection;
     }
 
@@ -281,23 +277,6 @@ class MySQL implements StorageInterface
         if ($db = $config->get('database', null)) {
             $this->appendSql("USE {$db}", 0);
         }
-    }
-
-    /**
-     * Setter for query
-     *
-     * @param array $query
-     * @return MySQL
-     */
-    public function setQuery(array $query)
-    {
-        $this->query = collect($query);
-
-        if ($dbname = $this->query->get('database')) {
-            $this->use($dbname);
-        }
-    
-        return $this;
     }
 
     public function showSessionId()

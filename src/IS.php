@@ -6,6 +6,11 @@ namespace Dof\Framework;
 
 class IS
 {
+    public static function ciin($value, array $list) : bool
+    {
+        return ciin_array($value, $list);
+    }
+
     public static function namespace($value) : bool
     {
         return is_string($value) && (
