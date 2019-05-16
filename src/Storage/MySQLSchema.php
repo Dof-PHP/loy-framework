@@ -12,7 +12,7 @@ class MySQLSchema
     public static function sync(
         string $namespace,
         array $annotations,
-        StorageInterface $mysql,
+        MySQL $mysql,
         bool $force = false
     ) {
         $meta = $annotations['meta'] ?? [];
@@ -55,7 +55,7 @@ class MySQLSchema
 
         $engine = $meta['ENGINE'] ?? self::DEFAULT_ENGINE;
         $charset = $meta['CHARSET'] ?? self::DEFAULT_CHARSET;
-        $_comment = $meta['COMMENT'] ?? '';
+        $notes = $meta['COMMENT'] ?? '';
         $pkName = $meta['PRIMARYKEY'] ?? 'id';
         $pkType = $meta['PRIMARYTYPE'] ?? 'int';
         $pkLength = $meta['PRIMARYLEN'] ?? 10;
@@ -119,12 +119,12 @@ class MySQLSchema
 
         $sql = <<<SQL
 CREATE TABLE `{$table}` (
-`{$pkName}` {$pkType}({$pkLength}) NOT NULL AUTO_INCREMENT,
+`{$pkName}` {$pkType}({$pkLength}) UNSIGNED NOT NULL AUTO_INCREMENT,
 {$fields}
 {$indexes}
 {$uniques}
 PRIMARY KEY (`{$pkName}`)
-) ENGINE={$engine} DEFAULT CHARSET={$charset} COMMENT='{$_comment}'
+) ENGINE={$engine} DEFAULT CHARSET={$charset} COMMENT='{$notes}'
 SQL;
 
         $mysql->exec($sql);

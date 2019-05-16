@@ -35,6 +35,6 @@ final class StorageSchema
             exception('UnSuppoertedStorageDriver', compact('storage', 'driver'));
         }
 
-        return $_driver::sync($storage, $data, StorageManager::init($storage), $force);
+        return $_driver::sync($storage, $data, StorageManager::init($storage, false), $force);
     }
 }

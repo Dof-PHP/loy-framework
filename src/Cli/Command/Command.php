@@ -466,25 +466,26 @@ class Command
         $force = $console->hasOption('force');
 
         $syncSingle = function ($single) use ($console, $force) {
+            $storage = null;
             if (class_exists($single)) {
                 if (! is_subclass_of($single, Storage::class)) {
                     $console->exception('SingleClassNotAStorage', compact('single'));
                 }
-
-                $res = StorageSchema::sync($single, $force);
-                $console->render("Syncing {$single} ... ", $console::INFO_COLOR, true);
-                $res ? $console->success('OK') : $console->fail('FAILED', true);
-            }
-
-            if (is_file($single)) {
+                $storage = $single;
+            } elseif (is_file($single)) {
                 $class = get_namespace_of_file($single, true);
                 if ((! $class) || (! is_subclass_of($class, Storage::class))) {
                     $console->exception('InvalidSingleStorageFile', compact('single', 'class'));
                 }
-                $res = StorageSchema::sync($class, $force);
-                $console->render("Syncing {$single} ... ", $console::INFO_COLOR, true);
-                $res ? $console->success('OK') : $console->fail('FAILED', true);
+                $storage = $class;
             }
+            if (! $storage) {
+                $console->exception('InvalidStorageSingle', compact('single', 'storage'));
+            }
+
+            $res = StorageSchema::sync($storage, $force);
+            $console->render("Syncing ... {$storage} ... ", $console::INFO_COLOR, true);
+            $res ? $console->success('OK') : $console->fail('FAILED', true);
         };
 
         if ((count($params) === 0) && (count($options) === 0)) {

@@ -130,7 +130,7 @@ final class StorageManager
 
     public static function __annotationFilterUnique(string $index, array $ext, string $storage) : array
     {
-        return self::__annotationFilterIndex();
+        return self::__annotationFilterIndex($index, $ext, $storage);
     }
 
     public static function __annotationFilterIndex(string $index, array $ext, string $storage) : array
@@ -184,9 +184,10 @@ final class StorageManager
      * Initialize storage driver instance for storage class
      *
      * @param string $namespace: Namespace of storage class
+     * @param bool $database: Set database for connection from config or annotations or not
      * @return Storage Instance
      */
-    public static function init(string $namespace)
+    public static function init(string $namespace, bool $database = true)
     {
         $instance = self::$namespaces[$namespace] ?? null;
         if ($instance) {
@@ -225,6 +226,10 @@ final class StorageManager
             $instance->callbackOnConnected($config);
         }
         : null;
+
+        if (! $database) {
+            unset($config['database'], $meta['database']);
+        }
 
         $instance->setConnection(Connection::get($driver, $connection, $config, $hook));
 
