@@ -30,7 +30,7 @@ abstract class Storage implements Repository
      * @Length(10)
      * @Notnull(1)
      */
-    protected $createdAt;
+    // protected $createdAt;
 
     /**
      * @Column(updated_at)
@@ -38,7 +38,7 @@ abstract class Storage implements Repository
      * @Length(10)
      * @Notnull(0)
      */
-    protected $updatedAt;
+    // protected $updatedAt;
 
     /**
      * @Column(deleted_at)
@@ -46,7 +46,7 @@ abstract class Storage implements Repository
      * @Length(10)
      * @Notnull(0)
      */
-    protected $deletedAt;
+    // protected $deletedAt;
 
     /** @var Storage Instance */
     protected $__storage;
