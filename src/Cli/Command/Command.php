@@ -456,10 +456,10 @@ class Command
     }
 
     /**
-     * @CMD(storage.sync)
+     * @CMD(orm.sync)
      * @Desc(Sync from storage ORM annotations to storage driver schema)
      */
-    public function storageSync($console)
+    public function syncORM($console)
     {
         $params = $console->getParams();
         $options = $console->getOptions();

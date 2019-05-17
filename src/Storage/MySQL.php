@@ -22,6 +22,9 @@ class MySQL implements StorageInterface
     /** @var bool: Used database or not */
     private $database;
 
+    /** @var bool: Queries need a database used or not */
+    private $needdb;
+
     /** @var array: Sqls executed in this instance lifetime */
     private $sqls = [];
 
@@ -238,6 +241,13 @@ class MySQL implements StorageInterface
         return "`{$prefix}{$table}`";
     }
 
+    public function quote(string $val)
+    {
+        $type = $this->getPDOValueConst($val);
+
+        return $this->getConnection()->quote($val, $type);
+    }
+
     public function getPDOValueConst($val)
     {
         switch (gettype($val)) {
@@ -253,6 +263,13 @@ class MySQL implements StorageInterface
         }
     }
 
+    public function setNeeddb(bool $needdb)
+    {
+        $this->needdb = $needdb;
+
+        return $this;
+    }
+
     public function setConnection($connection)
     {
         $this->connection = $connection;
@@ -264,7 +281,7 @@ class MySQL implements StorageInterface
             exception('MissingMySQLConnection');
         }
 
-        if (! $this->database) {
+        if ((! $this->database) && ($this->needdb)) {
             $dbname = $this->annotations->meta->get('DATABASE', null, ['need', 'string']);
             $this->use($dbname);
         }

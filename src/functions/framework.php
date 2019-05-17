@@ -251,6 +251,12 @@ if (! function_exists('logging')) {
         return call_user_func_array([\Dof\Framework\Facade\Log::class, $level], [$message, $context]);
     }
 }
+if (! function_exists('logger')) {
+    function logger()
+    {
+        return \Dof\Framework\Facade\Log::getInstance();
+    }
+}
 if (! function_exists('wrapper')) {
     function wrapper(string $namespace = null, string $type = null)
     {

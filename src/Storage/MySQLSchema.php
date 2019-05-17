@@ -28,7 +28,7 @@ class MySQLSchema
             self::initDatabase($database, $mysql);
         }
         if (self::existsTable($database, $table, $mysql)) {
-            // self::syncTable($database, $table, $annotations, $mysql);
+            self::syncTable($database, $table, $annotations, $mysql, $force);
         } else {
             self::initTable($database, $table, $annotations, $mysql);
         }
@@ -42,9 +42,215 @@ class MySQLSchema
         $mysql->exec("CREATE DATABASE `{$name}` DEFAULT CHARACTER SET utf8mb4");
     }
 
-    public static function syncTable(string $db, string $table, array $annotations, $mysql)
+    private static function syncTableColumns(string $db, string $table, array $annotations, $mysql, bool $force = false)
     {
-        // TODO: compare columns and decide whether add/drop operations are required
+        $meta = $annotations['meta'] ?? [];
+        $columns = $annotations['columns'] ?? [];
+        $properties = $annotations['properties'] ?? [];
+
+        $_columns = $mysql->setNeeddb(false)->rawGet("SHOW FULL COLUMNS FROM `{$table}` FROM `{$db}`");
+        $_columnNames = array_column($_columns, 'Field');
+        $_columns = array_combine($_columnNames, $_columns);
+        // sort($_columnNames);
+        $columnNames = array_keys($columns);
+        // sort($columnNames);
+
+        $columnsAdd = array_diff($columnNames, $_columnNames);
+        if ($columnsAdd) {
+            $add = "ALTER TABLE `{$db}`.`{$table}` ";
+            foreach ($columnsAdd as $column) {
+                $property = $columns[$column] ?? null;
+                $property = $properties[$property] ?? null;
+                if (! $property) {
+                    exception('PropertiesOfColumnNotFound', compact('table', 'column'));
+                }
+
+                $type = $property['TYPE'] ?? null;
+                $length = $property['LENGTH'] ?? null;
+                $notnull = 'NOT NULL';
+                if (($property['NOTNULL'] ?? null) == '0') {
+                    $notnull = '';
+                }
+                $default = '';
+                if (array_key_exists('DEFAULT', $property)) {
+                    $_default = $property['DEFAULT'] ?? null;
+                    $default = "DEFAULT '{$_default}'";
+                }
+                $comment = '';
+                if (array_key_exists('COMMENT', $property)) {
+                    $_comment = $property['COMMENT'] ?? '';
+                    $comment = "COMMENT '{$_comment}'";
+                }
+
+                $add .= "ADD COLUMN `{$column}` {$type}($length) {$notnull} {$default} {$comment}";
+                if (false !== next($columnsAdd)) {
+                    $add .= ', ';
+                }
+            }
+
+            $mysql->exec($add);
+        }
+
+        $columnsUpdate = array_intersect($columnNames, $_columnNames);
+        foreach ($columnsUpdate as $column) {
+            $attrs = $properties[$columns[$column] ?? null] ?? [];
+            if (! $attrs) {
+                exception('AttrsOfColumnNotFound', compact('table', 'column'));
+            }
+
+            $typeInCode = trim(strval($attrs['TYPE'] ?? null));
+            $lengthInCode = trim(strval($attrs['LENGTH'] ?? null));
+            if ((! $typeInCode) || (! $lengthInCode)) {
+                exception('MissingTypeInColumnAnnotations', compact('table', 'column'));
+            }
+            $unsignedInCode = (($attrs['UNSIGNED'] ?? null) == 1) ? 'unsigned' : '';
+            $typeInCode = trim("{$typeInCode}({$lengthInCode}) {$unsignedInCode}");
+            $notnullInCode = ci_equal($attrs['NOTNULL'] ?? '1', '1');
+            $defaultInCode = $attrs['DEFAULT'] ?? '';
+            $commentInCode = trim(strval($attrs['COMMENT'] ?? ''));
+
+            $_column = $_columns[$column] ?? null;
+            if (! $_column) {
+                exception('ColumnNotFoundInSchema', compact('db', 'table', 'column'));
+            }
+            $typeInSchema = trim(strval($_column['Type'] ?? ''));
+            $notnullInSchema = ci_equal($_column['Null'] ?? 'NO', 'no');
+            $defaultInSchema = $_column['Default'] ?? '';
+            $commentInSchema = trim(strval($_column['Comment'] ?? ''));
+
+            if (false
+                || (! ci_equal($typeInCode, $typeInSchema))
+                || ($notnullInCode !== $notnullInSchema)
+                || (! ci_equal($defaultInCode, $defaultInSchema))
+                || (! ci_equal($commentInCode, $commentInSchema))
+            ) {
+                // update table column with schema in annotations
+                $notnull = $notnullInCode ? 'NOT NULL' : '';
+                $default = '';
+                if (array_key_exists('DEFAULT', $attrs)) {
+                    $default = 'DEFAULT '.$mysql->quote($defaultInCode);
+                }
+                $comment = '';
+                if (array_key_exists('COMMENT', $attrs)) {
+                    $comment = 'COMMENT '.$mysql->quote($commentInCode);
+                }
+                $res = $mysql->exec("ALTER TABLE `{$db}`.`{$table}` MODIFY `{$column}` {$typeInCode} {$notnull} {$default} {$comment}");
+            }
+        }
+
+        $columnsDrop = array_diff($_columnNames, $columnNames);
+        if ($columnsDrop && $force) {
+            $drop = "ALTER TABLE `{$table}` ";
+            $dropColumns = $drop.join(', ', array_map(function ($column) {
+                return "DROP `{$column}`";
+            }, $columnsDrop));
+
+            $columnsToDrop = join(',', array_map(function ($column) {
+                return "'{$column}'";
+            }, $columnsDrop));
+
+            $mysql->exec($dropColumns);
+            // !!! MySQL will drop indexes automatically when the columns of that index is dropped
+            // !!! So here we MUST NOT drop then again
+            // $indexes = $mysql->rawGet("SHOW INDEX FROM `{$table}` WHERE `Column_name` IN({$columnsToDrop})");
+            // if ($indexes) {
+                // $indexesDrop = array_unique(array_column($indexes, 'Key_name'));
+                // $dropIndexes = $drop.join(', ', array_map(function ($index) {
+                    // return "DROP INDEX `{$index}`";
+                // }, $indexesDrop));
+                // $mysql->exec($dropIndexes);
+            // }
+        }
+        $mysql->setNeeddb(true);
+    }
+
+    private static function syncTableIndexes(string $db, string $table, array $annotations, $mysql, bool $force = false)
+    {
+        $meta = $annotations['meta'] ?? [];
+        $columns = $annotations['columns'] ?? [];
+        $properties = $annotations['properties'] ?? [];
+
+        $_indexes = $mysql->setNeeddb(false)->rawGet("SHOW INDEX FROM `{$table}` FROM `{$db}` WHERE `KEY_NAME` != 'PRIMARY'");
+        $_indexNames = array_unique(array_column($_indexes, 'Key_name'));
+        $indexes = $meta['INDEX'] ?? [];
+        $uniques = $meta['UNIQUE'] ?? [];
+        $indexNames = array_keys(array_merge($indexes, $uniques));
+
+        $indexesAdd = array_diff($indexNames, $_indexNames);
+        if ($indexesAdd) {
+            $addIndexes = "ALTER TABLE `{$table}` ";
+            foreach ($indexesAdd as $key) {
+                $unique = '';
+                $fields = $indexes[$key] ?? [];
+                if ($_fields = ($uniques[$key] ?? null)) {
+                    $unique = 'UNIQUE';
+                    $fields = $_fields;
+                }
+                if (! $fields) {
+                    exception('MissingColumnsOfIndexKey', compact('key', 'unique'));
+                }
+                foreach ($fields as $field) {
+                    if (! ($columns[$field] ?? false)) {
+                        exception('FieldOfIndexKeyNotExists', compact('field', 'key'));
+                    }
+                }
+
+                $fields = join(',', array_map(function ($field) {
+                    return "`{$field}`";
+                }, $fields));
+
+                $addIndexes .= "ADD {$unique} KEY `{$key}`($fields)";
+                if (false !== next($indexesAdd)) {
+                    $addIndexes .= ', ';
+                }
+            }
+
+            $mysql->exec($addIndexes);
+        }
+
+        $indexesUpdate = array_intersect($indexNames, $_indexNames);
+        foreach ($indexesUpdate as $index) {
+            $fieldsOfIndex = $mysql->setNeeddb(false)->rawGet("SHOW INDEX FROM `{$table}` FROM `{$db}` WHERE `KEY_NAME` = '{$index}'");
+            $_fieldsOfIndex = array_column($fieldsOfIndex, 'Column_name');
+            $columnsOfIndex = $indexes[$index] ?? ($uniques[$index] ?? []);
+
+            // Check index unicity between annotations and db schema
+            // Check indexes fields count between annotations and db schema
+            $uniqueInCode = boolval($uniques[$index] ?? false);
+            $uniqueInSchema = !boolval($fieldsOfIndex[0]['Non_unique'] ?? false);
+            $unique = $uniqueInCode ? 'UNIQUE' : '';
+            $fields = join(',', array_map(function ($field) {
+                return "`{$field}`";
+            }, $columnsOfIndex));
+
+            if (($uniqueInCode !== $uniqueInSchema) || ($columnsOfIndex !== $_fieldsOfIndex)) {
+                // re-create index and name as $index with unicity
+                $mysql->exec("ALTER TABLE `{$table}` DROP INDEX `{$index}`, ADD {$unique} KEY `{$index}` ({$fields}) ");
+                continue;
+            }
+        }
+
+        $indexesDrop = array_diff($_indexNames, $indexNames);
+        if ($indexesDrop && $force) {
+            $dropIndexes = "ALTER TABLE `{$table}` ";
+            $dropIndexes .= join(', ', array_map(function ($index) {
+                return "DROP KEY `{$index}`";
+            }, $indexesDrop));
+
+            $mysql->exec($dropIndexes);
+        }
+
+        $mysql->setNeeddb(true);
+    }
+
+    /**
+     * Compare columns from table schema to storage annotations
+     * Then decide whether add/drop/modification operations on columns and indexes are required
+     */
+    public static function syncTable(string $db, string $table, array $annotations, $mysql, bool $force = false)
+    {
+        self::syncTableColumns($db, $table, $annotations, $mysql, $force);
+        self::syncTableIndexes($db, $table, $annotations, $mysql, $force);
     }
 
     public static function initTable(string $db, string $table, array $annotations, $mysql)
@@ -99,7 +305,10 @@ class MySQLSchema
             }
 
             $unsigned = (($attr['UNSIGNED'] ?? null) == 1) ? 'UNSIGNED' : '';
-            $nullable = (($attr['NOTNULL'] ?? null) == 1) ? 'NOT NULL' : '';
+            $nullable = 'NOT NULL';
+            if (($attr['NOTNULL'] ?? null) == '0') {
+                $nullable = '';
+            }
             $default = '';
             if (array_key_exists('DEFAULT', $attr)) {
                 $_default = $attr['DEFAULT'] ?? null;
@@ -108,7 +317,7 @@ class MySQLSchema
             $comment = '';
             if (array_key_exists('COMMENT', $attr)) {
                 $_comment = $attr['COMMENT'] ?? '';
-                $comment = "COMMENT '{$_comment}'";
+                $comment = 'COMMENT '.$mysql->quote($_comment);
             }
 
             $fields .= "`{$column}` {$type}({$len}) {$unsigned} {$nullable} {$default} {$comment}, ";
@@ -142,7 +351,9 @@ SQL;
 
     public static function existsDatabase(string $name, $mysql) : bool
     {
-        $res = $mysql->get("SHOW DATABASES LIKE '{$name}'");
+        $res = $mysql->setNeeddb(false)->get("SHOW DATABASES LIKE '{$name}'");
+
+        $mysql->setNeeddb(true);
 
         return count($res[0] ?? []) > 0;
     }
