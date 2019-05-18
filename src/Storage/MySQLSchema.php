@@ -38,8 +38,9 @@ class MySQLSchema
 
     public static function initDatabase(string $name, $mysql)
     {
-        $mysql->exec("DROP DATABASE IF EXISTS `{$name}`");
-        $mysql->exec("CREATE DATABASE `{$name}` DEFAULT CHARACTER SET utf8mb4");
+        $mysql->setNeeddb(false)->exec("DROP DATABASE IF EXISTS `{$name}`");
+        $mysql->setNeeddb(false)->exec("CREATE DATABASE `{$name}` DEFAULT CHARACTER SET utf8mb4");
+        $mysql->setNeeddb(true);
     }
 
     private static function syncTableColumns(string $db, string $table, array $annotations, $mysql, bool $force = false)
@@ -81,8 +82,9 @@ class MySQLSchema
                     $_comment = $property['COMMENT'] ?? '';
                     $comment = "COMMENT '{$_comment}'";
                 }
+                $autoinc = $property['AUTOINC'] ?? '';
 
-                $add .= "ADD COLUMN `{$column}` {$type}($length) {$notnull} {$default} {$comment}";
+                $add .= "ADD COLUMN `{$column}` {$type}($length) {$notnull} {$autoinc} {$default} {$comment}";
                 if (false !== next($columnsAdd)) {
                     $add .= ', ';
                 }
@@ -108,6 +110,7 @@ class MySQLSchema
             $notnullInCode = ci_equal($attrs['NOTNULL'] ?? '1', '1');
             $defaultInCode = $attrs['DEFAULT'] ?? '';
             $commentInCode = trim(strval($attrs['COMMENT'] ?? ''));
+            $autoincInCode = ci_equal(trim(strval($attrs['AUTOINC'] ?? '')), '1');
 
             $_column = $_columns[$column] ?? null;
             if (! $_column) {
@@ -117,12 +120,14 @@ class MySQLSchema
             $notnullInSchema = ci_equal($_column['Null'] ?? 'NO', 'no');
             $defaultInSchema = $_column['Default'] ?? '';
             $commentInSchema = trim(strval($_column['Comment'] ?? ''));
+            $autoincInSchema = ci_equal(trim(strval($_column['Extra'] ?? '')), 'auto_increment');
 
             if (false
                 || (! ci_equal($typeInCode, $typeInSchema))
                 || ($notnullInCode !== $notnullInSchema)
                 || (! ci_equal($defaultInCode, $defaultInSchema))
                 || (! ci_equal($commentInCode, $commentInSchema))
+                || ($autoincInCode !== $autoincInSchema)
             ) {
                 // update table column with schema in annotations
                 $notnull = $notnullInCode ? 'NOT NULL' : '';
@@ -134,7 +139,16 @@ class MySQLSchema
                 if (array_key_exists('COMMENT', $attrs)) {
                     $comment = 'COMMENT '.$mysql->quote($commentInCode);
                 }
-                $res = $mysql->exec("ALTER TABLE `{$db}`.`{$table}` MODIFY `{$column}` {$typeInCode} {$notnull} {$default} {$comment}");
+
+                $autoinc = '';
+                if (false
+                    || $autoincInCode
+                    || ci_equal(strval($meta['PRIMARYKEY'] ?? 'id'), $column)
+                ) {
+                    $autoinc = 'AUTO_INCREMENT';
+                }
+
+                $res = $mysql->exec("ALTER TABLE `{$db}`.`{$table}` MODIFY `{$column}` {$typeInCode} {$notnull} {$autoinc} {$default} {$comment}");
             }
         }
 
@@ -261,7 +275,7 @@ class MySQLSchema
 
         $engine = $meta['ENGINE'] ?? self::DEFAULT_ENGINE;
         $charset = $meta['CHARSET'] ?? self::DEFAULT_CHARSET;
-        $notes = $meta['COMMENT'] ?? '';
+        $notes = $mysql->quote($meta['COMMENT'] ?? '');
         $pkName = $meta['PRIMARYKEY'] ?? 'id';
         $pkType = $meta['PRIMARYTYPE'] ?? 'int';
         $pkLength = $meta['PRIMARYLEN'] ?? 10;
@@ -333,7 +347,7 @@ CREATE TABLE `{$table}` (
 {$indexes}
 {$uniques}
 PRIMARY KEY (`{$pkName}`)
-) ENGINE={$engine} DEFAULT CHARSET={$charset} COMMENT='{$notes}'
+) ENGINE={$engine} AUTO_INCREMENT=1 DEFAULT CHARSET={$charset} COMMENT={$notes}
 SQL;
 
         $mysql->exec($sql);

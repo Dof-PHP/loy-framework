@@ -13,7 +13,8 @@ class ORMStorage extends Storage
      * @Column(id)
      * @Type(int)
      * @Length(10)
-     * @PrimaryKey(1)
+     * @Unsigned(1)
+     * @AutoInc(1)
      * @Notnull(1)
      */
     protected $id;

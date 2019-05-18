@@ -20,17 +20,18 @@ class MySQL implements StorageInterface
     private $builder;
 
     /** @var bool: Used database or not */
-    private $database;
+    private $database = false;
 
     /** @var bool: Queries need a database used or not */
-    private $needdb;
+    private $needdb = true;
 
     /** @var array: Sqls executed in this instance lifetime */
     private $sqls = [];
 
     public function builder() : MySQLBuilder
     {
-        return singleton(MySQLBuilder::class)->reset()->setOrigin($this);
+        return (new MySQLBuilder)->setOrigin($this);
+        // return singleton(MySQLBuilder::class)->reset()->setOrigin($this);
     }
 
     /**
