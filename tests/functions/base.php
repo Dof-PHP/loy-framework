@@ -186,3 +186,39 @@ GWT('Test ciin_array(): #1', 'IN', function ($given) {
 }, function ($result, $tester) {
     return $result === true;
 });
+
+GWT('Test is_index_array(): #1', [1, 2, 3, 'abc'], function ($given) {
+    return is_index_array($given);
+}, function ($result, $tester) {
+    return $result === true;
+});
+
+GWT('Test is_index_array(): #2', [1, 2, 3, 'abc' => 'foo'], function ($given) {
+    return is_index_array($given);
+}, function ($result, $tester) {
+    return $result === false;
+});
+
+GWT('Test is_index_array(): #3', [], function ($given) {
+    return is_index_array($given);
+}, function ($result, $tester) {
+    return $result === false;
+});
+
+GWT('Test is_assoc_array(): #1', [], function ($given) {
+    return is_assoc_array($given);
+}, function ($result, $tester) {
+    return $result === false;
+});
+
+GWT('Test is_assoc_array(): #2', [1, 2, 3], function ($given) {
+    return is_assoc_array($given);
+}, function ($result, $tester) {
+    return $result === false;
+});
+
+GWT('Test is_assoc_array(): #2', ['abc' => 123, 'foo' => 'bar'], function ($given) {
+    return is_assoc_array($given);
+}, function ($result, $tester) {
+    return $result === true;
+});

@@ -78,11 +78,13 @@ class MySQLSchema
                     $default = "DEFAULT '{$_default}'";
                 }
                 $comment = '';
-                if (array_key_exists('COMMENT', $property)) {
-                    $_comment = $property['COMMENT'] ?? '';
-                    $comment = "COMMENT '{$_comment}'";
+                if ($_comment = (trim(strval($property['COMMENT'] ?? '')) ?: trim(strval($property['TITLE'] ?? '')))) {
+                    $comment = 'COMMENT '.$mysql->quote($_comment);
                 }
-                $autoinc = $property['AUTOINC'] ?? '';
+                $autoinc = '';
+                if (trim(strval($property['AUTOINC'] ?? '')) === '1') {
+                    $autoinc = 'AUTO_INCREMENT';
+                }
 
                 $add .= "ADD COLUMN `{$column}` {$type}($length) {$notnull} {$autoinc} {$default} {$comment}";
                 if (false !== next($columnsAdd)) {
@@ -109,7 +111,7 @@ class MySQLSchema
             $typeInCode = trim("{$typeInCode}({$lengthInCode}) {$unsignedInCode}");
             $notnullInCode = ci_equal($attrs['NOTNULL'] ?? '1', '1');
             $defaultInCode = array_key_exists('DEFAULTNULL', $attrs) ? null : ($attrs['DEFAULT'] ?? null);
-            $commentInCode = trim(strval($attrs['COMMENT'] ?? ''));
+            $commentInCode = trim(strval($attrs['COMMENT'] ?? '')) ?: trim(strval($attrs['TITLE'] ?? ''));
             $autoincInCode = ci_equal(trim(strval($attrs['AUTOINC'] ?? '')), '1');
 
             $_column = $_columns[$column] ?? null;
@@ -138,7 +140,7 @@ class MySQLSchema
                     $default = 'DEFAULT '.$mysql->quote($attr['DEFAULT'] ?? '');
                 }
                 $comment = '';
-                if (array_key_exists('COMMENT', $attrs)) {
+                if ($commentInCode) {
                     $comment = 'COMMENT '.$mysql->quote($commentInCode);
                 }
 
@@ -331,8 +333,7 @@ class MySQLSchema
                 $default = "DEFAULT '{$_default}'";
             }
             $comment = '';
-            if (array_key_exists('COMMENT', $attr)) {
-                $_comment = $attr['COMMENT'] ?? '';
+            if ($_comment = (trim($attr['COMMENT'] ?? '') ?: trim($attr['TITLE'] ?? ''))) {
                 $comment = 'COMMENT '.$mysql->quote($_comment);
             }
 

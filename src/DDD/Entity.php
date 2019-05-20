@@ -12,6 +12,11 @@ abstract class Entity
      */
     protected $id;
 
+    final public static function init() : Entity
+    {
+        return new static;
+    }
+
     public function onCreated()
     {
     }

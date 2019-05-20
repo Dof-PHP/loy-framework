@@ -54,16 +54,20 @@ if (! function_exists('collect')) {
     function collect(array $data, $origin = null, bool $recursive = true)
     {
         if (! $recursive) {
-            return \Dof\Framework\Facade\Collection::new($data, $origin, false);
+            return (($data === []) || is_assoc_array($data))
+                ? \Dof\Framework\Facade\Collection::new($data, $origin, false)
+                : $data;
         }
 
-        foreach ($data as $key => $value) {
-            if (is_array($value)) {
-                $data[$key] = collect($value, null, true);
+        foreach ($data as $key => &$value) {
+            if (is_array($value) && (($value === []) || is_assoc_array($value))) {
+                $value = collect($value, null, true);
             }
         }
 
-        return \Dof\Framework\Facade\Collection::new($data, $origin, $recursive);
+        return (($data === []) || is_assoc_array($data))
+            ? \Dof\Framework\Facade\Collection::new($data, $origin, $recursive)
+            : $data;
     }
 }
 if (! function_exists('uncollect')) {
@@ -116,6 +120,12 @@ if (! function_exists('domain')) {
         }
     }
 }
+if (! function_exists('config')) {
+    function config(string $type, string $key)
+    {
+        return \Dof\Framework\ConfigManager::get(join('.', [$type, $key]));
+    }
+}
 if (! function_exists('service')) {
     function service($service, array $params = [])
     {
@@ -147,12 +157,6 @@ if (! function_exists('annotation')) {
     function annotation(string $target, string $origin = null, bool $file = false, bool $cache = true) : array
     {
         return \Dof\Framework\Facade\Annotation::get($target, $origin, $file, $cache);
-    }
-}
-if (! function_exists('config')) {
-    function config(string $key = 'domain')
-    {
-        return \Dof\Framework\ConfigManager::get($key);
     }
 }
 if (! function_exists('validate')) {

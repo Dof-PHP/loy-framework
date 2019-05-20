@@ -538,6 +538,26 @@ if (! function_exists('array_unset')) {
         }
     }
 }
+if (! function_exists('is_index_array')) {
+    function is_index_array(array $arr) : bool
+    {
+        if ([] === $arr) {
+            return false;
+        }
+
+        return array_keys($arr) === range(0, (count($arr) - 1));
+    }
+}
+if (! function_exists('is_assoc_array')) {
+    function is_assoc_array(array $arr) : bool
+    {
+        if ([] === $arr) {
+            return false;
+        }
+
+        return count(array_filter(array_keys($arr), 'is_string')) === count($arr);
+    }
+}
 if (! function_exists('stringify')) {
     function stringify($value)
     {
@@ -1172,5 +1192,58 @@ if (! function_exists('fixed_string')) {
         $res .= mb_substr($raw, -($half), $half);
 
         return $res;
+    }
+}
+if (! function_exists('http_client_ip')) {
+    function http_client_ip() : ?string
+    {
+        $try_client_ip_key = function ($residence) {
+            return getenv($residence)
+            ?: (
+                $_SERVER[$residence] ?? null
+            );
+        };
+
+        foreach ([
+            'HTTP_X_REAL_IP',
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_X_FORWARDED',
+            'HTTP_FORWARDED_FOR',
+            'HTTP_FORWARDED',
+            'REMOTE_ADDR',
+            'HTTP_CLIENT_IP',
+        ] as $residence) {
+            if ($ip = $try_client_ip_key($residence)) {
+                return $ip;
+            }
+        }
+    }
+}
+if (! function_exists('http_client_os')) {
+    function http_client_os() : string
+    {
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+        if (! ini_get('browscap')) {
+            return 'unknown';
+        }
+
+        $browser = get_browser($ua);
+
+        return $browser->platform ?? 'unknown';
+    }
+}
+if (! function_exists('http_client_name')) {
+    function http_client_name() : string
+    {
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+        if (! ini_get('browscap')) {
+            return 'unknown';
+        }
+
+        $browser = get_browser($ua);
+
+        return $browser->browser ?? 'unknown';
     }
 }

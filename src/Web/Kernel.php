@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework\Web;
 
 use Throwable;
+use Closure;
 use Dof\Framework\Kernel as Core;
 use Dof\Framework\Container;
 use Dof\Framework\PortManager;
@@ -99,7 +100,7 @@ final class Kernel
         try {
             self::pipingin();
         } catch (Throwable $e) {
-            Kernel::throw(ERR::PIPIIN_ERROR, [], 500, $class);
+            Kernel::throw(ERR::PIPEIN_ERROR, [], 500, $e, $class);
         }
 
         try {
@@ -117,29 +118,9 @@ final class Kernel
         try {
             $result = (new $class)->{$method}(...$params);
         } catch (Throwable $e) {
-            if (is_anonymous($e) && (is_exception($e, Service::EXCEPTION_NAME))) {
-                $previous = parse_throwable($e)['__previous'] ?? [];
-                $message = $previous['message'] ?? null;
-                $context = $previous['context'] ?? [];
-
-                $errors = $context['__errors'] ?? [];
-                $error  = ERR::DOF_SERVICE_EXCEPTION;
-                // Here we treat all service exception as client side error by default
-                // Coz if not there should never throw the exception named as this
-                $status = 400;
-                if ($_error = ($errors[$message] ?? null)) {
-                    $error  = [($_error[0] ?? -1), $message];
-                    $status = $_error[1] ?? 400;
-                } else {
-                    $context['__info'] = $message;
-                }
-
-                unset($context['__errors']);
-
-                Response::error($status, $error, $context, $class);
-            } else {
+            self::throwIfService($e, $class, function () use ($class, $method, $e) {
                 Kernel::throw(ERR::RESULTING_RESPONSE_FAILED, compact('class', 'method'), 500, $e, $class);
-            }
+            });
         }
 
         try {
@@ -182,7 +163,7 @@ final class Kernel
                 ]);
             }
 
-            if (true !== ($res = call_user_func_array([singleton($preflight), self::PREFLIGHT_HANDLER], [
+            if (true !== ($res = call_user_func_array([Container::di($preflight), self::PREFLIGHT_HANDLER], [
                 Request::getInstance(),
                 Response::getInstance()
             ]))) {
@@ -313,8 +294,10 @@ final class Kernel
                     Port::getInstance()
                 ]);
             } catch (Throwable $e) {
-                $error = is_anonymous($e) ? 400 : 500;
-                Kernel::throw(ERR::PIPEIN_THROUGH_FAILED, compact('pipe'), $error, $e, Route::get('class'));
+                self::throwIfService($e, Route::get('class'), function () use ($pipe, $e) {
+                    $error = is_anonymous($e) ? 400 : 500;
+                    Kernel::throw(ERR::PIPEIN_THROUGH_FAILED, compact('pipe'), $error, $e, Route::get('class'));
+                });
             }
         }
     }
@@ -395,7 +378,7 @@ final class Kernel
 
             try {
                 $_result = call_user_func_array(
-                    [singleton($pipe), Kernel::PIPEOUT_HANDLER],
+                    [Container::di($pipe), Kernel::PIPEOUT_HANDLER],
                     [$_result, Route::getInstance(), Port::getInstance(), Request::getInstance(), Response::getInstance()]
                 );
             } catch (Throwable $e) {
@@ -424,6 +407,33 @@ final class Kernel
         }
 
         return $isError ? Response::wraperr($result, $wrapper) : Response::wrapout($result, $wrapper);
+    }
+
+    public static function throwIfService(Throwable $e, string $domain, Closure $ifNot)
+    {
+        if (is_anonymous($e) && (is_exception($e, Service::EXCEPTION_NAME))) {
+            $previous = parse_throwable($e)['__previous'] ?? [];
+            $message = $previous['message'] ?? null;
+            $context = $previous['context'] ?? [];
+
+            $errors = $context['__errors'] ?? [];
+            $error  = ERR::DOF_SERVICE_EXCEPTION;
+            // Here we treat all service exception as client side error by default
+            // Coz if not there should never throw the exception named as this
+            $status = 400;
+            if ($_error = ($errors[$message] ?? null)) {
+                $error  = [($_error[0] ?? -1), $message];
+                $status = $_error[1] ?? 400;
+            } else {
+                $context['__info'] = $message;
+            }
+
+            unset($context['__errors']);
+
+            Response::error($status, $error, $context, $domain);
+        } else {
+            $ifNot();
+        }
     }
 
     /**

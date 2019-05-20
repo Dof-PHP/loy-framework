@@ -205,6 +205,20 @@ class Request
         return $this->getMethod();
     }
 
+    public function getIp() : ?string
+    {
+        return $this->getOrSet('ip', function () {
+            return http_client_ip();
+        });
+    }
+
+    public function getUA() : ?string
+    {
+        return $this->getOrSet('ua', function () {
+            return $this->getHeader('USER_AGENT');
+        });
+    }
+
     public function getHeader(string $keyupper) : ?string
     {
         $keyupper = strtoupper($keyupper);

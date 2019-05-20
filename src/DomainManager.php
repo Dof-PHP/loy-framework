@@ -235,7 +235,7 @@ final class DomainManager
                     }
                     public function get(string $key)
                     {
-                        $config = ConfigManager::getDomainFinalByKey($this->domain, $key);
+                        $config = ConfigManager::getDomainByKey($this->domain, $key);
 
                         return is_array($config) ? collect($config, $this) : $config;
                     }
@@ -249,7 +249,6 @@ final class DomainManager
                     }
                 };
             }
-
             public function __get(string $attr)
             {
                 if ('config' === $attr) {
