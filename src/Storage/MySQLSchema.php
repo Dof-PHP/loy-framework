@@ -108,7 +108,7 @@ class MySQLSchema
             $unsignedInCode = (($attrs['UNSIGNED'] ?? null) == 1) ? 'unsigned' : '';
             $typeInCode = trim("{$typeInCode}({$lengthInCode}) {$unsignedInCode}");
             $notnullInCode = ci_equal($attrs['NOTNULL'] ?? '1', '1');
-            $defaultInCode = $attrs['DEFAULT'] ?? '';
+            $defaultInCode = array_key_exists('DEFAULTNULL', $attrs) ? null : ($attrs['DEFAULT'] ?? null);
             $commentInCode = trim(strval($attrs['COMMENT'] ?? ''));
             $autoincInCode = ci_equal(trim(strval($attrs['AUTOINC'] ?? '')), '1');
 
@@ -118,22 +118,26 @@ class MySQLSchema
             }
             $typeInSchema = trim(strval($_column['Type'] ?? ''));
             $notnullInSchema = ci_equal($_column['Null'] ?? 'NO', 'no');
-            $defaultInSchema = $_column['Default'] ?? '';
+            $defaultInSchema = $_column['Default'] ?? null;
             $commentInSchema = trim(strval($_column['Comment'] ?? ''));
             $autoincInSchema = ci_equal(trim(strval($_column['Extra'] ?? '')), 'auto_increment');
+
+            logger()->debug('default', [$column, $defaultInCode, $defaultInSchema]);
 
             if (false
                 || (! ci_equal($typeInCode, $typeInSchema))
                 || ($notnullInCode !== $notnullInSchema)
-                || (! ci_equal($defaultInCode, $defaultInSchema))
+                || ($defaultInCode !== $defaultInSchema)
                 || (! ci_equal($commentInCode, $commentInSchema))
                 || ($autoincInCode !== $autoincInSchema)
             ) {
                 // update table column with schema in annotations
                 $notnull = $notnullInCode ? 'NOT NULL' : '';
                 $default = '';
-                if (array_key_exists('DEFAULT', $attrs)) {
-                    $default = 'DEFAULT '.$mysql->quote($defaultInCode);
+                if (array_key_exists('DEFAULTNULL', $attrs)) {
+                    $default = 'DEFAULT NULL';
+                } elseif (array_key_exists('DEFAULT', $attrs)) {
+                    $default = 'DEFAULT '.$mysql->quote($attr['DEFAULT'] ?? '');
                 }
                 $comment = '';
                 if (array_key_exists('COMMENT', $attrs)) {
