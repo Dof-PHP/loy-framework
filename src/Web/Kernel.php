@@ -309,7 +309,7 @@ final class Kernel
     {
         $paramsMethod = Port::get('__parameters');
         $paramsRoute  = Route::get('params.kv');
-        if (($paramsMethod->count() < 1) && ($paramsRoute->count() < 1)) {
+        if ((count($paramsMethod) < 1) && (count($paramsRoute) < 1)) {
             return [];
         }
 
