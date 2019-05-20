@@ -122,8 +122,6 @@ class MySQLSchema
             $commentInSchema = trim(strval($_column['Comment'] ?? ''));
             $autoincInSchema = ci_equal(trim(strval($_column['Extra'] ?? '')), 'auto_increment');
 
-            logger()->debug('default', [$column, $defaultInCode, $defaultInSchema]);
-
             if (false
                 || (! ci_equal($typeInCode, $typeInSchema))
                 || ($notnullInCode !== $notnullInSchema)
