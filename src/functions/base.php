@@ -696,8 +696,10 @@ if (! function_exists('microftime')) {
     {
         $raw = $raw ? $raw : microtime(true);
         $mts = explode('.', (string) $raw);
+        $ts = intval($mts[0] ?? time());
+        $ms = intval($mts[1] ?? 0);
 
-        return join($separate, [date($format, (int) $mts[0]), $mts[1]]);
+        return join($separate, [date($format, $ts), $ms]);
     }
 }
 if (! function_exists('timezone')) {
