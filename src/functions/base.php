@@ -861,7 +861,7 @@ if (! function_exists('getallheaders')) {
         $headers = [];
         foreach ($_SERVER as $name => $value) {
             if (mb_substr($name, 0, 5) === 'HTTP_') {
-                $headers[mb_substr($name, 5)] = $value;
+                $headers[strtoupper(mb_substr($name, 5))] = $value;
             }
         }
         return $headers;
