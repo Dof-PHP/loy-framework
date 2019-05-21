@@ -6,7 +6,6 @@ namespace Dof\Framework\Storage;
 
 use PDO;
 use Redis;
-use Closure;
 
 final class Connection
 {
@@ -18,8 +17,7 @@ final class Connection
     public static function get(
         string $driver,
         string $connection,
-        iterable $config = [],
-        Closure $hook = null
+        iterable $config = []
     ) {
         $_driver = strtolower($driver);
 
@@ -32,14 +30,11 @@ final class Connection
             return $conn;
         }
 
-        return call_user_func_array([__CLASS__, $_driver], [$connection, $config, $hook]);
+        return call_user_func_array([__CLASS__, $_driver], [$connection, $config]);
     }
 
-    public static function mysql(
-        string $connection,
-        iterable $config = [],
-        Closure $hook = null
-    ) : PDO {
+    public static function mysql(string $connection, iterable $config = []) : PDO
+    {
         $config = is_collection($config) ? $config : collect($config);
 
         $host = $config->get('host', '', ['string']);
@@ -62,21 +57,14 @@ final class Connection
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             // $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
-            if ($hook) {
-                $hook($config);
-            }
-
             return self::$pool['mysql'][$connection] = $pdo;
         } catch (Throwable $e) {
             exception('ConnectionToMySQLFailed', compact('dsn'), $e);
         }
     }
 
-    public static function redis(
-        string $connection,
-        iterable $config = [],
-        Closure $hook = null
-    ) : Redis {
+    public static function redis(string $connection, iterable $config = []) : Redis
+    {
         if (! extension_loaded('redis')) {
             exception('RedisExtensionNotEnabled');
         }
@@ -98,10 +86,6 @@ final class Connection
             }
             if ($dbnum) {
                 $redis->select($dbnum);
-            }
-
-            if ($hook) {
-                $hook($config);
             }
 
             return self::$pool['redis'][$connection] = $redis;
