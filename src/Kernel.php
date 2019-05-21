@@ -163,13 +163,18 @@ final class Kernel
 
     public static function formatCacheFile(...$params) : string
     {
-        return ospath(
+        $dir = ospath(
             self::$root,
             self::RUNTIME,
             self::CACHE,
-            'framework',
-            join('.', [md5(join('.', $params)), self::CACHE])
+            'framework'
         );
+
+        if (! is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+
+        return ospath($dir, join('.', [md5(join('.', $params)), self::CACHE]));
     }
 
     public static function appendContext(string $key, array $context = null, string $_key = null)
