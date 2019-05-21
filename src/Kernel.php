@@ -60,6 +60,12 @@ final class Kernel
 
         ConfigManager::init(self::$root);
 
+        if ($tz = ConfigManager::getEnv('TIMEZONE')) {
+            // if (in_array($tz, timezone_identifiers_list())) {
+            date_default_timezone_set($tz);
+            // }
+        }
+
         // Do some cleaning works before PHP process exit, like:
         // - Clean up database locks
         // - Rollback uncommitted transactions
