@@ -72,7 +72,16 @@ class File implements LoggerInterface
             rename($file, $_archive);
         }
 
-        file_put_contents($file, $this->seperate($log), FILE_APPEND);
+        $fp = fopen($file, 'a+');
+        // stream_set_blocking($fp, 0);
+        // if (flock($fp, LOCK_EX)) {
+        fwrite($fp, $this->seperate($log));
+        // }
+        // flock($fp, LOCK_UN);
+        fclose($fp);
+
+        // file_put_contents($file, $this->seperate($log), FILE_APPEND | LOCK_EX);
+        // error_log($this->seperate($log), 3, $file);
     }
 
     public function seperate(string $log) : string

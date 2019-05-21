@@ -117,6 +117,7 @@ final class StorageManager
         }
 
         self::$orms[$namespace]['meta'] = $ofClass['doc'] ?? [];
+        self::$orms[$namespace]['meta']['NAMESPACE'] = $namespace;
         foreach ($ofProperties as $property => $attr) {
             $_column = $attr['doc'] ?? [];
             $column  = $_column['COLUMN'] ?? false;
@@ -184,10 +185,9 @@ final class StorageManager
      * Initialize storage driver instance for storage class
      *
      * @param string $namespace: Namespace of storage class
-     * @param bool $database: Set database for connection from config and annotations or not
      * @return \Dof\Framework\Storage\StorageInterface
      */
-    public static function init(string $namespace, bool $database = true)
+    public static function init(string $namespace)
     {
         $instance = self::$namespaces[$namespace] ?? null;
         if ($instance) {
@@ -226,17 +226,8 @@ final class StorageManager
         // So $meta must be the 2nd parameter of array_merge()
         $config = array_merge($config, $meta);
         $instance = new $storage($annotations);
-        $hook = method_exists($instance, 'callbackOnConnected')
-        ? function ($config) use ($instance) {
-            $instance->callbackOnConnected($config);
-        }
-        : null;
-
-        if (! $database) {
-            unset($config['database'], $meta['database']);
-        }
-
-        $instance->setConnection(Connection::get($driver, $connection, $config, $hook));
+        unset($config['database'], $meta['database']);
+        $instance->setConnection(Connection::get($driver, $connection, $config));
 
         if (method_exists($instance, '__logging')) {
             Kernel::register('before-shutdown', function () use ($instance, $storage, $driver, $namespace) {

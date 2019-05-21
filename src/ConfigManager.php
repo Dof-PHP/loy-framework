@@ -184,17 +184,17 @@ final class ConfigManager
 
     public static function getDomainFinalByNamespace(string $ns, string $key = null, $default = null)
     {
-        return self::getDomainByNamespace($ns, $key, $default) ?: self::getDefault($key, $default);
+        return self::getDomainByNamespace($ns, $key, null) ?: self::getDefault($key, $default);
     }
 
     public static function getDomainFinalByFile(string $file, string $key = null, $default = null)
     {
-        return self::getDomainByFile($file, $key, $default) ?: self::getDefault($key, $default);
+        return self::getDomainByFile($file, $key, null) ?: self::getDefault($key, $default);
     }
 
     public static function getDomainFinalByKey(string $domain, string $key = null, $default = null)
     {
-        return self::getDomainByKey($domain, $key, $default) ?: self::getDefault($key, $default);
+        return self::getDomainByKey($domain, $key, null) ?: self::getDefault($key, $default);
     }
 
     public static function getDomainEnvByNamespace(string $ns, string $key = null, $default = null)

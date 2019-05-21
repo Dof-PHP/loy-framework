@@ -463,9 +463,8 @@ class Command
     {
         $params = $console->getParams();
         $options = $console->getOptions();
-        $force = $console->hasOption('force');
 
-        $syncSingle = function ($single) use ($console, $force) {
+        $syncSingle = function ($single) use ($console) {
             $storage = null;
             if (class_exists($single)) {
                 if (! is_subclass_of($single, Storage::class)) {
@@ -482,23 +481,21 @@ class Command
             if (! $storage) {
                 $console->exception('InvalidStorageSingle', compact('single', 'storage'));
             }
-
-            $res = StorageSchema::sync($storage, $force);
-            $console->render("Syncing ... {$storage} ... ", $console::INFO_COLOR, true);
-            $res ? $console->success('OK') : $console->fail('FAILED', true);
+            
+            $force = $console->hasOption('force');
+            $dump = $console->hasOption('dump');
+            $res = StorageSchema::sync($storage, $force, $dump);
+            if ($dump) {
+                foreach ($res as $sql) {
+                    $console->line($sql, 2);
+                }
+            } else {
+                $console->render("Syncing ... {$storage} ... ", $console::INFO_COLOR, true);
+                $res ? $console->success('OK') : $console->fail('FAILED', true);
+            }
         };
 
-        if ((count($params) === 0) && (count($options) === 0)) {
-            $orms = DomainManager::getNamespaces(function ($key, $ns) {
-                return true
-                    && is_subclass_of($ns, Storage::class)
-                    && ci_equal(mb_substr($ns, -3, 3), 'ORM');
-            });
-
-            foreach ($orms as $orm) {
-                $syncSingle($orm);
-            }
-        } elseif ($console->hasOption('single')) {
+        if ($console->hasOption('single')) {
             $single = $console->getOption('single');
             if (! $single) {
                 $console->exception('MissingSingleTarget');
@@ -524,6 +521,16 @@ class Command
         } elseif ($params) {
             foreach ($params as $single) {
                 $syncSingle($single);
+            }
+        } else {
+            $orms = DomainManager::getNamespaces(function ($key, $ns) {
+                return true
+                    && is_subclass_of($ns, Storage::class)
+                    && ci_equal(mb_substr($ns, -3, 3), 'ORM');
+            });
+
+            foreach ($orms as $orm) {
+                $syncSingle($orm);
             }
         }
     }

@@ -19,12 +19,6 @@ class MySQL implements StorageInterface
     /** @var \Dof\Framework\Storage\MySQLBuilder: Query builder based on table */
     private $builder;
 
-    /** @var bool: Used database or not */
-    private $database = false;
-
-    /** @var bool: Queries need a database used or not */
-    private $needdb = true;
-
     /** @var array: Sqls executed in this instance lifetime */
     private $sqls = [];
 
@@ -188,8 +182,6 @@ class MySQL implements StorageInterface
 
     public function use(string $dbname)
     {
-        $this->database = $dbname;
-
         $sql = "USE `{$dbname}`";
 
         $this->exec($sql);
@@ -264,13 +256,6 @@ class MySQL implements StorageInterface
         }
     }
 
-    public function setNeeddb(bool $needdb)
-    {
-        $this->needdb = $needdb;
-
-        return $this;
-    }
-
     public function setConnection($connection)
     {
         $this->connection = $connection;
@@ -282,19 +267,15 @@ class MySQL implements StorageInterface
             exception('MissingMySQLConnection');
         }
 
-        if ((! $this->database) && ($this->needdb)) {
-            $dbname = $this->annotations->meta->get('DATABASE', null, ['need', 'string']);
-            $this->use($dbname);
+        $db = $this->annotations->meta->DATABASE ?? null;
+        if (! $db) {
+            exception('MissingDatabaseInMySQLAnnotations', uncollect($this->annotations->meta ?? []));
         }
+
+        $useDb = "USE `{$db}`";
+        $this->connection->exec($useDb);
 
         return $this->connection;
-    }
-
-    public function callbackOnConnected(Collection $config)
-    {
-        if ($db = $config->get('database', null)) {
-            $this->appendSql("USE {$db}", 0);
-        }
     }
 
     public function showSessionId()

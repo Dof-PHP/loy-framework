@@ -6,17 +6,25 @@ namespace Dof\Framework\Storage;
 
 use Throwable;
 use Dof\Framework\Collection;
+use Dof\Framework\TypeHint;
 
 /**
  * API docs: <https://github.com/phpredis/phpredis/blob/develop/README.markdown>
  */
 class Redis implements StorageInterface
 {
+    private $annotations;
+
     private $connection;
 
-    /** @var array: Commands executed in this instance lifetime */
+    /** @var array: Commands executed in the lifetime of this instance */
     private $cmds = [];
     
+    public function __construct(array $annotations)
+    {
+        $this->annotations = collect($annotations);
+    }
+
     public function __call(string $method, array $params = [])
     {
         $this->appendCMD($method, ...$params);
@@ -36,18 +44,23 @@ class Redis implements StorageInterface
         return $this;
     }
 
-    public function callbackOnConnected(Collection $config)
-    {
-        if ($db = $config->get('database', null)) {
-            $this->appendCMD('select', $db);
-        }
-    }
-
     public function getConnection()
     {
         if (! $this->connection) {
             exception('MissingRedisConnection');
         }
+
+        $db = $this->annotations->meta->DATABASE ?? null;
+        if (! $db) {
+            exception('MissingDatabaseInRedisAnnotations', uncollect($this->annotations->meta ?? []));
+        }
+        if (! TypeHint::isUInt($db)) {
+            exception('InvalidRedisDatabaseInAnnotations', [$db]);
+        }
+
+        $db = TypeHint::convertToUint($db);
+
+        $this->connection->select($db);
 
         return $this->connection;
     }

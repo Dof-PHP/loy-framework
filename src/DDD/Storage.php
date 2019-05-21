@@ -33,7 +33,7 @@ abstract class Storage implements Repository
     }
 
     /**
-     * Convert an array result data
+     * Convert an array result data into entity object
      */
     final public function convert(array $result = null)
     {

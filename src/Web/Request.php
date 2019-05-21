@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Web;
 
+use Dof\Framework\Web\Route;
+use Dof\Framework\ConfigManager;
+
 class Request
 {
     use HttpTrait;
@@ -321,10 +324,49 @@ class Request
 
     public function getContext() : array
     {
-        return [
+        $context = [
             $this->getVerb(),
             $this->getUri(),
             $this->getMime(),
         ];
+
+        $logHeaders = ConfigManager::getEnv('HTTP_REQUEST_LOG_HEADERS', false);
+        $logParams = ConfigManager::getEnv('HTTP_REQUEST_LOG_PARAMS', false);
+        $domain = Route::get('class');
+        if ($domain) {
+            $logParams = ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_REQUEST_LOG_PARAMS', false);
+            $logHeaders = ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_REQUEST_LOG_HEADERS', false);
+        }
+
+        $log = [];
+        if ($logParams) {
+            $params = $this->getAll();
+            $maskKeys = $domain
+            ? ConfigManager::getDomainFinalDomainByNamespace(
+                $domain,
+                'HTTP_REQUEST_PARAMS_MASK_KEYS',
+                ['password']
+            )
+            : ConfigManager::getDomain(
+                'HTTP_REQUEST_PARAMS_MASK_KEYS',
+                ['password']
+            );
+
+            foreach ($params as $key => &$val) {
+                if (ciin_array($key, $maskKeys)) {
+                    $val = '*';
+                }
+            }
+
+            $log[0] = $params;
+        }
+        if ($logHeaders) {
+            $log[1] = $this->getHeaders();
+        }
+        if ($log) {
+            $context[] = $log;
+        }
+
+        return $context;
     }
 }

@@ -9,47 +9,79 @@ class MySQLSchema
     const DEFAULT_ENGINE = 'InnoDB';
     const DEFAULT_CHARSET = 'utf8mb4';
 
-    public static function sync(
-        string $namespace,
-        array $annotations,
-        MySQL $mysql,
-        bool $force = false
-    ) {
-        $meta = $annotations['meta'] ?? [];
+    private $storage;
+    private $annotations = [];
+    private $driver;
+    private $force = false;
+    private $dump = false;
+    private $sqls = [];
+
+    public function reset()
+    {
+        $this->storage = null;
+        $this->annotations = [];
+        $this->driver = null;
+        $this->force = false;
+        $this->dump = false;
+        $this->sqls = [];
+
+        return $this;
+    }
+
+    public function exec()
+    {
+        $this->sqls[] = "-- {$this->storage}";
+
+        $meta = $this->annotations['meta'] ?? [];
         $database = $meta['DATABASE'] ?? null;
         if (! $database) {
-            exception('DatabaseNotSetOfStorage', compact('namespace'));
+            exception('DatabaseNotSetOfStorage', [$this->storage]);
         }
         $table = $meta['TABLE'] ?? null;
         if (! $table) {
-            exception('TableNameNotSetOfStorage', compact('namespace'));
+            exception('TableNameNotSetOfStorage', [$this->storage]);
         }
-        if (! self::existsDatabase($database, $mysql)) {
-            self::initDatabase($database, $mysql);
-        }
-        if (self::existsTable($database, $table, $mysql)) {
-            self::syncTable($database, $table, $annotations, $mysql, $force);
+
+        if ($this->existsDatabase($database)) {
+            if ($this->existsTable($database, $table)) {
+                $this->syncTable($database, $table);
+            } else {
+                $this->initTable($database, $table);
+            }
         } else {
-            self::initTable($database, $table, $annotations, $mysql);
+            $this->initDatabase($database);
+            $this->initTable($database, $table);
         }
 
-        return true;
+        return $this->dump ? $this->sqls : true;
     }
 
-    public static function initDatabase(string $name, $mysql)
+    public function initDatabase(string $name)
     {
-        $mysql->setNeeddb(false)->exec("DROP DATABASE IF EXISTS `{$name}`");
-        $mysql->setNeeddb(false)->exec("CREATE DATABASE `{$name}` DEFAULT CHARACTER SET utf8mb4");
-        $mysql->setNeeddb(true);
+        $dropDB = "DROP DATABASE IF EXISTS `{$name}`;";
+        $createDB = "CREATE DATABASE IF NOT EXISTS `{$name}` DEFAULT CHARACTER SET utf8mb4;";
+
+        if ($this->dump) {
+            if ($this->force) {
+                $this->sqls[] = $dropDB;
+            }
+            $this->sqls[] = $createDB;
+        } else {
+            if ($this->force) {
+                $this->mysql()->exec($dropDB);
+            }
+
+            $this->mysql()->exec($createDB);
+        }
     }
 
-    private static function syncTableColumns(string $db, string $table, array $annotations, $mysql, bool $force = false)
+    private function syncTableColumns(string $db, string $table)
     {
-        $meta = $annotations['meta'] ?? [];
-        $columns = $annotations['columns'] ?? [];
-        $properties = $annotations['properties'] ?? [];
+        $meta = $this->annotations['meta'] ?? [];
+        $columns = $this->annotations['columns'] ?? [];
+        $properties = $this->annotations['properties'] ?? [];
 
-        $_columns = $mysql->setNeeddb(false)->rawGet("SHOW FULL COLUMNS FROM `{$table}` FROM `{$db}`");
+        $_columns = $this->mysql()->rawGet("SHOW FULL COLUMNS FROM `{$table}` FROM `{$db}`");
         $_columnNames = array_column($_columns, 'Field');
         $_columns = array_combine($_columnNames, $_columns);
         // sort($_columnNames);
@@ -79,7 +111,7 @@ class MySQLSchema
                 }
                 $comment = '';
                 if ($_comment = (trim(strval($property['COMMENT'] ?? '')) ?: trim(strval($property['TITLE'] ?? '')))) {
-                    $comment = 'COMMENT '.$mysql->quote($_comment);
+                    $comment = 'COMMENT '.$this->mysql()->quote($_comment);
                 }
                 $autoinc = '';
                 if (trim(strval($property['AUTOINC'] ?? '')) === '1') {
@@ -88,11 +120,17 @@ class MySQLSchema
 
                 $add .= "ADD COLUMN `{$column}` {$type}($length) {$notnull} {$autoinc} {$default} {$comment}";
                 if (false !== next($columnsAdd)) {
-                    $add .= ', ';
+                    $add .= ",\n";
                 }
             }
 
-            $mysql->exec($add);
+            $add .= ';';
+
+            if ($this->dump) {
+                $this->sqls[] = $add;
+            } else {
+                $this->mysql()->exec($add);
+            }
         }
 
         $columnsUpdate = array_intersect($columnNames, $_columnNames);
@@ -137,11 +175,11 @@ class MySQLSchema
                 if (array_key_exists('DEFAULTNULL', $attrs)) {
                     $default = 'DEFAULT NULL';
                 } elseif (array_key_exists('DEFAULT', $attrs)) {
-                    $default = 'DEFAULT '.$mysql->quote($attr['DEFAULT'] ?? '');
+                    $default = 'DEFAULT '.$this->mysql()->quote($attrs['DEFAULT'] ?? '');
                 }
                 $comment = '';
                 if ($commentInCode) {
-                    $comment = 'COMMENT '.$mysql->quote($commentInCode);
+                    $comment = 'COMMENT '.$this->mysql()->quote($commentInCode);
                 }
 
                 $autoinc = '';
@@ -152,43 +190,49 @@ class MySQLSchema
                     $autoinc = 'AUTO_INCREMENT';
                 }
 
-                $res = $mysql->exec("ALTER TABLE `{$db}`.`{$table}` MODIFY `{$column}` {$typeInCode} {$notnull} {$autoinc} {$default} {$comment}");
+                $modify = "ALTER TABLE `{$db}`.`{$table}` MODIFY `{$column}` {$typeInCode} {$notnull} {$autoinc} {$default} {$comment};";
+                if ($this->dump) {
+                    $this->sqls[] = $modify;
+                } else {
+                    $this->mysql()->exec($modify);
+                }
             }
         }
 
         $columnsDrop = array_diff($_columnNames, $columnNames);
-        if ($columnsDrop && $force) {
-            $drop = "ALTER TABLE `{$table}` ";
-            $dropColumns = $drop.join(', ', array_map(function ($column) {
+        if ($columnsDrop && $this->force) {
+            $drop = "ALTER TABLE `{$table}` \n";
+            $dropColumns = $drop.join(",\n", array_map(function ($column) {
                 return "DROP `{$column}`";
             }, $columnsDrop));
+            $dropColumns .= ';';
 
-            $columnsToDrop = join(',', array_map(function ($column) {
-                return "'{$column}'";
-            }, $columnsDrop));
+            if ($this->dump) {
+                $this->sqls[] = $dropColumns;
+            } else {
+                $this->mysql()->exec($dropColumns);
+            }
 
-            $mysql->exec($dropColumns);
             // !!! MySQL will drop indexes automatically when the columns of that index is dropped
             // !!! So here we MUST NOT drop then again
-            // $indexes = $mysql->rawGet("SHOW INDEX FROM `{$table}` WHERE `Column_name` IN({$columnsToDrop})");
+            // $indexes = $this->mysql()->rawGet("SHOW INDEX FROM `{$table}` WHERE `Column_name` IN({$columnsToDrop})");
             // if ($indexes) {
                 // $indexesDrop = array_unique(array_column($indexes, 'Key_name'));
                 // $dropIndexes = $drop.join(', ', array_map(function ($index) {
                     // return "DROP INDEX `{$index}`";
                 // }, $indexesDrop));
-                // $mysql->exec($dropIndexes);
+                // $this->mysql()->exec($dropIndexes);
             // }
         }
-        $mysql->setNeeddb(true);
     }
 
-    private static function syncTableIndexes(string $db, string $table, array $annotations, $mysql, bool $force = false)
+    private function syncTableIndexes(string $db, string $table)
     {
-        $meta = $annotations['meta'] ?? [];
-        $columns = $annotations['columns'] ?? [];
-        $properties = $annotations['properties'] ?? [];
+        $meta = $this->annotations['meta'] ?? [];
+        $columns = $this->annotations['columns'] ?? [];
+        $properties = $this->annotations['properties'] ?? [];
 
-        $_indexes = $mysql->setNeeddb(false)->rawGet("SHOW INDEX FROM `{$table}` FROM `{$db}` WHERE `KEY_NAME` != 'PRIMARY'");
+        $_indexes = $this->mysql()->rawGet("SHOW INDEX FROM `{$table}` FROM `{$db}` WHERE `KEY_NAME` != 'PRIMARY'");
         $_indexNames = array_unique(array_column($_indexes, 'Key_name'));
         $indexes = $meta['INDEX'] ?? [];
         $uniques = $meta['UNIQUE'] ?? [];
@@ -219,16 +263,20 @@ class MySQLSchema
 
                 $addIndexes .= "ADD {$unique} KEY `{$key}`($fields)";
                 if (false !== next($indexesAdd)) {
-                    $addIndexes .= ', ';
+                    $addIndexes .= ",\n";
                 }
             }
 
-            $mysql->exec($addIndexes);
+            if ($this->dump) {
+                $this->sqls[] = $addIndexes;
+            } else {
+                $mysql->exec($addIndexes);
+            }
         }
 
         $indexesUpdate = array_intersect($indexNames, $_indexNames);
         foreach ($indexesUpdate as $index) {
-            $fieldsOfIndex = $mysql->setNeeddb(false)->rawGet("SHOW INDEX FROM `{$table}` FROM `{$db}` WHERE `KEY_NAME` = '{$index}'");
+            $fieldsOfIndex = $this->mysql()->rawGet("SHOW INDEX FROM `{$table}` FROM `{$db}` WHERE `KEY_NAME` = '{$index}'");
             $_fieldsOfIndex = array_column($fieldsOfIndex, 'Column_name');
             $columnsOfIndex = $indexes[$index] ?? ($uniques[$index] ?? []);
 
@@ -243,43 +291,50 @@ class MySQLSchema
 
             if (($uniqueInCode !== $uniqueInSchema) || ($columnsOfIndex !== $_fieldsOfIndex)) {
                 // re-create index and name as $index with unicity
-                $mysql->exec("ALTER TABLE `{$table}` DROP INDEX `{$index}`, ADD {$unique} KEY `{$index}` ({$fields}) ");
+                $createIndex = "ALTER TABLE `{$table}` DROP INDEX `{$index}`, ADD {$unique} KEY `{$index}` ({$fields}) ";
+                if ($this->dump) {
+                    $this->sqls[] = $createIndex;
+                } else {
+                    $this->mysql()->exec($createIndex);
+                }
                 continue;
             }
         }
 
         $indexesDrop = array_diff($_indexNames, $indexNames);
-        if ($indexesDrop && $force) {
+        if ($indexesDrop && $this->force) {
             $dropIndexes = "ALTER TABLE `{$table}` ";
             $dropIndexes .= join(', ', array_map(function ($index) {
                 return "DROP KEY `{$index}`";
             }, $indexesDrop));
 
-            $mysql->exec($dropIndexes);
+            if ($this->dump) {
+                $this->sqls[] = $dropIndexes;
+            } else {
+                $this->mysql()->exec($dropIndexes);
+            }
         }
-
-        $mysql->setNeeddb(true);
     }
 
     /**
      * Compare columns from table schema to storage annotations
      * Then decide whether add/drop/modification operations on columns and indexes are required
      */
-    public static function syncTable(string $db, string $table, array $annotations, $mysql, bool $force = false)
+    public function syncTable(string $db, string $table)
     {
-        self::syncTableColumns($db, $table, $annotations, $mysql, $force);
-        self::syncTableIndexes($db, $table, $annotations, $mysql, $force);
+        self::syncTableColumns($db, $table);
+        self::syncTableIndexes($db, $table);
     }
 
-    public static function initTable(string $db, string $table, array $annotations, $mysql)
+    public function initTable(string $db, string $table)
     {
-        $meta = $annotations['meta'] ?? [];
-        $columns = $annotations['columns'] ?? [];
-        $properties = $annotations['properties'] ?? [];
+        $meta = $this->annotations['meta'] ?? [];
+        $columns = $this->annotations['columns'] ?? [];
+        $properties = $this->annotations['properties'] ?? [];
 
         $engine = $meta['ENGINE'] ?? self::DEFAULT_ENGINE;
         $charset = $meta['CHARSET'] ?? self::DEFAULT_CHARSET;
-        $notes = $mysql->quote($meta['COMMENT'] ?? '');
+        $notes = $this->mysql()->quote($meta['COMMENT'] ?? '');
         $pkName = $meta['PRIMARYKEY'] ?? 'id';
         $pkType = $meta['PRIMARYTYPE'] ?? 'int';
         $pkLength = $meta['PRIMARYLEN'] ?? 10;
@@ -334,44 +389,131 @@ class MySQLSchema
             }
             $comment = '';
             if ($_comment = (trim($attr['COMMENT'] ?? '') ?: trim($attr['TITLE'] ?? ''))) {
-                $comment = 'COMMENT '.$mysql->quote($_comment);
+                $comment = 'COMMENT '.$this->mysql()->quote($_comment);
             }
 
-            $fields .= "`{$column}` {$type}({$len}) {$unsigned} {$nullable} {$default} {$comment}, ";
+            $fields .= "`{$column}` {$type}({$len}) {$unsigned} {$nullable} {$default} {$comment}, \n";
         }
 
-        $mysql->exec("USE `{$db}`");
-        $mysql->exec("DROP TABLE IF EXISTS `{$table}`");
+        $useDb = "USE `{$db}`;";
+        $dropTable = "DROP TABLE IF EXISTS `{$table}`;";
 
-        $sql = <<<SQL
-CREATE TABLE `{$table}` (
+        $createTable = <<<SQL
+CREATE TABLE IF NOT EXISTS `{$table}` (
 `{$pkName}` {$pkType}({$pkLength}) UNSIGNED NOT NULL AUTO_INCREMENT,
 {$fields}
 {$indexes}
 {$uniques}
 PRIMARY KEY (`{$pkName}`)
-) ENGINE={$engine} AUTO_INCREMENT=1 DEFAULT CHARSET={$charset} COMMENT={$notes}
+) ENGINE={$engine} AUTO_INCREMENT=1 DEFAULT CHARSET={$charset} COMMENT={$notes};
 SQL;
 
-        $mysql->exec($sql);
-
-        return true;
+        if ($this->dump) {
+            $this->sqls[] = $useDb;
+            if ($this->force) {
+                $this->sqls[] = $dropTable;
+            }
+            $this->sqls[] = $createTable;
+        } else {
+            $this->mysql()->exec($useDb);
+            if ($this->force) {
+                $this->mysql()->exec($dropTable);
+            }
+            $this->mysql()->exec($createTable);
+        }
     }
 
-    public static function existsTable(string $db, string $table, $mysql) : bool
+    public function existsTable(string $db, string $table) : bool
     {
-        $mysql->exec("USE `{$db}`");
-        $res = $mysql->get("SHOW TABLES LIKE '{$table}'");
+        $useDb = "USE `{$db}`;";
+
+        $this->mysql()->exec($useDb);
+
+        $this->sqls[] = $useDb;
+
+        $res = $this->mysql()->get("SHOW TABLES LIKE '{$table}'");
 
         return count($res[0] ?? []) > 0;
     }
 
-    public static function existsDatabase(string $name, $mysql) : bool
+    public function existsDatabase(string $name) : bool
     {
-        $res = $mysql->setNeeddb(false)->get("SHOW DATABASES LIKE '{$name}'");
-
-        $mysql->setNeeddb(true);
+        $res = $this->mysql()->rawGet("SHOW DATABASES LIKE '{$name}'");
 
         return count($res[0] ?? []) > 0;
+    }
+
+    final public function mysql() : MySQL
+    {
+        if ((! $this->driver) || (! ($this->driver instanceof MySQL))) {
+            exception('MissingOrInvalidMySQLDriver', [$this->driver]);
+        }
+
+        return $this->driver;
+    }
+
+    /**
+     * Setter for storage
+     *
+     * @param string $storage
+     * @return MySQLSchema
+     */
+    public function setStorage(string $storage)
+    {
+        $this->storage = $storage;
+    
+        return $this;
+    }
+
+    /**
+     * Setter for annotations
+     *
+     * @param array $annotations
+     * @return MySQLSchema
+     */
+    public function setAnnotations(array $annotations)
+    {
+        $this->annotations = $annotations;
+    
+        return $this;
+    }
+
+    /**
+     * Setter for driver
+     *
+     * @param MySQL $driver
+     * @return MySQLSchema
+     */
+    public function setDriver(MySQL $driver)
+    {
+        $this->driver = $driver;
+    
+        return $this;
+    }
+
+    /**
+     * Setter for force
+     *
+     * @param bool $force
+     * @return MySQLSchema
+     */
+    public function setForce(bool $force)
+    {
+        $this->force = $force;
+    
+        return $this;
+    }
+
+    /**
+     * Setter for dump
+     *
+     * @param bool $dump
+     * @return MySQLSchema
+     */
+    public function setDump(bool $dump)
+    {
+        $this->dump = $dump;
+    
+        return $this;
     }
 }

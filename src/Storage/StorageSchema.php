@@ -17,15 +17,15 @@ final class StorageSchema
      *
      * @param string $storage: Namespace of storage orm class
      */
-    public static function sync(string $storage, bool $force = false)
+    public static function sync(string $storage, bool $force = false, bool $dump = false)
     {
         if (! class_exists($storage)) {
             exception('StorageClassNotExists', compact('storage'));
         }
 
-        $data = StorageManager::get($storage);
+        $annotations = StorageManager::get($storage);
 
-        $driver = $data['meta']['DRIVER'] ?? null;
+        $driver = $annotations['meta']['DRIVER'] ?? null;
         if (! $driver) {
             exception('StorageDriverNotSet', compact('storage'));
         }
@@ -35,6 +35,12 @@ final class StorageSchema
             exception('UnSuppoertedStorageDriver', compact('storage', 'driver'));
         }
 
-        return $_driver::sync($storage, $data, StorageManager::init($storage, false), $force);
+        return singleton($_driver)->reset()
+            ->setStorage($storage)
+            ->setAnnotations($annotations)
+            ->setDriver(StorageManager::init($storage, false))
+            ->setForce($force)
+            ->setDump($dump)
+            ->exec();
     }
 }

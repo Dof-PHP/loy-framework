@@ -262,8 +262,13 @@ class MySQLBuilder
             return 0;
         }
 
-        $first = array_keys($list[0] ?? []);
-        sort($first);
+        if (! is_index_array($list)) {
+            exception('InvalidInsertValues', ['Non-Index Array']);
+        }
+
+        $first = $list[0] ?? [];
+        ksort($first);
+        $first = array_keys($first);
         $columns = join(',', array_map(function ($column) {
             return "`{$column}`";
         }, $first));
@@ -272,14 +277,13 @@ class MySQLBuilder
         $params = [];
 
         foreach ($list as $idx => $item) {
+            ksort($item);
             $_params = array_values($item);
             foreach ($_params as $param) {
                 array_push($params, $param);
             }
 
-            $item = array_keys($item);
-            sort($item);
-            if ($item !== $first) {
+            if (array_keys($item) !== $first) {
                 exception('InvalidInsertRows', [
                     'err' => 'Insert columns not match against the first one',
                     'num' => $idx,
