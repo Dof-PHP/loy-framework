@@ -235,7 +235,7 @@ class Request
     public function getHeaders() : array
     {
         return $this->getOrSet('headers', function () {
-            return getallheaders();
+            return array_change_key_case(getallheaders(), CASE_UPPER);
         });
     }
 
