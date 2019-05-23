@@ -90,10 +90,10 @@ class JWT
      * Verify a JWT token signed by dof
      *
      * @param string $token
-     * @throw
+     * @param array $parse: JWT parse result
      * @return array: User defined payload
      */
-    public function verify(string $token)
+    public function verify(string $token, array &$parse = null)
     {
         if (! $token) {
             exception('MissingToken');
@@ -161,6 +161,15 @@ class JWT
             } catch (Throwable $e) {
                 exception('AfterVerifyHookFailed', compact('res'), $e);
             }
+        }
+
+        if (is_array($parse)) {
+            $parse = [
+                'header' => $_header,
+                'claims' => $data[0] ?? [],
+                'payload' => $data[1] ?? null,
+                'signature' => $signature
+            ];
         }
 
         return $params;

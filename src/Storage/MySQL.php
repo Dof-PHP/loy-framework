@@ -278,6 +278,11 @@ class MySQL implements StorageInterface
         return $this->connection;
     }
 
+    public function annotations()
+    {
+        return $this->annotations;
+    }
+
     public function showSessionId()
     {
         $res = $this->get('SELECT CONNECTION_ID() as session_id');

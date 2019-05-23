@@ -210,20 +210,26 @@ final class DomainManager
             {
                 $domain = $this->__config()->get('domain');
 
-                return $key ? $domain->get($key) : $domain;
+                $val = $key ? $domain->get($key) : $domain;
+
+                return is_null($val) ? $default : $val;
             }
-            public function env(string $key = null)
+            public function env(string $key = null, $default = null)
             {
                 $env = $this->__config()->get('env');
                 if (! $env) {
                     return null;
                 }
 
-                return $key ? $env->get($key) : $env;
+                $val = $key ? $env->get($key) : $env;
+
+                return is_null($val) ? $default : $val;
             }
-            public function config(string $type = null)
+            public function config(string $type = null, $default = null)
             {
-                return $type ? $this->__config()->get($type) : $this->__config();
+                $val = $type ? $this->__config()->get($type) : $this->__config();
+
+                return is_null($val) ? $default : $val;
             }
             private function __config()
             {

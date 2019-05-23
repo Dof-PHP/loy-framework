@@ -81,6 +81,8 @@ class BearerAuth
                 });
             }
 
+            // $parse = [];
+            // $uid = $jwt->verify($token, $parse);
             $uid = $jwt->verify($token);
 
             $route->params->pipe->set(static::class, collect([

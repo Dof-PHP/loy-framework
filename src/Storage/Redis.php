@@ -65,6 +65,11 @@ class Redis implements StorageInterface
         return $this->connection;
     }
 
+    public function annotations()
+    {
+        return $this->annotations;
+    }
+
     private function appendCMD(...$params)
     {
         $this->cmds[] = fixed_string(join(' ', $params), 255);
