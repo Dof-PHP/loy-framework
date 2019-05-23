@@ -73,9 +73,6 @@ final class RepositoryManager
                 exception('UnsupportedEntityType', compact('type', 'attribute', 'entity'));
             }
             $setter = 'set'.ucfirst($attribute);
-            if (! method_exists($instance, $setter)) {
-                exception('EntitySetterNotExists', compact('attribute', 'entity'));
-            }
 
             $instance->{$setter}(TypeHint::convert($val, $type));
         }

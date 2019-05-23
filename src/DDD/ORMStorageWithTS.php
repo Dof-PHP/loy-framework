@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\DDD;
 
-class ORMStorageWithTimestamp extends ORMStorage
+class ORMStorageWithTS extends ORMStorage
 {
     /**
      * @Column(created_at)

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\DDD;
 
-class EntityWithTimestamp extends Entity
+class EntityWithTS extends Entity
 {
     /**
      * @Title(Created timestamp)

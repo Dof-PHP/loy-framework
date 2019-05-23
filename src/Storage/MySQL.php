@@ -102,7 +102,7 @@ class MySQL implements StorageInterface
     {
         $start = microtime(true);
 
-        $result = $this->getConnection()->exec($sql);
+        $result = $this->getConnection(false)->exec($sql);
 
         $this->appendSQL($sql, $start);
 
@@ -113,7 +113,7 @@ class MySQL implements StorageInterface
     {
         $start = microtime(true);
 
-        $statement = $this->getConnection()->query($sql);
+        $statement = $this->getConnection(false)->query($sql);
 
         $result = $statement->fetchAll(PDO::FETCH_ASSOC);
 
@@ -238,7 +238,7 @@ class MySQL implements StorageInterface
     {
         $type = $this->getPDOValueConst($val);
 
-        return $this->getConnection()->quote($val, $type);
+        return $this->getConnection(false)->quote($val, $type);
     }
 
     public function getPDOValueConst($val)
@@ -261,7 +261,7 @@ class MySQL implements StorageInterface
         $this->connection = $connection;
     }
 
-    public function getConnection()
+    public function getConnection(bool $needdb = true)
     {
         if (! $this->connection) {
             exception('MissingMySQLConnection');
@@ -272,8 +272,10 @@ class MySQL implements StorageInterface
             exception('MissingDatabaseInMySQLAnnotations', uncollect($this->annotations->meta ?? []));
         }
 
-        $useDb = "USE `{$db}`";
-        $this->connection->exec($useDb);
+        if ($needdb) {
+            $useDb = "USE `{$db}`";
+            $this->connection->exec($useDb);
+        }
 
         return $this->connection;
     }

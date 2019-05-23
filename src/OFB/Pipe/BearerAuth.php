@@ -47,7 +47,7 @@ class BearerAuth
             Response::abort(401, ERR::MISSING_TOKEN_HEADER_OR_PARAMETER, [], $port->get('class'));
         }
 
-        $secret = ConfigManager::getDomainFinalEnvByNamespace($route->get('class'), $this->secret);
+        $secret = ConfigManager::getDomainFinalEnvByNamespace(static::class, $this->secret);
         if (! $secret) {
             Response::abort(500, ERR::TOKEN_SECRET_MISSING, [
                 'key' => $this->secret,

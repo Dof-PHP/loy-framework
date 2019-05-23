@@ -23,4 +23,9 @@ class ORMStorage extends Storage
     {
         return $this->__storage->builder();
     }
+
+    final public function paginate(int $page, int $size)
+    {
+        return $this->converts($this->builder()->paginate($page, $size));
+    }
 }

@@ -68,10 +68,10 @@ class MySQLSchema
             $this->sqls[] = $createDB;
         } else {
             if ($this->force) {
-                $this->mysql()->exec($dropDB);
+                $this->mysql()->rawExec($dropDB);
             }
 
-            $this->mysql()->exec($createDB);
+            $this->mysql()->rawExec($createDB);
         }
     }
 
@@ -129,7 +129,7 @@ class MySQLSchema
             if ($this->dump) {
                 $this->sqls[] = $add;
             } else {
-                $this->mysql()->exec($add);
+                $this->mysql()->rawExec($add);
             }
         }
 
@@ -194,7 +194,7 @@ class MySQLSchema
                 if ($this->dump) {
                     $this->sqls[] = $modify;
                 } else {
-                    $this->mysql()->exec($modify);
+                    $this->mysql()->rawExec($modify);
                 }
             }
         }
@@ -210,7 +210,7 @@ class MySQLSchema
             if ($this->dump) {
                 $this->sqls[] = $dropColumns;
             } else {
-                $this->mysql()->exec($dropColumns);
+                $this->mysql()->rawExec($dropColumns);
             }
 
             // !!! MySQL will drop indexes automatically when the columns of that index is dropped
@@ -221,7 +221,7 @@ class MySQLSchema
                 // $dropIndexes = $drop.join(', ', array_map(function ($index) {
                     // return "DROP INDEX `{$index}`";
                 // }, $indexesDrop));
-                // $this->mysql()->exec($dropIndexes);
+                // $this->mysql()->rawExec($dropIndexes);
             // }
         }
     }
@@ -266,11 +266,12 @@ class MySQLSchema
                     $addIndexes .= ",\n";
                 }
             }
+            $addIndexes .= ';';
 
             if ($this->dump) {
                 $this->sqls[] = $addIndexes;
             } else {
-                $mysql->exec($addIndexes);
+                $this->mysql()->rawExec($addIndexes);
             }
         }
 
@@ -291,11 +292,11 @@ class MySQLSchema
 
             if (($uniqueInCode !== $uniqueInSchema) || ($columnsOfIndex !== $_fieldsOfIndex)) {
                 // re-create index and name as $index with unicity
-                $createIndex = "ALTER TABLE `{$table}` DROP INDEX `{$index}`, ADD {$unique} KEY `{$index}` ({$fields}) ";
+                $createIndex = "ALTER TABLE `{$db}`.`{$table}` DROP INDEX `{$index}`, ADD {$unique} KEY `{$index}` ({$fields});";
                 if ($this->dump) {
                     $this->sqls[] = $createIndex;
                 } else {
-                    $this->mysql()->exec($createIndex);
+                    $this->mysql()->rawExec($createIndex);
                 }
                 continue;
             }
@@ -307,11 +308,73 @@ class MySQLSchema
             $dropIndexes .= join(', ', array_map(function ($index) {
                 return "DROP KEY `{$index}`";
             }, $indexesDrop));
+            $dropIndexes .= ';';
 
             if ($this->dump) {
                 $this->sqls[] = $dropIndexes;
             } else {
-                $this->mysql()->exec($dropIndexes);
+                $this->mysql()->rawExec($dropIndexes);
+            }
+        }
+    }
+
+    public function syncTableSchema(string $db, string $table)
+    {
+        $_table = $this->mysql()->rawGet("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE table_schema='{$db}' AND table_name='{$table}'")[0] ?? [];
+        $commentInSchema = strval($_table['TABLE_COMMENT'] ?? '');
+        $commentInCode = trim(strval($this->annotations['meta']['COMMENT'] ?? ''));
+        if (($commentInCode !== $commentInSchema) && $commentInCode) {
+            $comment = $this->mysql()->quote($commentInCode);
+            $updateComment = "ALTER TABLE `{$db}`.`{$table}` COMMENT = {$comment};";
+            if ($this->dump) {
+                $this->sqls[] = $updateComment;
+            } else {
+                $this->mysql()->rawExec($updateComment);
+            }
+        }
+
+        $engineInSchema = strval($_table['ENGINE'] ?? 'InnoDB');
+        $engineInCode = trim(strval($this->annotations['meta']['ENGINE'] ?? 'InnoDB'));
+        if ((! ci_equal($engineInCode, $engineInSchema)) && $engineInCode) {
+            $updateEngine = "ALTER TABLE `{$db}`.`{$table}` ENGINE {$engineInCode};";
+            if ($this->dump) {
+                $this->sqls[] = $updateEngine;
+            } else {
+                $this->mysql()->rawExec($updateEngine);
+            }
+        }
+
+        $charsetInCode = trim(strval($this->annotations['meta']['CHARSET'] ?? ''));
+        if ($charsetInCode) {
+            $collateInCode = trim(strval($this->annotations['meta']['COLLATE'] ?? ''));
+            $collateInSchema = strval($_table['TABLE_COLLATION'] ?? '');
+            if (ci_equal($collateInCode, $collateInSchema)) {
+                $charsetInSchema = '';
+                $__table = $this->mysql()->rawGet("SHOW CREATE TABLE `{$db}`.`{$table}`");
+                $tmp = explode(PHP_EOL, array_values($__table[0] ?? [])[1] ?? '');
+                $tmp = $tmp[count($tmp) - 1] ?? '';
+                if ($tmp) {
+                    $reg = '#CHARSET\=((\w)+)#';
+                    $res = [];
+                    preg_match($reg, $tmp, $res);
+                    $charsetInSchema = $res[1] ?? '';
+                }
+
+                if (! ci_equal($charsetInSchema, $charsetInCode)) {
+                    $updateCharset = "ALTER TABLE `{$db}`.`{$table}` CONVERT TO CHARACTER SET {$charsetInCode};";
+                    if ($this->dump) {
+                        $this->sqls[] = $updateCharset;
+                    } else {
+                        $this->mysql()->rawExec($updateCharset);
+                    }
+                }
+            } elseif ($collateInCode) {
+                $updateCollate = "ALTER TABLE `{$db}`.`{$table}` CONVERT TO CHARACTER SET {$charsetInCode} COLLATE {$collateInCode};";
+                if ($this->dump) {
+                    $this->sqls[] = $updateCollate;
+                } else {
+                    $this->mysql()->rawExec($updateCollate);
+                }
             }
         }
     }
@@ -322,6 +385,7 @@ class MySQLSchema
      */
     public function syncTable(string $db, string $table)
     {
+        self::syncTableSchema($db, $table);
         self::syncTableColumns($db, $table);
         self::syncTableIndexes($db, $table);
     }
@@ -396,7 +460,7 @@ class MySQLSchema
         }
 
         $useDb = "USE `{$db}`;";
-        $dropTable = "DROP TABLE IF EXISTS `{$table}`;";
+        $dropTable = "DROP TABLE IF EXISTS `{$db}`.`{$table}`;";
 
         $createTable = <<<SQL
 CREATE TABLE IF NOT EXISTS `{$table}` (
@@ -415,11 +479,11 @@ SQL;
             }
             $this->sqls[] = $createTable;
         } else {
-            $this->mysql()->exec($useDb);
+            $this->mysql()->rawExec($useDb);
             if ($this->force) {
-                $this->mysql()->exec($dropTable);
+                $this->mysql()->rawExec($dropTable);
             }
-            $this->mysql()->exec($createTable);
+            $this->mysql()->rawExec($createTable);
         }
     }
 
@@ -427,11 +491,11 @@ SQL;
     {
         $useDb = "USE `{$db}`;";
 
-        $this->mysql()->exec($useDb);
+        $this->mysql()->rawExec($useDb);
 
         $this->sqls[] = $useDb;
 
-        $res = $this->mysql()->get("SHOW TABLES LIKE '{$table}'");
+        $res = $this->mysql()->rawGet("SHOW TABLES LIKE '{$table}'");
 
         return count($res[0] ?? []) > 0;
     }

@@ -7,9 +7,15 @@ namespace Dof\Framework;
 final class TypeHint
 {
     const SUPPORTS = [
-        'uint'   => true,
-        'int'    => true,
+        'uint' => true,
+        'int' => true,
+        'integer' => true,
+        'double' => true,
+        'float' => true,
         'string' => true,
+        'array' => true,
+        'bool' => true,
+        'boolean' => true,
     ];
 
     public static function convert($val, string $type)
@@ -20,6 +26,15 @@ final class TypeHint
         }
 
         return self::$converter($val);
+    }
+
+    public static function convertToArray($val) : array
+    {
+        if ($val instanceof Collection) {
+            return (array) $val->toArray();
+        }
+
+        return (array) $val;
     }
 
     public static function convertToString($val)
@@ -46,6 +61,11 @@ final class TypeHint
         return $val;
     }
 
+    public static function convertToInteger($val)
+    {
+        return self::convertToInt($val);
+    }
+
     public static function convertToInt($val)
     {
         if (self::isInt($val)) {
@@ -53,6 +73,21 @@ final class TypeHint
         }
 
         exception('TypeHintIntFailed', compact('val'));
+    }
+
+    public static function convertToBoolean($val) : bool
+    {
+        return self::convertToBool($val);
+    }
+
+    public static function convertToBool($val) : bool
+    {
+        return boolval($val);
+    }
+
+    public static function isArray($val) : bool
+    {
+        return is_array($val) || ($val instanceof Collection);
     }
 
     public static function isString($val) : bool
@@ -67,6 +102,21 @@ final class TypeHint
         }
 
         return $val > 0;
+    }
+
+    public static function isBool($val) : bool
+    {
+        return is_bool($val);
+    }
+
+    public static function isBoolean($val) : bool
+    {
+        return self::isBool($val);
+    }
+
+    public static function isInteger($val) : bool
+    {
+        return self::isInt($val);
     }
 
     public static function isInt($val) : bool
