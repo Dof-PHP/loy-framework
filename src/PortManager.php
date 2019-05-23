@@ -521,6 +521,7 @@ final class PortManager
         ];
 
         $groups = array_merge(self::formatDocGroups($defaultGroup), self::formatDocGroups($group));
+
         if ($groups) {
             $docs['group'] = self::dynamicAppendDocWithGroups($docs['group'] ?? [], $doc, $groups);
         } else {
@@ -705,8 +706,8 @@ final class PortManager
     {
         $keys = $groups;
         foreach ($groups as $name => $title) {
+            $data[$name]['title'] = $title;
             if (false === next($groups)) {
-                $data[$name]['title']  = $title;
                 $data[$name]['list'][] = $append;
                 $data[$name]['group']  = [];
                 return $data;
@@ -714,10 +715,8 @@ final class PortManager
 
             $_data = $data[$name]['group'] ?? [];
             unset($keys[$name]);
-            $data[$name]['title'] = $title;
             $data[$name]['group'] = self::dynamicAppendDocWithGroups($_data, $append, $keys);
             $data[$name]['list']  = array_merge(($data[$name]['list'] ?? []), ($_data['list'] ?? []));
-
             return $data;
         }
     }

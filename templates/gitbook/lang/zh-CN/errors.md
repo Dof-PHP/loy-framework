@@ -16,7 +16,7 @@
 ## 领域自定义
 
 <?php foreach (($errors[1] ?? []) as $domain => $errs) : ?>
-### <?= \Dof\Framework\ConfigManager::getDomainByKey($domain, 'domain.title', $doamin) ?>
+### <?= \Dof\Framework\ConfigManager::getDomainByKey($domain, 'domain.title', $domain) ?>
 
 
 | 错误码 | KEY | 描述 | 备注 |
