@@ -328,6 +328,7 @@ final class PortManager
         $wraperr = $attrs['WRAPERR'] ?? $defaultWraperr;
         $wraperr = (($attrs['WRAPERR'] ?? null) === '_') ? null : $wraperr;
         $assembler = $attrs['ASSEMBLER'] ?? $defaultAssembler;
+        $assembler = (($attrs['ASSEMBLER'] ?? null) === '_') ? null : $assembler;
         $headerIn  = $attrs['HEADERIN']  ?? [];
         $headerOut = $attrs['HEADEROUT'] ?? [];
         $headerStatus = $attrs['HEADERSTATUS'] ?? $defaultHeaderStatus;
