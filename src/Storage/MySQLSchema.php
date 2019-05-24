@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Storage;
 
+use Dof\Framework\Kernel;
+
 class MySQLSchema
 {
     const DEFAULT_ENGINE = 'InnoDB';
@@ -30,8 +32,6 @@ class MySQLSchema
 
     public function exec()
     {
-        $this->sqls[] = "-- {$this->storage}";
-
         $meta = $this->annotations['meta'] ?? [];
         $database = $meta['DATABASE'] ?? null;
         if (! $database) {
@@ -53,7 +53,14 @@ class MySQLSchema
             $this->initTable($database, $table);
         }
 
-        return $this->dump ? $this->sqls : true;
+        if ($this->dump) {
+            $file = str_replace(Kernel::getRoot().'/', '', get_file_of_namespace($this->storage));
+            array_unshift($this->sqls, "---- {$this->storage} | {$file} ----");
+
+            return $this->sqls;
+        }
+
+        return true;
     }
 
     public function initDatabase(string $name)
