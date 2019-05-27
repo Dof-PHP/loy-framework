@@ -83,7 +83,14 @@ abstract class Storage implements Repository
         $data = [];
         foreach ($columns as $column => $property) {
             $getter = 'get'.ucfirst($property);
-            $data[$column] = $entity->{$getter}() ?? null;
+            $val = $entity->{$getter}() ?? null;
+            // Null value check and set default if necessary
+            if (is_null($val)) {
+                $_property = $annotation['properties'][$property] ?? null;
+                $val = $_property['DEFAULT'] ?? null;
+            }
+
+            $data[$column] = $val;
         }
 
         if (! $data) {
@@ -137,7 +144,13 @@ abstract class Storage implements Repository
         $data = [];
         foreach ($columns as $column => $property) {
             $getter = 'get'.ucfirst($property);
-            $data[$column] = $entity->{$getter}() ?? null;
+            $val = $entity->{$getter}() ?? null;
+            if (is_null($val)) {
+                $_property = $annotation['properties'][$property] ?? null;
+                $val = $_property['DEFAULT'] ?? null;
+            }
+
+            $data[$column] = $val;
         }
 
         if (! $data) {

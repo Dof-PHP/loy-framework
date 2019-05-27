@@ -54,9 +54,9 @@ class MySQL implements StorageInterface
             return (int) $id;
         } catch (Throwable $e) {
             if (($e->errorInfo[1] ?? null) === 1062) {
-                exception('ViolatedUniqueConstraint', compact('sql', 'value'), $e);
+                exception('ViolatedUniqueConstraint', compact('sql', 'values'), $e);
             }
-            exception('InsertToMySQLFailed', compact('sql', 'value'), $e);
+            exception('InsertToMySQLFailed', compact('sql', 'values'), $e);
         }
     }
 
@@ -172,6 +172,10 @@ class MySQL implements StorageInterface
 
             return $result;
         } catch (Throwable $e) {
+            if (($e->errorInfo[1] ?? null) === 1062) {
+                exception('ViolatedUniqueConstraint', compact('sql', 'params'), $e);
+            }
+
             exception('OperationsToMySQLFailed', ['sql' => $sql], $e);
         }
     }
