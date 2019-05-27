@@ -18,6 +18,7 @@ class MySQLBuilder
     private $or = [];
     private $orRaw = [];
 
+    private $order = [];
     private $offset;
     private $limit;
 
@@ -30,6 +31,7 @@ class MySQLBuilder
         $this->whereRaw = [];
         $this->or = [];
         $this->orRaw = [];
+        $this->order = [];
         $this->offset = null;
         $this->limit = null;
 
@@ -81,6 +83,27 @@ class MySQLBuilder
     public function alias(string $column, string $alias)
     {
         $this->alias[$alias] = $column;
+
+        return $this;
+    }
+
+    public function orderAsc(string $column)
+    {
+        $this->order[$column] = 'ASC';
+
+        return $this;
+    }
+
+    public function orderDesc(string $column)
+    {
+        $this->order[$column] = 'DESC';
+
+        return $this;
+    }
+
+    public function order(string $column, string $sort)
+    {
+        $this->order[$column] = $sort;
 
         return $this;
     }
@@ -163,6 +186,17 @@ class MySQLBuilder
             }
         }
 
+        $order = '';
+        if ($this->order) {
+            $order = 'ORDER BY ';
+            foreach ($this->order as $by => $sort) {
+                $order .= "`{$by}` {$sort}";
+                if (next($this->order) !== false) {
+                    $order .= ',';
+                }
+            }
+        }
+
         $limit = '';
         if (is_int($this->limit)) {
             if (is_int($this->offset)) {
@@ -174,8 +208,8 @@ class MySQLBuilder
 
         list($where, $params) = $this->buildWhere();
 
-        $sql = 'SELECT %s FROM #{TABLE} %s %s';
-        $sql = sprintf($sql, $columns, $where, $limit);
+        $sql = 'SELECT %s FROM #{TABLE} %s %s %s';
+        $sql = sprintf($sql, $columns, $where, $order, $limit);
 
         return $this->origin->get($sql, $params);
     }
