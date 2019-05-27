@@ -42,24 +42,20 @@ class MySQL implements StorageInterface
     public function insert(string $sql, array $values) : int
     {
         try {
-            $this->getConnection()->beginTransaction();
-
             $sql = $this->generate($sql);
 
             $start = microtime(true);
 
-            $this->appendSql($sql, $start, $values);
             $statement = $this->getConnection()->prepare($sql);
-            $statement->execute($values);
+            $id = $statement->execute($values);
 
-            $id = $this->getConnection()->lastInsertId();
-
-            $this->getConnection()->commit();
+            $this->appendSql($sql, $start, $values);
 
             return (int) $id;
         } catch (Throwable $e) {
-            $this->getConnection()->rollBack();
-
+            if (($e->errorInfo[1] ?? null) === 1062) {
+                exception('ViolatedUniqueConstraint', compact('sql', 'value'), $e);
+            }
             exception('InsertToMySQLFailed', compact('sql', 'value'), $e);
         }
     }
@@ -93,7 +89,7 @@ class MySQL implements StorageInterface
         return $this->builder()->where('id', $pk)->first();
     }
 
-    public function __construct(array $annotations)
+    public function __construct(array $annotations = [])
     {
         $this->annotations = collect($annotations);
     }
@@ -267,12 +263,12 @@ class MySQL implements StorageInterface
             exception('MissingMySQLConnection');
         }
 
-        $db = $this->annotations->meta->DATABASE ?? null;
-        if (! $db) {
-            exception('MissingDatabaseInMySQLAnnotations', uncollect($this->annotations->meta ?? []));
-        }
-
         if ($needdb) {
+            $db = $this->annotations->meta->DATABASE ?? null;
+            if (! $db) {
+                exception('MissingDatabaseInMySQLAnnotations', uncollect($this->annotations->meta ?? []));
+            }
+
             $useDb = "USE `{$db}`";
             $this->connection->exec($useDb);
         }

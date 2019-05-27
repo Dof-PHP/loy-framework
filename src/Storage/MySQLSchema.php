@@ -55,7 +55,7 @@ class MySQLSchema
 
         if ($this->dump) {
             $file = str_replace(Kernel::getRoot().'/', '', get_file_of_namespace($this->storage));
-            array_unshift($this->sqls, "---- {$this->storage} | {$file} ----");
+            array_unshift($this->sqls, "-- {$this->storage} | {$file}");
 
             return $this->sqls;
         }

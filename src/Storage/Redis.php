@@ -20,7 +20,7 @@ class Redis implements StorageInterface
     /** @var array: Commands executed in the lifetime of this instance */
     private $cmds = [];
     
-    public function __construct(array $annotations)
+    public function __construct(array $annotations = [])
     {
         $this->annotations = collect($annotations);
     }

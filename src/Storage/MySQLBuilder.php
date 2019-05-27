@@ -239,9 +239,24 @@ class MySQLBuilder
         return $this->origin->exec($sql, $params);
     }
 
+    /**
+     * Add on record from storage class annotations
+     */
     public function add(array $data) : int
     {
+        $annotations= $this->origin->annotations();
         $columns = array_keys($data);
+
+        // Null value check and set default if necessary
+        foreach ($columns as $column) {
+            $val = $data[$column] ?? null;
+            if (is_null($val)) {
+                $property = $annotations['columns'][$column] ?? null;
+                $_property = $annotations['properties'][$property] ?? null;
+                $data[$column] = $_property->DEFAULT ?? null;
+            }
+        }
+
         $values = array_values($data);
         $count = count($values);
         $_values = join(',', array_fill(0, $count, '?'));

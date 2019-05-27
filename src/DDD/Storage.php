@@ -83,9 +83,7 @@ abstract class Storage implements Repository
         $data = [];
         foreach ($columns as $column => $property) {
             $getter = 'get'.ucfirst($property);
-            if (method_exists($entity, $getter)) {
-                $data[$column] = $entity->{$getter}();
-            }
+            $data[$column] = $entity->{$getter}() ?? null;
         }
 
         if (! $data) {
@@ -139,9 +137,7 @@ abstract class Storage implements Repository
         $data = [];
         foreach ($columns as $column => $property) {
             $getter = 'get'.ucfirst($property);
-            if (method_exists($entity, $getter)) {
-                $data[$column] = $entity->{$getter}();
-            }
+            $data[$column] = $entity->{$getter}() ?? null;
         }
 
         if (! $data) {
