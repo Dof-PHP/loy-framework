@@ -1249,3 +1249,11 @@ if (! function_exists('http_client_name')) {
         return $browser->browser ?? 'unknown';
     }
 }
+if (! function_exists('swap')) {
+    function swap(&$a, &$b)
+    {
+        $c = $a;
+        $a = $b;
+        $b = $c;
+    }
+}

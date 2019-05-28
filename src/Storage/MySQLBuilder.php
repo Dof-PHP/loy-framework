@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Storage;
 
+use Closure;
 use Dof\Framework\Paginator;
 
 class MySQLBuilder
 {
     private $origin;
 
+    private $db;
+    private $table;
     private $select = [];
     private $alias = [];
     private $aliasRaw = [];
@@ -25,6 +28,9 @@ class MySQLBuilder
     public function reset()
     {
         $this->origin = null;
+        $this->db = null;
+        $this->table = null;
+        $this->select = [];
         $this->alias = [];
         $this->aliasRaw = [];
         $this->where = [];
@@ -45,30 +51,125 @@ class MySQLBuilder
         return $this;
     }
 
+    public function zero(string $column)
+    {
+        $this->where[] = [$column, '!=', ''];
+        $this->where[] = [$column, '=', 0];
+
+        return $this;
+    }
+
+    public function empty(string $column)
+    {
+        $this->where[] = [$column, '=', ''];
+
+        return $this;
+    }
+
+    public function notnull(string $column)
+    {
+        $this->where[] = [$column, 'IS NOT NULL', null];
+
+        return $this;
+    }
+
+    public function null(string $column)
+    {
+        $this->where[] = [$column, 'IS NULL', null];
+
+        return $this;
+    }
+
+    public function not(string $column, $value)
+    {
+        $this->where[] = [$column, '!=', $value];
+
+        return $this;
+    }
+
+    public function in(string $column, $value)
+    {
+        $this->where[] = [$column, 'IN', $value];
+
+        return $this;
+    }
+
+    public function notin(string $column, $value)
+    {
+        $this->where[] = [$column, 'NOT IN', $value];
+
+        return $this;
+    }
+
+    public function like(string $column, $value)
+    {
+        $this->where[] = [$column, 'LIKE', $value];
+
+        return $this;
+    }
+
+    public function lt(string $column, $value, bool $equal = true)
+    {
+        $operator = $equal ? '<=' : '<';
+
+        $this->where[] = [$column, $operator, $value];
+
+        return $this;
+    }
+
+    public function gt(string $column, $value, bool $equal = true)
+    {
+        $operator = $equal ? '>=' : '>';
+
+        $this->where[] = [$column, $operator, $value];
+
+        return $this;
+    }
+
     public function where(string $column, $value, string $operator = '=')
     {
-        $this->where[$column] = [$operator, $value];
+        $this->where[] = [$column, $operator, $value];
 
         return $this;
     }
 
     public function whereRaw(string $raw, $value, string $operator = '=')
     {
-        $this->whereRaw[$raw] = [$operator, $value];
+        $this->whereRaw[] = [$raw, $operator, $value];
 
         return $this;
     }
 
     public function or(string $column, $value, string $operator = '=')
     {
-        $this->or[$column] = [$operator, $value];
+        $this->or[] = [$column, $operator, $value];
 
         return $this;
     }
 
     public function orRaw(string $raw, $value, string $operator = '=')
     {
-        $this->orRaw[$raw] = [$operator, $value];
+        $this->orRaw[] = [$raw, $operator, $value];
+
+        return $this;
+    }
+
+    /**
+     * Alias a timestamp column with custom date format
+     *
+     * @param string $column: Timestamp column
+     * @param string $alias: Alias used to name the expression
+     * @param string $format: Format used to convert timestamp to date string
+     */
+    public function date(string $column, string $alias = null, string $format = null)
+    {
+        $_format = $format ? ','.$this->origin->quote($format) : '';
+
+        $expression = "FROM_UNIXTIME(`$column`{$_format})";
+
+        $_alias = $alias ?: $column;
+
+        $this->aliasRaw[$_alias] = $expression;
 
         return $this;
     }
@@ -87,14 +188,14 @@ class MySQLBuilder
         return $this;
     }
 
-    public function orderAsc(string $column)
+    public function asc(string $column)
     {
         $this->order[$column] = 'ASC';
 
         return $this;
     }
 
-    public function orderDesc(string $column)
+    public function desc(string $column)
     {
         $this->order[$column] = 'DESC';
 
@@ -104,6 +205,20 @@ class MySQLBuilder
     public function order(string $column, string $sort)
     {
         $this->order[$column] = $sort;
+
+        return $this;
+    }
+
+    public function db(string $db)
+    {
+        $this->db = $db;
+
+        return $this;
+    }
+
+    public function table(string $table)
+    {
+        $this->table = $table;
 
         return $this;
     }
@@ -126,6 +241,18 @@ class MySQLBuilder
         $res = $this->get();
 
         return intval($res[0]['total'] ?? 0);
+    }
+
+    public function limit(int $limit, int $offset = null)
+    {
+        if ($offset > 0) {
+            $this->offset = $limit;
+            $this->limit = $offset;
+        } else {
+            $this->limit = $limit;
+        }
+
+        return $this;
     }
 
     public function paginate(int $page, int $size) : Paginator
@@ -164,24 +291,60 @@ class MySQLBuilder
 
     public function get()
     {
-        $columns = '#{COLUMNS}';
+        $params = [];
+
+        $sql = $this->sql($params);
+
+        return $this->origin->get($sql, $params);
+    }
+
+    public function sql(array &$params) : string
+    {
+        $selects = '#{COLUMNS}';
         if ($this->select) {
-            $columns = '';
+            $selects = '';
             foreach ($this->select as $column) {
                 $_column = $this->alias[$column] ?? null;
                 if ($_column) {
-                    $columns .= "`{$_column}` AS `{$column}`";
+                    $selects .= "`{$_column}` AS `{$column}`";
                 } else {
                     $expression = $this->aliasRaw[$column] ?? null;
                     if ($expression) {
-                        $columns .= "{$expression} AS `{$column}`";
+                        $selects .= "{$expression} AS `{$column}`";
                     } else {
-                        $columns .= "`{$column}`";
+                        $selects .= "`{$column}`";
                     }
                 }
 
                 if (false !== next($this->select)) {
-                    $columns .= ', ';
+                    $selects .= ', ';
+                }
+            }
+        } else {
+            $selects = '';
+            $columns = array_keys($this->origin->annotations()->columns->toArray());
+            foreach ($columns as $column) {
+                $selects .= "`{$column}`";
+                if (next($columns) !== false) {
+                    $selects .= ',';
+                }
+            }
+            if ($this->alias) {
+                $selects .= ',';
+                foreach ($this->alias as $alias => $column) {
+                    $selects .= "`{$column}` AS `{$alias}`";
+                    if (next($this->alias) !== false) {
+                        $selects .= ',';
+                    }
+                }
+            }
+            if ($this->aliasRaw) {
+                $selects .= ',';
+                foreach ($this->aliasRaw as $alias => $expression) {
+                    $selects .= "{$expression} AS `{$alias}`";
+                }
+                if (next($this->aliasRaw) !== false) {
+                    $selects .= ',';
                 }
             }
         }
@@ -208,10 +371,14 @@ class MySQLBuilder
 
         list($where, $params) = $this->buildWhere();
 
-        $sql = 'SELECT %s FROM #{TABLE} %s %s %s';
-        $sql = sprintf($sql, $columns, $where, $order, $limit);
+        $table = $this->table ?: '#{TABLE}';
+        if ($this->db) {
+            $table = "`{$this->db}`.{$table}";
+        }
 
-        return $this->origin->get($sql, $params);
+        $sql = 'SELECT %s FROM %s %s %s %s';
+
+        return sprintf($sql, $selects, $table, $where, $order, $limit);
     }
 
     /**
@@ -351,14 +518,26 @@ class MySQLBuilder
             $placeholder = '?';
             if (ciin_array(trim($operator), ['in', 'not in'])) {
                 $placeholder = '(?)';
-                if (is_array($val)) {
+                if (is_array($val) || is_string($val)) {
+                    $val = is_string($val) ? array_trim_from_string($val, ',') : $val;
                     $placeholder = '('.join(',', array_fill(0, count($val), '?')).')';
                     foreach ($val as $v) {
                         array_push($params, $v);
                     }
+                } elseif (is_closure($val)) {
+                    $builder = new self;
+                    $_params = [];
+                    $val($builder);
+                    $sql = $builder->sql($_params);
+                    $placeholder = "({$sql})";
+                    foreach ($_params as $param) {
+                        array_push($params, $param);
+                    }
                 } else {
-                    $params[] = $val;
+                    $params[] = (array) $val;
                 }
+            } elseif (ciin_array(trim($operator), ['IS NOT NULL', 'IS NULL'])) {
+                $placeholder = '';
             } else {
                 $params[] = $val;
             }
@@ -372,7 +551,7 @@ class MySQLBuilder
 
         if ($this->where || $this->whereRaw) {
             $where .= ' WHERE ';
-            foreach ($this->where as $column => list($operator, $val)) {
+            foreach ($this->where as list($column, $operator, $val)) {
                 $where .= $buildWhere($column, $operator, $val, $params, false);
                 if (false !== next($this->where)) {
                     $where .= ' AND ';
@@ -382,7 +561,7 @@ class MySQLBuilder
                 $where .= ' AND ';
             }
 
-            foreach ($this->whereRaw as $expression => list($operator, $val)) {
+            foreach ($this->whereRaw as list($expression, $operator, $val)) {
                 $where .= $buildWhere($expression, $operator, $val, $params, true);
                 if (false !== next($this->whereRaw)) {
                     $where .= ' AND ';
@@ -396,7 +575,7 @@ class MySQLBuilder
                 $where .= ' WHRER ';
             }
 
-            foreach ($this->or as $column => list($operator, $val)) {
+            foreach ($this->or as list($column, $operator, $val)) {
                 $where .= $buildWhere($column, $operator, $val, $params, false);
                 if (false !== next($this->or)) {
                     $where .= ' OR ';
@@ -405,7 +584,7 @@ class MySQLBuilder
             if ($this->orRaw) {
                 $where .= ' OR ';
             }
-            foreach ($this->orRaw as $expression => list($operator, $val)) {
+            foreach ($this->orRaw as list($expression, $operator, $val)) {
                 $where .= $buildWhere($expression, $operator, $val, $params, true);
                 if (false !== next($this->orRaw)) {
                     $where .= ' OR ';

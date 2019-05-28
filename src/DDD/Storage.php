@@ -22,6 +22,11 @@ abstract class Storage implements Repository
         $this->__storage = StorageManager::init(static::class);
     }
 
+    final public static function new()
+    {
+        return new static;
+    }
+
     final public static function init()
     {
         return new static;
@@ -163,6 +168,11 @@ abstract class Storage implements Repository
         $this->__storage->update($entity->getId(), $data);
 
         return $entity;
+    }
+
+    final public static function annotations()
+    {
+        return StorageManager::get(static::class);
     }
 
     final public function find(int $pk) : ?Entity
