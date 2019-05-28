@@ -28,4 +28,9 @@ class ORMStorage extends Storage
     {
         return $this->converts($this->builder()->paginate($page, $size));
     }
+
+    final public static function table()
+    {
+        return self::annotations()['meta']['TABLE'] ?? null;
+    }
 }

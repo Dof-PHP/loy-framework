@@ -170,6 +170,21 @@ abstract class Storage implements Repository
         return $entity;
     }
 
+    final public static function database()
+    {
+        return self::annotations()['meta']['DATABASE'] ?? null;
+    }
+
+    final public static function repository()
+    {
+        return self::annotations()['meta']['REPOSITORY'] ?? null;
+    }
+
+    final public static function driver()
+    {
+        return self::annotations()['meta']['DRIVER'] ?? null;
+    }
+
     final public static function annotations()
     {
         return StorageManager::get(static::class);
