@@ -197,6 +197,11 @@ class MySQLSchema
                     $autoinc = 'AUTO_INCREMENT';
                 }
 
+                // Update null value use default if NOT NULL is set to avoid (1138, Invalid use of NULL value) mysql error
+                if ($notnull) {
+                    $updateNull = "UPDATE `{$db}`.`{$table}` SET `{$column}` = {$default} WHERE `{$column}` IS NULL";
+                }
+
                 $modify = "ALTER TABLE `{$db}`.`{$table}` MODIFY `{$column}` {$typeInCode} {$notnull} {$autoinc} {$default} {$comment};";
                 if ($this->dump) {
                     $this->sqls[] = $modify;
