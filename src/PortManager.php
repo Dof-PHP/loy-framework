@@ -160,16 +160,16 @@ final class PortManager
      */
     public static function compile(array $dirs, bool $cache = false)
     {
-        if (count($dirs) < 1) {
-            return;
-        }
-
         // Reset
         self::$dirs = [];
         self::$docs = [];
         self::$ports = [];
         self::$routes  = [];
         self::$aliases = [];
+
+        if (count($dirs) < 1) {
+            return;
+        }
 
         array_map(function ($item) {
             $dir = ospath($item, self::PORT_DIR);

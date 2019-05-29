@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Dof\Framework\DDD;
 
+use Dof\Framework\EntityManager;
+use Dof\Framework\TypeHint;
+
 abstract class Entity extends Model
 {
     /**
@@ -11,6 +14,33 @@ abstract class Entity extends Model
      * @Type(Uint)
      */
     protected $id;
+
+    public static function init(array $data)
+    {
+        $entity = static::class;
+        $instance = new $entity;
+        $annotations = EntityManager::get($entity);
+
+        foreach ($data as $property => $val) {
+            $attr = $annotations['properties'][$property] ?? null;
+            if (! $attr) {
+                continue;
+            }
+            $type = $attr['TYPE'] ?? null;
+            if (! $type) {
+                exception('MissingTypeInEntityProperty', compact('property', 'entity'));
+            }
+
+            $setter = 'set'.ucfirst($property);
+            $instance->{$setter}(TypeHint::convert($val, $type));
+        }
+
+        if (is_null($instance->pk())) {
+            exception('MissingEntityIdentity', compact('data', 'entity'));
+        }
+
+        return $instance;
+    }
 
     final public function setId(int $id)
     {

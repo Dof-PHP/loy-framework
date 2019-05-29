@@ -49,13 +49,13 @@ final class EntityManager
      */
     public static function compile(array $dirs, bool $cache = false)
     {
-        if (count($dirs) < 1) {
-            return;
-        }
-
         // Reset
         self::$dirs = [];
         self::$entities = [];
+
+        if (count($dirs) < 1) {
+            return;
+        }
 
         array_map(function ($item) {
             $dir = ospath($item, self::ENTITY_DIR);

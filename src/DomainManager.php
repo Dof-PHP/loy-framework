@@ -79,6 +79,7 @@ final class DomainManager
         }
         self::$root = $domainRoot;
 
+        // reset
         self::$dirs = [];
         self::$keys = [];
         self::$metas = [];

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Dof\Framework\DDD;
 
+use Dof\Framework\TypeHint;
+use Dof\Framework\DataModelManager;
+
 /**
  * Data Model
  */
@@ -14,9 +17,27 @@ abstract class Model
         return new static;
     }
 
-    final public static function init()
+    public static function init(array $data)
     {
-        return new static;
+        $model = static::class;
+        $instance = new $model;
+        $annotations = DataModelManager::get($model);
+
+        foreach ($data as $property => $val) {
+            $attr = $annotations['properties'][$property] ?? null;
+            if (! $attr) {
+                continue;
+            }
+            $type = $attr['TYPE'] ?? null;
+            if (! $type) {
+                exception('MissingTypeInModelProperty', compact('property', 'model'));
+            }
+
+            $setter = 'set'.ucfirst($property);
+            $instance->{$setter}(TypeHint::convert($val, $type));
+        }
+
+        return $instance;
     }
 
     public function onCreated()

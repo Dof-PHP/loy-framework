@@ -38,13 +38,13 @@ final class DataModelManager
 
     public static function compile(array $dirs, bool $cache = false)
     {
-        if (count($dirs) < 1) {
-            return;
-        }
-
         // Reset
         self::$dirs = [];
         self::$models = [];
+
+        if (count($dirs) < 1) {
+            return;
+        }
 
         array_map(function ($item) {
             $dir = ospath($item, self::MODEL_DIR);

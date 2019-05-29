@@ -6,8 +6,6 @@ namespace Dof\Framework\DDD;
 
 use Throwable;
 use Dof\Framework\StorageManager;
-use Dof\Framework\RepositoryManager;
-use Dof\Framework\Paginator;
 
 /**
  * Storage is the persistence layer implementations
@@ -35,44 +33,6 @@ abstract class Storage implements Repository
     final public function storage()
     {
         return $this->__storage;
-    }
-
-    /**
-     * Convert an array result data into object of entity or data model
-     */
-    final public function convert(array $result = null)
-    {
-        return RepositoryManager::convert(static::class, $result);
-    }
-
-    /**
-     * Convert a list of results or a paginator instance
-     */
-    final public function converts($result = null)
-    {
-        if (! $result) {
-            return;
-        }
-
-        if ($result instanceof Paginator) {
-            $list = $result->getList();
-            foreach ($list as &$item) {
-                $item = RepositoryManager::convert(static::class, $item);
-            }
-            $result->setList($list);
-
-            return $result;
-        }
-
-        if (! is_array($result)) {
-            exception('UnconvertableEntityOrigin', compact('result'));
-        }
-
-        foreach ($result as &$item) {
-            $item = RepositoryManager::convert(static::class, $item);
-        }
-
-        return $result;
     }
 
     final public static function database()

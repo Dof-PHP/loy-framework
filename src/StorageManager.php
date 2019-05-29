@@ -25,9 +25,9 @@ final class StorageManager
     const STORAGE_DIR  = 'Storage';
 
     private static $dirs = [];
-    private static $orms = [];
+    private static $storages = [];
 
-    /** @var array: ORM Namespace <=> Storage Instance */
+    /** @var array: Storage Namespace <=> Storage Instance */
     private static $namespaces = [];
 
     /**
@@ -39,14 +39,14 @@ final class StorageManager
     {
         $cache = Kernel::formatCacheFile(__CLASS__);
         if (is_file($cache)) {
-            list(self::$dirs, self::$orms) = load_php($cache);
+            list(self::$dirs, self::$storages) = load_php($cache);
             return;
         }
 
         self::compile($dirs);
 
         if (ConfigManager::matchEnv(['ENABLE_STORAGE_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
-            array2code([self::$dirs, self::$orms], $cache);
+            array2code([self::$dirs, self::$storages], $cache);
         }
     }
 
@@ -58,13 +58,13 @@ final class StorageManager
      */
     public static function compile(array $dirs, bool $cache = false)
     {
+        // Reset
+        self::$dirs = [];
+        self::$storages = [];
+
         if (count($dirs) < 1) {
             return;
         }
-
-        // Reset
-        self::$dirs = [];
-        self::$orms = [];
 
         array_map(function ($item) {
             $dir = ospath($item, self::STORAGE_DIR);
@@ -82,7 +82,7 @@ final class StorageManager
         }, __CLASS__);
 
         if ($cache) {
-            array2code([self::$dirs, self::$orms], Kernel::formatCacheFile(__CLASS__));
+            array2code([self::$dirs, self::$storages], Kernel::formatCacheFile(__CLASS__));
         }
     }
 
@@ -103,7 +103,7 @@ final class StorageManager
         if (! $namespace) {
             return;
         }
-        if ($exists = (self::$orms[$namespace] ?? false)) {
+        if ($exists = (self::$storages[$namespace] ?? false)) {
             exception('DuplicateStorageClass', compact('exists'));
         }
         if (! ($ofClass['doc']['DRIVER'] ?? false)) {
@@ -116,16 +116,16 @@ final class StorageManager
             exception('MissingStorageDatabaseName', compact('namespace'));
         }
 
-        self::$orms[$namespace]['meta'] = $ofClass['doc'] ?? [];
-        self::$orms[$namespace]['meta']['NAMESPACE'] = $namespace;
+        self::$storages[$namespace]['meta'] = $ofClass['doc'] ?? [];
+        self::$storages[$namespace]['meta']['NAMESPACE'] = $namespace;
         foreach ($ofProperties as $property => $attr) {
             $_column = $attr['doc'] ?? [];
             $column  = $_column['COLUMN'] ?? false;
             if (! $column) {
                 continue;
             }
-            self::$orms[$namespace]['columns'][$column]      = $property;
-            self::$orms[$namespace]['properties'][$property] = $_column;
+            self::$storages[$namespace]['columns'][$column]      = $property;
+            self::$storages[$namespace]['properties'][$property] = $_column;
         }
     }
 
@@ -194,7 +194,7 @@ final class StorageManager
             return $instance;
         }
 
-        // Find storage driver from orm annotation (first) and domain database config (second)
+        // Find storage driver from annotations (first) and domain database config (second)
         $domain = DomainManager::getKeyByNamespace($namespace);
         if (! $domain) {
             exception('BadStorageWithOutDomain');
@@ -204,7 +204,7 @@ final class StorageManager
         $meta = array_change_key_case($annotations['meta'] ?? [], CASE_LOWER);
         $driver = $meta['driver'] ?? null;
         if (! $driver) {
-            exception('UnknownORMStorageDriver', compact('namespace'));
+            exception('UnknownStorageDriver', compact('namespace'));
         }
         $storage = self::SUPPORT_DRIVERS[$driver] ?? null;
         if (! $storage) {
@@ -259,11 +259,11 @@ final class StorageManager
 
     public static function get(string $namespace)
     {
-        return self::$orms[$namespace] ?? null;
+        return self::$storages[$namespace] ?? null;
     }
 
-    public static function getOrms()
+    public static function getStorages()
     {
-        return self::$orms;
+        return self::$storages;
     }
 }

@@ -6,6 +6,7 @@ namespace Dof\Framework\DDD;
 
 use Dof\Framework\StorageManager;
 use Dof\Framework\RepositoryManager;
+use Dof\Framework\Paginator;
 
 /**
  * In Dof, ORMStorage also the configuration of ORM
@@ -39,10 +40,11 @@ class ORMStorage extends Storage
 
     final public function add(Entity $entity) : Entity
     {
-        $annotation = StorageManager::get(static::class);
+        $storage = static::class;
+        $annotation = StorageManager::get($storage);
         $columns = $annotation['columns'] ?? [];
         if (! $columns) {
-            exception('NoColumnsOnStorageToAdd', ['storage' => static::class]);
+            exception('NoColumnsOnStorageToAdd', compact('storage'));
         }
 
         unset($columns['id']);
@@ -68,8 +70,10 @@ class ORMStorage extends Storage
         }
 
         $id = $this->__storage->add($data);
-
         $entity->setId($id);
+
+        // Add entity into repository cache
+        RepositoryManager::add($storage, $entity);
 
         return $entity;
     }
@@ -87,20 +91,25 @@ class ORMStorage extends Storage
         }
 
         $pk = is_int($entity) ? $entity : $entity->getId();
+        $storage = static::class;
 
         try {
             // Ignore when entity not exists in repository
-            return $this->__storage->delete($pk);
+            $res = $this->__storage->delete($pk);
 
-            // TODO: Flush repository cache
+            // Remove entity from repository cache
+            RepositoryManager::remove($storage, $entity);
+
+            return $res;
         } catch (Throwable $e) {
-            exception('RemoveEntityFailed', ['pk' => $pk, 'class' => static::class], $e);
+            exception('RemoveEntityFailed', compact('pk', 'storage'), $e);
         }
     }
 
     final public function save(Entity $entity) : Entity
     {
-        $annotation = StorageManager::get(static::class);
+        $storage = static::class;
+        $annotation = StorageManager::get($storage);
         $columns = $annotation['columns'] ?? [];
         if (! $columns) {
             exception('NoColumnsOnStorageToUpdate', ['storage' => static::class]);
@@ -112,6 +121,7 @@ class ORMStorage extends Storage
         foreach ($columns as $column => $property) {
             $getter = 'get'.ucfirst($property);
             $val = $entity->{$getter}() ?? null;
+            // Null value check and set default if specific
             if (is_null($val)) {
                 $_property = $annotation['properties'][$property] ?? null;
                 $val = $_property['DEFAULT'] ?? null;
@@ -129,13 +139,62 @@ class ORMStorage extends Storage
 
         $this->__storage->update($entity->getId(), $data);
 
+        // Update/Reset repository cache
+        RepositoryManager::update($storage, $entity);
+
         return $entity;
     }
 
     final public function find(int $pk) : ?Entity
     {
-        $result = $this->__storage->find($pk);
+        // Find in repository cache first
+        if ($entity = RepositoryManager::find(static::class, $pk)) {
+            return $entity;
+        }
 
-        return RepositoryManager::convert(static::class, $result);
+        $result = $this->__storage->find($pk);
+        if (! $result) {
+            return null;
+        }
+
+        return RepositoryManager::map(static::class, $result);
+    }
+
+    /**
+     * Convert an array result data into entity object
+     */
+    final public function convert(array $result = null) : ?Entity
+    {
+        return RepositoryManager::map(static::class, $result);
+    }
+
+    /**
+     * Convert a list of results or a paginator instance into entity object list
+     */
+    final public function converts($result = null)
+    {
+        if (! $result) {
+            return;
+        }
+
+        if ($result instanceof Paginator) {
+            $list = $result->getList();
+            foreach ($list as &$item) {
+                $item = RepositoryManager::map(static::class, $item);
+            }
+            $result->setList($list);
+
+            return $result;
+        }
+
+        if (! is_array($result)) {
+            exception('UnConvertableEntityOrigin', compact('result'));
+        }
+
+        foreach ($result as &$item) {
+            $item = RepositoryManager::map(static::class, $item);
+        }
+
+        return $result;
     }
 }

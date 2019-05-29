@@ -21,76 +21,6 @@ final class RepositoryManager
     private static $dirs = [];
     private static $repositories = [];
 
-    /**
-     * Convert a storage result into an object of entity or data model
-     */
-    public static function convert(string $storage, array $result = null) : ?Model
-    {
-        if (! $result) {
-            return null;
-        }
-
-        $_storage = Storage::class;
-        if (! is_subclass_of($storage, $_storage)) {
-            $error = "Not SubClass Of {$_storage}";
-            exception('InvalidStorageToConvert', compact('storage', 'error'));
-        }
-
-        $orm = StorageManager::get($storage);
-        if (! $orm) {
-            exception('StorageClassNotFound', compact('orm'));
-        }
-        $repository = $orm['meta']['REPOSITORY'] ?? null;
-        if (! $repository) {
-            exception('NoRepositoryBoundStorage', compact('storage'));
-        }
-        $_repository = self::get($repository);
-        if (! $_repository) {
-            exception('RepositoryNotFound', compact('repository'));
-        }
-        $implementor = $_repository['IMPLEMENTOR'] ?? null;
-        if ($implementor !== $storage) {
-            exception('InvalidStorageImplementor', compact('repository', 'implementor', 'storage'));
-        }
-        $entity = $_repository['ENTITY'] ?? null;
-        $model  = $_repository['MODEL']  ?? null;
-        if ((! $entity) && (! $model)) {
-            exception('NoEntityOrModelBindToRepository', compact('repository'));
-        }
-        $_entity = EntityManager::get($entity);
-        if (! $_entity) {
-            exception('BadEntityWithoutAnnotation', compact('repository', 'entity'));
-        }
-        $instance = new $entity;
-        foreach ($result as $column => $val) {
-            if (! isset($orm['columns'][$column])) {
-                continue;
-            }
-            $attribute = $orm['columns'][$column];
-            if (! isset($_entity['properties'][$attribute])) {
-                continue;
-            }
-            $property = $_entity['properties'][$attribute];
-            if ($property['NOTORM'] ?? false) {
-                continue;
-            }
-            $type = $property['TYPE'] ?? null;
-            if (! TypeHint::support($type)) {
-                exception('UnsupportedEntityType', compact('type', 'attribute', 'entity'));
-            }
-            $setter = 'set'.ucfirst($attribute);
-
-            $instance->{$setter}(TypeHint::convert($val, $type));
-        }
-
-        if (is_null($instance->getId())) {
-            $error = 'Entity identity not exists';
-            exception('ConvertEntityFailed', compact('entity', 'error', 'result'));
-        }
-
-        return $instance;
-    }
-
     public static function load(array $dirs)
     {
         $cache = Kernel::formatCacheFile(__CLASS__);
@@ -116,13 +46,13 @@ final class RepositoryManager
 
     public static function compile(array $dirs, bool $cache = false)
     {
-        if (count($dirs) < 1) {
-            return;
-        }
-
         // Reset
         self::$dirs = [];
         self::$repositories = [];
+
+        if (count($dirs) < 1) {
+            return;
+        }
 
         array_map(function ($item) {
             $dir = ospath($item, self::REPOSITORY_DIR);
@@ -235,5 +165,124 @@ final class RepositoryManager
     public static function getRepositories()
     {
         return self::$repositories;
+    }
+
+    /**
+     * Add ORM storage record into cache
+     *
+     * @param string $storage: Namespace of ORM storage class
+     * @param Entity $entity: Entity object
+     */
+    public static function add(string $storage, Entity $entity)
+    {
+        // TODO
+    }
+
+    /**
+     * Remove ORM storage record from cache
+     *
+     * @param string $storage: Namespace of ORM storage class
+     * @param Entity|int $entity: Entity object
+     */
+    public static function remove(string $storage, $entity)
+    {
+        // TODO
+    }
+
+    /**
+     * Update/Reset ORM storage record in cache
+     *
+     * @param string $storage: Namespace of ORM storage class
+     * @param Entity $entity: Entity object
+     */
+    public static function update(string $storage, Entity $entity)
+    {
+        // TODO
+    }
+
+    /**
+     * Find ORM storage record in cacche and convert it into enity object
+     *
+     * @param string $storage: Namespace of ORM storage class
+     * @param int $pk: Entity identity
+     */
+    public static function find(string $storage, int $pk) : ?Entity
+    {
+        // TODO
+        return null;
+    }
+
+    /**
+     * Mapping a storage result into an entity object
+     *
+     * @param string $storage: Namespace of ORM storage class
+     * @param array $result: An assoc array holds entity data
+     */
+    public static function map(string $storage, array $result = null) : ?Entity
+    {
+        if (! $result) {
+            return null;
+        }
+
+        $_storage = ORMStorage::class;
+        if (! is_subclass_of($storage, $_storage)) {
+            $error = "Not SubClass Of {$_storage}";
+            exception('InvalidStorageToConvert', compact('storage', 'error'));
+        }
+
+        $orm = StorageManager::get($storage);
+        if (! $orm) {
+            exception('ORMStorageClassNotFound', compact('orm'));
+        }
+        $repository = $orm['meta']['REPOSITORY'] ?? null;
+        if (! $repository) {
+            exception('NoRepositoryBoundStorage', compact('storage'));
+        }
+        $_repository = self::get($repository);
+        if (! $_repository) {
+            exception('ORMStorageRepositoryNotFound', compact('repository', 'storage'));
+        }
+        $implementor = $_repository['IMPLEMENTOR'] ?? null;
+        if ($implementor !== $storage) {
+            exception('InvalidStorageImplementor', compact('repository', 'implementor', 'storage'));
+        }
+        $entity = $_repository['ENTITY'] ?? null;
+        if (! $entity) {
+            exception('NoEntityBindToORMRepository', compact('repository'));
+        }
+        if (! is_subclass_of($entity, Entity::class)) {
+            exception('InvalidEntityBindToORMRepository', compact('repository', 'entity'));
+        }
+        $_entity = EntityManager::get($entity);
+        if (! $_entity) {
+            exception('BadEntityWithoutAnnotation', compact('repository', 'entity'));
+        }
+        $instance = new $entity;
+        foreach ($result as $column => $val) {
+            if (! isset($orm['columns'][$column])) {
+                continue;
+            }
+            $attribute = $orm['columns'][$column];
+            if (! isset($_entity['properties'][$attribute])) {
+                continue;
+            }
+            $property = $_entity['properties'][$attribute];
+            if ($property['NOTORM'] ?? false) {
+                continue;
+            }
+            $type = $property['TYPE'] ?? null;
+            if (! TypeHint::support($type)) {
+                exception('UnsupportedEntityType', compact('type', 'attribute', 'entity'));
+            }
+            $setter = 'set'.ucfirst($attribute);
+
+            $instance->{$setter}(TypeHint::convert($val, $type));
+        }
+
+        if (is_null($instance->getId())) {
+            exception('EntityIdentityMissing', compact('entity', 'result'));
+        }
+
+        return $instance;
     }
 }
