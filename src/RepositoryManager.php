@@ -53,10 +53,11 @@ final class RepositoryManager
             exception('InvalidStorageImplementor', compact('repository', 'implementor', 'storage'));
         }
         $entity = $_repository['ENTITY'] ?? null;
-        if (! $entity) {
-            exception('NoEntityBoundRepository', compact('repository'));
+        $model  = $_repository['MODEL']  ?? null;
+        if ((! $entity) && (! $model)) {
+            exception('NoEntityOrModelBindToRepository', compact('repository'));
         }
-        $_entity  = EntityManager::get($entity);
+        $_entity = EntityManager::get($entity);
         if (! $_entity) {
             exception('BadEntityWithoutAnnotation', compact('repository', 'entity'));
         }
@@ -160,9 +161,6 @@ final class RepositoryManager
         }
         if (is_subclass_of($namespace, ORMRepository::class) && (! ($ofClass['doc']['ENTITY'] ?? false))) {
             exception('ORMRepositoryNoEntityToManage', compact('namespace'));
-        }
-        if (is_subclass_of($namespace, KVRepository::class) && (! ($ofClass['doc']['MODEL'] ?? false))) {
-            exception('KVRepositoryNoDataModelToManage', compact('namespace'));
         }
         if (! ($ofClass['doc']['IMPLEMENTOR'] ?? false)) {
             exception('RepositoryNoImplementorToStorage', compact('namespace'));

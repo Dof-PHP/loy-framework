@@ -30,7 +30,7 @@ class MySQLSchema
         return $this;
     }
 
-    public function exec()
+    public function prepare()
     {
         $meta = $this->annotations['meta'] ?? [];
         $database = $meta['DATABASE'] ?? null;
@@ -41,6 +41,33 @@ class MySQLSchema
         if (! $table) {
             exception('TableNameNotSetOfStorage', [$this->storage]);
         }
+
+        return [$database, $table];
+    }
+
+    public function init()
+    {
+        list($database, $table) = $this->prepare();
+
+        if (! $this->existsDatabase($database)) {
+            $this->initDatabase($database);
+        }
+
+        $this->initTable($database, $table);
+
+        if ($this->dump) {
+            $file = str_replace(Kernel::getRoot().'/', '', get_file_of_namespace($this->storage));
+            array_unshift($this->sqls, "-- {$this->storage} | {$file}");
+
+            return $this->sqls;
+        }
+
+        return true;
+    }
+
+    public function sync()
+    {
+        list($database, $table) = $this->prepare();
 
         if ($this->existsDatabase($database)) {
             if ($this->existsTable($database, $table)) {
@@ -61,25 +88,6 @@ class MySQLSchema
         }
 
         return true;
-    }
-
-    public function initDatabase(string $name)
-    {
-        $dropDB = "DROP DATABASE IF EXISTS `{$name}`;";
-        $createDB = "CREATE DATABASE IF NOT EXISTS `{$name}` DEFAULT CHARACTER SET utf8mb4;";
-
-        if ($this->dump) {
-            if ($this->force) {
-                $this->sqls[] = $dropDB;
-            }
-            $this->sqls[] = $createDB;
-        } else {
-            if ($this->force) {
-                $this->mysql()->rawExec($dropDB);
-            }
-
-            $this->mysql()->rawExec($createDB);
-        }
     }
 
     private function syncTableColumns(string $db, string $table)
@@ -402,6 +410,25 @@ class MySQLSchema
         self::syncTableIndexes($db, $table);
     }
 
+    public function initDatabase(string $name)
+    {
+        $dropDB = "DROP DATABASE IF EXISTS `{$name}`;";
+        $createDB = "CREATE DATABASE IF NOT EXISTS `{$name}` DEFAULT CHARACTER SET utf8mb4;";
+
+        if ($this->dump) {
+            if ($this->force) {
+                $this->sqls[] = $dropDB;
+            }
+            $this->sqls[] = $createDB;
+        } else {
+            if ($this->force) {
+                $this->mysql()->rawExec($dropDB);
+            }
+
+            $this->mysql()->rawExec($createDB);
+        }
+    }
+
     public function initTable(string $db, string $table)
     {
         $meta = $this->annotations['meta'] ?? [];
@@ -484,12 +511,17 @@ PRIMARY KEY (`{$pkName}`)
 ) ENGINE={$engine} AUTO_INCREMENT=1 DEFAULT CHARSET={$charset} COMMENT={$notes};
 SQL;
 
+        $onTableCreated = method_exists($this->storage, 'onTableCreated');
+
         if ($this->dump) {
             $this->sqls[] = $useDb;
             if ($this->force) {
                 $this->sqls[] = $dropTable;
             }
             $this->sqls[] = $createTable;
+            if ($onTableCreated) {
+                $this->sqls[] = "-- FOUND CALLBACK ON TABLE CREATED: {$this->storage}@onTableCreated()";
+            }
         } else {
             $this->mysql()->rawExec($useDb);
             if ($this->force) {
@@ -497,7 +529,7 @@ SQL;
             }
             $this->mysql()->rawExec($createTable);
 
-            if (method_exists($this->storage, 'onTableCreated')) {
+            if ($onTableCreated) {
                 $this->storage::new()->onTableCreated();
             }
         }

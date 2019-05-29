@@ -12,12 +12,7 @@ final class StorageSchema
         'mysql' => MySQLSchema::class,
     ];
 
-    /**
-     * Sync a storage orm schema to their driver from their annotations
-     *
-     * @param string $storage: Namespace of storage orm class
-     */
-    public static function sync(string $storage, bool $force = false, bool $dump = false)
+    public static function prepare(string $storage)
     {
         if (! class_exists($storage)) {
             exception('StorageClassNotExists', compact('storage'));
@@ -35,12 +30,37 @@ final class StorageSchema
             exception('UnSuppoertedStorageDriver', compact('storage', 'driver'));
         }
 
-        return singleton($_driver)->reset()
+        return [$_driver, $annotations];
+    }
+
+    /**
+     * Sync a storage orm schema to their driver from their annotations
+     *
+     * @param string $storage: Namespace of storage orm class
+     */
+    public static function sync(string $storage, bool $force = false, bool $dump = false)
+    {
+        list($driver, $annotations) = self::prepare($storage);
+
+        return singleton($driver)->reset()
             ->setStorage($storage)
             ->setAnnotations($annotations)
             ->setDriver(StorageManager::init($storage, false))
             ->setForce($force)
             ->setDump($dump)
-            ->exec();
+            ->sync();
+    }
+
+    public static function init(string $storage, bool $force = false, bool $dump = false)
+    {
+        list($driver, $annotations) = self::prepare($storage);
+
+        return singleton($driver)->reset()
+            ->setStorage($storage)
+            ->setAnnotations($annotations)
+            ->setDriver(StorageManager::init($storage, false))
+            ->setForce($force)
+            ->setDump($dump)
+            ->init();
     }
 }

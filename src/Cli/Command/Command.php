@@ -9,6 +9,7 @@ use Dof\Framework\Kernel;
 use Dof\Framework\GWT;
 use Dof\Framework\Doc\Generator as DocGen;
 use Dof\Framework\DDD\Storage;
+use Dof\Framework\DDD\ORMStorage;
 use Dof\Framework\Storage\StorageSchema;
 use Dof\Framework\ConfigManager;
 use Dof\Framework\DomainManager;
@@ -565,7 +566,7 @@ class Command
 
             PortManager::compile($domains, true);
 
-            $console->exit();
+            $console->success('Done!', true);
         } catch (Throwable $e) {
             $console->exception('CompileFailed', [], $e);
         }
@@ -611,12 +612,53 @@ class Command
     }
 
     /**
-     * @CMD(orm.sync)
-     * @Desc(Sync from storage ORM annotations to storage driver schema)
-     * @Option(single){notes=The single file name to sync at once}
+     * @CMD(orm.init)
+     * @Desc(Init an ORM storage from its annotations to connected driver schema)
+     * @Option(orm){notes=The single orm class filepath or namespace to init}
      * @Option(force){notes=Whether execute the dangerous operations like drop/delete&default=false}
-     * @Option(domain){notes=The domain name used to sync orm classes schema}
+     * @Option(dump){notes=Dump the sqls will be executed rather than execute them directly&default=false}
      */
+    public function initORM($console)
+    {
+        $orm = $console->getOption('orm');
+        if (! $orm) {
+            $console->exception('MissingORMToInit');
+        }
+
+        $class = null;
+        if (is_file($orm)) {
+            $class = get_namespace_of_file($orm, true);
+        } elseif (class_exists($orm)) {
+            $class = $orm;
+        }
+
+        if ((! $class) || (! is_subclass_of($class, ORMStorage::class))) {
+            $console->exception('InvalidORMClass', compact('orm', 'class'));
+        }
+
+        $force = $console->hasOption('force');
+        $dump  = $console->hasOption('dump');
+
+        $res = StorageSchema::init($class, $force, $dump);
+        if ($dump) {
+            foreach ($res as $sql) {
+                $console->line($sql, 2);
+            }
+        } else {
+            $_force = $force ? ' (FORCE) ' : '';
+            $console->render("Initializing{$_force}... {$class} ... ", $console::INFO_COLOR, true);
+            $res ? $console->success('OK') : $console->fail('FAILED', true);
+        }
+    }
+
+    /**
+    * @CMD(orm.sync)
+    * @Desc(Sync from storage ORM annotations to storage driver schema)
+    * @Option(single){notes=The single file name to sync at once}
+    * @Option(force){notes=Whether execute the dangerous operations like drop/delete&default=false}
+    * @Option(domain){notes=The domain name used to sync orm classes schema}
+    * @Option(dump){notes=Dump the sqls will be executed rather than execute them directly&default=false}
+    */
     public function syncORM($console)
     {
         $params = $console->getParams();
@@ -648,7 +690,8 @@ class Command
                     $console->line($sql, 2);
                 }
             } else {
-                $console->render("Syncing ... {$storage} ... ", $console::INFO_COLOR, true);
+                $_force = $force ? ' (FORCE) ' : '';
+                $console->render("Syncing{$_force}... {$storage} ... ", $console::INFO_COLOR, true);
                 $res ? $console->success('OK') : $console->fail('FAILED', true);
             }
         };

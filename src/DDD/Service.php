@@ -57,6 +57,11 @@ abstract class Service
         exception(self::EXCEPTION_NAME, compact('message', 'context'));
     }
 
+    final public static function new()
+    {
+        return Container::di(static::class);
+    }
+
     final public static function init()
     {
         return Container::di(static::class);
