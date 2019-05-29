@@ -420,7 +420,7 @@ class MySQLSchema
 
         foreach ($meta['INDEX'] ?? [] as $index => $_fields) {
             array_walk($_fields, function (&$field) {
-                return "`{$field}`";
+                $field = "`{$field}`";
             });
             $_fields = join(',', $_fields);
             $indexes .= "KEY `{$index}` ($_fields), ";
@@ -428,7 +428,7 @@ class MySQLSchema
 
         foreach ($meta['UNIQUE'] ?? [] as $index => $_fields) {
             array_walk($_fields, function (&$field) {
-                return "`{$field}`";
+                $field = "`{$field}`";
             });
             $_fields = join(',', $_fields);
             $uniques .= "UNIQUE KEY `{$index}` ($_fields), ";
