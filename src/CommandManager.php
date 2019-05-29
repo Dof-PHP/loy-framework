@@ -99,12 +99,14 @@ final class CommandManager
             $comment = $commentGroup ? join(': ', [$commentGroup, $comment]) : $comment;
             $options = $docMethod['OPTION'] ?? [];
             $options = array_merge($optionGroup, $options);
+            $argvs = $docMethod['ARGV'] ?? [];
 
             $_cmd = [
                 'class'   => $namespace,
                 'method'  => $method,
                 'comment' => $comment,
                 'options' => $options,
+                'argvs'   => $argvs,
             ];
 
             $command = strtolower($command);
@@ -151,6 +153,28 @@ final class CommandManager
     }
 
     public static function __annotationMultipleOption() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationFilterArgv(string $order, array $ext, string $namespace) : ?array
+    {
+        $ext = array_change_key_case($ext, CASE_UPPER);
+
+        $notes = $ext['NOTES'] ?? '';
+        if ((count($ext) === 1) && empty(array_filter(array_values($ext)))) {
+            $notes = array_keys($ext)[0] ?? '';
+        }
+ 
+        return [trim($order) => $notes];
+    }
+
+    public static function __annotationMultipleMergeArgv()
+    {
+        return 'index';
+    }
+
+    public static function __annotationMultipleArgv() : bool
     {
         return true;
     }

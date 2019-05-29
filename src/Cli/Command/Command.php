@@ -26,6 +26,7 @@ class Command
     /**
      * @CMD(version)
      * @Desc(Get Dof version)
+     * @Option(raw){notes=Get the raw version count of framework}
      */
     public function version($console)
     {
@@ -50,6 +51,7 @@ class Command
     /**
      * @CMD(help)
      * @Desc(Print Dof help messages)
+     * @Argv(1){notes=The command name used to print help message}
      */
     public function help($console)
     {
@@ -65,7 +67,10 @@ class Command
             $console->line($console->render("Usage: php dof {$cmd} [--options ...] [parameters ...]", 'YELLOW'), 2);
             extract($attr);
 
-            $console->success('Command: '.$cmd);
+            $console->line(
+                $console->render('Command: ', $console::TITLE_COLOR)
+                .$console->render($cmd, $console::SUCCESS_COLOR)
+            );
             $console->line();
             $console->info('Comment: '.$comment);
             $console->line();
@@ -73,14 +78,25 @@ class Command
             foreach ($options as $option => $_attr) {
                 extract($_attr);
                 $default = $DEFAULT ?: 'NULL';
-                $console->title("\t--{$option} {$NOTES} (Default: {$default})");
+                $console->line(
+                    $console->render("\t--{$option}\t", $console::SUCCESS_COLOR)
+                    .$console->render($NOTES, $console::INFO_COLOR)
+                    .$console->render("\t(Default: {$default})", $console::TITLE_COLOR)
+                );
             }
-            $console->line();
+            $console->title('Arguments: ');
+            foreach ($argvs as $order => $desc) {
+                $console->line(
+                    $console->render("\t#{$order}\t", $console::SUCCESS_COLOR)
+                    .$console->render($desc, $console::INFO_COLOR)
+                );
+            }
 
+            $console->line();
             $console->info('Class: '.$class);
             $console->info('Method: '.$method);
         } else {
-            $console->line($console->render('Usage: php dof command [--options ...] [parameters ...]', 'YELLOW'));
+            $console->line($console->render('Usage: php dof {COMMAND} [--options ...] [parameters ...]', 'YELLOW'));
         }
 
         $console->line();
@@ -89,6 +105,7 @@ class Command
     /**
      * @CMD(php)
      * @Desc(Execute a standalone php script)
+     * @Argv(1){notes=The php script file to run}
      */
     public function php($console)
     {
@@ -226,6 +243,9 @@ class Command
     /**
      * @CMD(dof)
      * @Desc(Dof default command)
+     * @Option(help){notes=Print dof cli help message}
+     * @Option(version){notes=Get dof framework version string}
+     * @Option(root){notes=Get dof framework root}
      */
     public function dof($console)
     {
@@ -239,13 +259,6 @@ class Command
 
         if ($console->hasOption('root')) {
             return $this->getRoot($console);
-        }
-
-        if ($console->getOptions()->count()) {
-            $console->exception(
-                'UnSupportOptions',
-                array_keys($console->getOptions()->toArray())
-            );
         }
 
         return $this->header($console);
@@ -299,15 +312,6 @@ class Command
     }
 
     /**
-     * @CMD(cmd.list)
-     * @Desc(List commands)
-     */
-    public function listCommand($console)
-    {
-        $console->line('TODO: display commands list');
-    }
-
-    /**
      * @CMD(test)
      * @Desc(Run all domain tests)
      */
@@ -329,6 +333,7 @@ class Command
     /**
      * @CMD(test.domain)
      * @Desc(Run domain tests)
+     * @Argv(1){notes=The domain name to run test cases}
      */
     public function testDomain($console)
     {
@@ -348,6 +353,7 @@ class Command
     /**
      * @CMD(test.dir)
      * @Desc(Run Dof GWT test cases by directory)
+     * @Option(path){notes=The directory to run test cases}
      */
     public function testDir($console)
     {
@@ -409,6 +415,9 @@ class Command
     /**
      * @CMD(docs.build.model)
      * @Desc(Generate data model docs of domains)
+     * @Option(save){notes=The path to save the build result}
+     * @Option(absolute){notes=Whether the save path is an absolute path}
+     * @Option(ui){notes=The UI name used to render docs}
      */
     public function buildDocsModel($console)
     {
@@ -426,6 +435,9 @@ class Command
     /**
      * @CMD(docs.build.wrapin)
      * @Desc(Generate wrapin docs of domains)
+     * @Option(save){notes=The path to save the build result}
+     * @Option(absolute){notes=Whether the save path is an absolute path}
+     * @Option(ui){notes=The UI name used to render docs}
      */
     public function buildDocsWrapin($console)
     {
@@ -443,6 +455,9 @@ class Command
     /**
      * @CMD(docs.build.http)
      * @Desc(Generate http docs of domains)
+     * @Option(save){notes=The path to save the build result}
+     * @Option(absolute){notes=Whether the save path is an absolute path}
+     * @Option(ui){notes=The UI name used to render docs}
      */
     public function buildDocsHttp($console)
     {
@@ -460,6 +475,9 @@ class Command
     /**
      * @CMD(docs.build.all)
      * @Desc(Generate all docs of domains)
+     * @Option(save){notes=The path to save the build result}
+     * @Option(absolute){notes=Whether the save path is an absolute path}
+     * @Option(ui){notes=The UI name used to render docs}
      */
     public function buildDocsAll($console)
     {
@@ -477,6 +495,9 @@ class Command
     /**
      * @CMD(docs.build)
      * @Desc(Generate all docs of domains)
+     * @Option(save){notes=The path to save the build result}
+     * @Option(absolute){notes=Whether the save path is an absolute path}
+     * @Option(ui){notes=The UI name used to render docs}
      */
     public function buildDocs($console)
     {
@@ -587,6 +608,9 @@ class Command
     /**
      * @CMD(orm.sync)
      * @Desc(Sync from storage ORM annotations to storage driver schema)
+     * @Option(single){notes=The single file name to sync at once}
+     * @Option(force){notes=Whether execute the dangerous operations like drop/delete&default=false}
+     * @Option(domain){notes=The domain name used to sync orm classes schema}
      */
     public function syncORM($console)
     {

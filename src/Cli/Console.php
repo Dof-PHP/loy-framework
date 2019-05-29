@@ -10,6 +10,7 @@ use Dof\Framework\Collection;
 class Console
 {
     const INFO_COLOR = 'LIGHT_GRAY';
+    const TITLE_COLOR = 'LIGHT_BLUE';
     const FAIL_COLOR = 'RED';
     const SUCCESS_COLOR = 'GREEN';
     const WARNING_COLOR = 'YELLOW';
@@ -65,7 +66,7 @@ class Console
 
     public function title(string $text)
     {
-        $this->line($this->render($text, 'LIGHT_BLUE'));
+        $this->line($this->render($text, self::TITLE_COLOR));
     }
 
     public function info(string $text, bool $exit = false)
