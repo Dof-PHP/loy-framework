@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Doc;
 
+use Dof\Framework\Kernel;
 use Dof\Framework\PortManager;
 use Dof\Framework\ErrorManager;
 use Dof\Framework\EntityManager;
@@ -16,7 +17,6 @@ final class Generator
     const SUPPORT_UI = [
         'gitbook' => GitBook::class,
     ];
-    const TEMPLATE_DIR = 'templates';
 
     private static function support(string $ui)
     {
@@ -42,7 +42,7 @@ final class Generator
      */
     public static function buildAll(string $ui, string $save, string $lang = 'zh-CN')
     {
-        $templates = ospath(dirname(dirname(dirname(__FILE__))), self::TEMPLATE_DIR);
+        $templates = ospath(dirname(dirname(dirname(__FILE__))), Kernel::TEMPLATE);
 
         self::support($ui)
             ->setTemplates($templates)
@@ -57,7 +57,7 @@ final class Generator
 
     public static function buildModel(string $ui, string $save, string $lang = 'zh-CN')
     {
-        $templates = ospath(dirname(dirname(dirname(__FILE__))), self::TEMPLATE_DIR);
+        $templates = ospath(dirname(dirname(dirname(__FILE__))), Kernel::TEMPLATE);
 
         self::support($ui)
             ->setTemplates($templates)
@@ -69,7 +69,7 @@ final class Generator
 
     public static function buildWrapin(string $ui, string $save, string $lang = 'zh-CN')
     {
-        $templates = ospath(dirname(dirname(dirname(__FILE__))), self::TEMPLATE_DIR);
+        $templates = ospath(dirname(dirname(dirname(__FILE__))), Kernel::TEMPLATE);
 
         self::support($ui)
             ->setTemplates($templates)
@@ -81,7 +81,7 @@ final class Generator
 
     public static function buildHttp(string $ui, string $save, string $lang = 'zh-CN')
     {
-        $templates = ospath(dirname(dirname(dirname(__FILE__))), self::TEMPLATE_DIR);
+        $templates = ospath(dirname(dirname(dirname(__FILE__))), Kernel::TEMPLATE);
 
         self::support($ui)
             ->setTemplates($templates)

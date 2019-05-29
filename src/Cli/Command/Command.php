@@ -45,7 +45,6 @@ class Command
         $console->output('  ');
         $console->output($console->render('ckwongloy@gmail.com', 'DARK_GRAY'));
         $console->line(null, 2);
-        $console->exit();
     }
 
     /**
@@ -54,8 +53,37 @@ class Command
      */
     public function help($console)
     {
-        // TODO
-        $this->header($console);
+        $console->line();
+
+        $cmd = $console->getParams()[0] ?? null;
+        if ($cmd) {
+            $attr = CommandManager::get($cmd);
+            if (! $attr) {
+                $console->exception('CommandToHelpNotExist', [$cmd]);
+            }
+
+            $console->line($console->render("Usage: php dof {$cmd} [--options ...] [parameters ...]", 'YELLOW'), 2);
+            extract($attr);
+
+            $console->success('Command: '.$cmd);
+            $console->line();
+            $console->info('Comment: '.$comment);
+            $console->line();
+            $console->title('Options: ');
+            foreach ($options as $option => $_attr) {
+                extract($_attr);
+                $default = $DEFAULT ?: 'NULL';
+                $console->title("\t--{$option} {$NOTES} (Default: {$default})");
+            }
+            $console->line();
+
+            $console->info('Class: '.$class);
+            $console->info('Method: '.$method);
+        } else {
+            $console->line($console->render('Usage: php dof command [--options ...] [parameters ...]', 'YELLOW'));
+        }
+
+        $console->line();
     }
 
     /**
@@ -87,11 +115,112 @@ class Command
 
     /**
      * @CMD(root)
-     * @Desc(Get Dof project root)
+     * @Desc(Get Dof framework root)
      */
     public function getRoot($console)
     {
-        return $console->success(Kernel::getRoot(), true);
+        return $console->success(Kernel::root(), true);
+    }
+
+    /**
+     * @CMD(cmd.domain)
+     * @Desc(List domain commands in current project)
+     */
+    public function listDomainCMD($console)
+    {
+        $commands = CommandManager::getDomain();
+        ksort($commands);
+        
+        $console->line();
+        foreach ($commands as $domain => $cmds) {
+            $title = ConfigManager::getDomainDomainByKey($domain, 'title', strtoupper($domain));
+            $path = str_replace(Kernel::getRoot().'/', '', DomainManager::getByKey($domain));
+            $console->title(join(' | ', [$domain, $title, $path]));
+
+            foreach ($cmds as $cmd => $idx) {
+                $attr = CommandManager::get($cmd);
+                extract($attr);
+
+                $console->line(
+                    $console->render($cmd, $console::SUCCESS_COLOR)
+                    ."\t\t"
+                    .$console->render($comment, $console::INFO_COLOR)
+                );
+
+                if (false !== next($commands)) {
+                    if (! ci_equal(mb_strcut($cmd, 0, 1), mb_strcut(key($commands), 0, 1))) {
+                        $console->line();
+                    }
+                }
+            }
+        }
+        $console->line();
+    }
+
+    /**
+     * @CMD(cmd.default)
+     * @Desc(List default commands builtin Dof-PHP framework)
+     */
+    public function listDefaultCMD($console)
+    {
+        $commands = CommandManager::getDefault();
+        ksort($commands);
+        
+        $console->line();
+        foreach ($commands as $cmd => $idx) {
+            $attr = CommandManager::get($cmd);
+            extract($attr);
+
+            $console->line(
+                $console->render($cmd, $console::SUCCESS_COLOR)
+                ."\t\t"
+                .$console->render($comment, $console::INFO_COLOR)
+            );
+
+            if (false !== next($commands)) {
+                if (! ci_equal(mb_strcut($cmd, 0, 1), mb_strcut(key($commands), 0, 1))) {
+                    $console->line();
+                }
+            }
+        }
+        $console->line();
+    }
+
+    /**
+     * @CMD(cmd)
+     * @Desc(List all commands in current Dof-PHP project)
+     */
+    public function listCMD($console)
+    {
+        return $this->listAllCMD($console);
+    }
+
+    /**
+     * @CMD(cmd.all)
+     * @Desc(List all commands in current Dof-PHP project)
+     */
+    public function listAllCMD($console)
+    {
+        $commands = CommandManager::getCommands();
+        ksort($commands);
+
+        $console->line();
+        foreach ($commands as $cmd => $attr) {
+            extract($attr);
+            $console->line(
+                $console->render($cmd, $console::SUCCESS_COLOR)
+                ."\t\t"
+                .$console->render($comment, $console::INFO_COLOR)
+            );
+
+            if (false !== next($commands)) {
+                if (! ci_equal(mb_strcut($cmd, 0, 1), mb_strcut(key($commands), 0, 1))) {
+                    $console->line();
+                }
+            }
+        }
+
+        $console->line();
     }
 
     /**
@@ -417,9 +546,9 @@ class Command
     }
 
     /**
-    * @CMD(compile.port)
-    * @Desc(Compiles Port classes and it's annotations)
-    */
+     * @CMD(compile.port)
+     * @Desc(Compiles Port classes and it's annotations)
+     */
     public function compliePort($console)
     {
         ConfigManager::compileDefault(Kernel::getRoot(), true);
@@ -436,9 +565,9 @@ class Command
     }
 
     /**
-    * @CMD(compile.port.clear)
-    * @Desc(Clear Port compile result)
-    */
+     * @CMD(compile.port.clear)
+     * @Desc(Clear Port compile result)
+     */
     public function clearPortComplie($console)
     {
         PortManager::flush();
@@ -447,10 +576,10 @@ class Command
     }
 
     /**
-    * @CMD(compile.domain)
-    * @Desc(Compiles classes and annotations of domains)
-    * @Option(domain)
-    */
+     * @CMD(compile.domain)
+     * @Desc(Compiles classes and annotations of domains)
+     * @Option(domain){notes=Domain key}
+     */
     public function complieDomain($console)
     {
     }
@@ -549,5 +678,302 @@ class Command
      */
     public function getDomainConfig($console)
     {
+    }
+
+    /**
+     * @CMD(entity.add)
+     * @Desc(Add an entity class in a domain)
+     */
+    public function addEntity($console)
+    {
+        $domain = $console->getOption('domain');
+        if (! $domain) {
+            $console->exception('MissingDomainName');
+        }
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $console->exception('DomainNotExists', [$domain]);
+        }
+        $name = $console->getOption('name');
+        if (! $name) {
+            $console->exception('MissingEntityName');
+        }
+        $class = ospath($path, EntityManager::ENTITY_DIR, "{$name}.php");
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('EntityAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+
+        $withts = $console->hasOption('withts');
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'entity.tpl');
+        if (! is_file($template)) {
+            $console->exception('EntityClassTemplateNotExist', [$template]);
+        }
+
+        $namespace = str_replace('/', '\\', dirname($name));
+        if ($namespace === '.') {
+            $namespace = '';
+        } else {
+            $namespace = '\\'.$namespace;
+        }
+
+        $parent = $withts ? 'EntityWithTS' : 'Entity';
+
+        $entity = file_get_contents($template);
+        $entity = str_replace('__DOMAIN__', $domain, $entity);
+        $entity = str_replace('__NAMESPACE__', $namespace, $entity);
+        $entity = str_replace('__PARENT__', $parent, $entity);
+        $entity = str_replace('__NAME__', basename($name), $entity);
+
+        save($class, $entity);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $console->success("Created Entity: {$_class} ({$class})");
+    }
+
+    /**
+     * @CMD(port.add)
+     * @Desc(Add a port class in a domain)
+     */
+    public function addPort($console)
+    {
+        $domain = $console->getOption('domain');
+        if (! $domain) {
+            $console->exception('MissingDomainName');
+        }
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $console->exception('DomainNotExists', [$domain]);
+        }
+        $name = $console->getOption('name');
+        if (! $name) {
+            $console->exception('MissingPortName');
+        }
+        $class = ospath($path, PortManager::PORT_DIR, "{$name}.php");
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('PortAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'port.tpl');
+        if (! is_file($template)) {
+            $console->exception('PortClassTemplateNotExist', [$template]);
+        }
+
+        $namespace = str_replace('/', '\\', dirname($name));
+        if ($namespace === '.') {
+            $namespace = '';
+        } else {
+            $namespace = '\\'.$namespace;
+        }
+
+        $port = file_get_contents($template);
+        $port = str_replace('__DOMAIN__', $domain, $port);
+        $port = str_replace('__NAMESPACE__', $namespace, $port);
+        $port = str_replace('__NAME__', basename($name), $port);
+
+        save($class, $port);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $console->success("Created Port: {$_class} ({$class})");
+    }
+
+    /**
+     * @CMD(storage.add.orm)
+     * @Desc(Add an orm storage class in a domain)
+     */
+    public function addORMStorage($console)
+    {
+        $domain = $console->getOption('domain');
+        if (! $domain) {
+            $console->exception('MissingDomainName');
+        }
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $console->exception('DomainNotExists', [$domain]);
+        }
+        $name = $console->getOption('name');
+        if (! $name) {
+            $console->exception('MissingORMStorageName');
+        }
+        $class = ospath($path, StorageManager::STORAGE_DIR, "{$name}ORM.php");
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('StorageAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'storage-orm.tpl');
+        if (! is_file($template)) {
+            $console->exception('ORMStorageClassTemplateNotExist', [$template]);
+        }
+
+        $namespace = str_replace('/', '\\', dirname($name));
+        if ($namespace === '.') {
+            $namespace = '';
+        } else {
+            $namespace = '\\'.$namespace;
+        }
+
+        $orm = file_get_contents($template);
+        $orm = str_replace('__DOMAIN__', $domain, $orm);
+        $orm = str_replace('__NAMESPACE__', $namespace, $orm);
+        $orm = str_replace('__PARENT__', 'ORMStorage', $orm);
+        $orm = str_replace('__NAME__', basename($name), $orm);
+
+        save($class, $orm);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $console->success("Created ORM Storage: {$_class} ({$class})");
+    }
+
+    /**
+     * @CMD(storage.add.kv)
+     * @Desc(Add an kv storage class in a domain)
+     */
+    public function addKVStorage($console)
+    {
+        $domain = $console->getOption('domain');
+        if (! $domain) {
+            $console->exception('MissingDomainName');
+        }
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $console->exception('DomainNotExists', [$domain]);
+        }
+        $name = $console->getOption('name');
+        if (! $name) {
+            $console->exception('MissingKVStorageName');
+        }
+        $class = ospath($path, StorageManager::STORAGE_DIR, "{$name}.php");
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('KVStorageAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'storage-kv.tpl');
+        if (! is_file($template)) {
+            $console->exception('KVStorageClassTemplateNotExist', [$template]);
+        }
+
+        $namespace = str_replace('/', '\\', dirname($name));
+        if ($namespace === '.') {
+            $namespace = '';
+        } else {
+            $namespace = '\\'.$namespace;
+        }
+
+        $orm = file_get_contents($template);
+        $orm = str_replace('__DOMAIN__', $domain, $orm);
+        $orm = str_replace('__NAMESPACE__', $namespace, $orm);
+        $orm = str_replace('__PARENT__', 'KVStorage', $orm);
+        $orm = str_replace('__NAME__', basename($name), $orm);
+
+        save($class, $orm);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $console->success("Created KV Storage: {$_class} ({$class})");
+    }
+
+    /**
+     * @CMD(repo.add)
+     * @Desc(Add a repository interface in a domain)
+     */
+    public function addRepository($console)
+    {
+        $domain = $console->getOption('domain');
+        if (! $domain) {
+            $console->exception('MissingDomainName');
+        }
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $console->exception('DomainNotExists', [$domain]);
+        }
+        $name = $console->getOption('name');
+        if (! $name) {
+            $console->exception('MissingRepositoryName');
+        }
+        $class = ospath($path, RepositoryManager::REPOSITORY_DIR, "{$name}Repository.php");
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('StorageAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'repository.tpl');
+        if (! is_file($template)) {
+            $console->exception('RepositoryInterfaceTemplateNotExist', [$template]);
+        }
+
+        $namespace = str_replace('/', '\\', dirname($name));
+        if ($namespace === '.') {
+            $namespace = '';
+        } else {
+            $namespace = '\\'.$namespace;
+        }
+
+        $repo = file_get_contents($template);
+        $repo = str_replace('__DOMAIN__', $domain, $repo);
+        $repo = str_replace('__NAMESPACE__', $namespace, $repo);
+        $repo = str_replace('__NAME__', basename($name), $repo);
+
+        save($class, $repo);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $console->success("Created Repository: {$_class} ({$class})");
+    }
+
+    /**
+     * @CMD(service.add)
+     * @Desc(Add a service class in a domain)
+     */
+    public function addService($console)
+    {
+        $domain = $console->getOption('domain');
+        if (! $domain) {
+            $console->exception('MissingDomainName');
+        }
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $console->exception('DomainNotExists', [$domain]);
+        }
+        $name = $console->getOption('name');
+        if (! $name) {
+            $console->exception('MissingServiceName');
+        }
+        $class = ospath($path, Kernel::SERVICE, "{$name}.php");
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('ServiceAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'service.tpl');
+        if (! is_file($template)) {
+            $console->exception('ServiceClassTemplateNotExist', [$template]);
+        }
+
+        $namespace = str_replace('/', '\\', dirname($name));
+        if ($namespace === '.') {
+            $namespace = '';
+        } else {
+            $namespace = '\\'.$namespace;
+        }
+
+        $service = file_get_contents($template);
+        $service = str_replace('__DOMAIN__', $domain, $service);
+        $service = str_replace('__NAMESPACE__', $namespace, $service);
+        $service = str_replace('__NAME__', basename($name), $service);
+
+        save($class, $service);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $console->success("Created Service: {$_class} ({$class})");
+    }
+
+    /**
+     * @CMD(curd)
+     * @Desc(Generate all CURD operations related classes based on entity)
+     */
+    public function curd()
+    {
+        // TODO
     }
 }

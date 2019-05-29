@@ -46,7 +46,6 @@ final class Kernel
                         chownr($runtime, $owner);
                     }
                     if ($group = ConfigManager::getFramework('runtime.permission.group')) {
-                        chgrpr($runtime, $group);
                     }
                     if ($mode = ConfigManager::getFramework('runtime.permission.mode', 0644)) {
                         chmodr($runtime, $mode);
@@ -63,18 +62,9 @@ final class Kernel
         if (! $cmd) {
             $cmd = 'dof';
         }
-        $cmd = strtolower($cmd);
-        $isDomain = $cmd === 'domain';
-        if ($isDomain) {
-            $cmd = array_shift($params);
-            if (is_null($cmd)) {
-                Kernel::throw('MissingDomainCommandName');
-            }
-        }
-
-        $_cmd = CommandManager::get($cmd, $isDomain);
+        $_cmd = CommandManager::get(strtolower($cmd));
         if (! $_cmd) {
-            Kernel::throw('CommandNotFound', compact('cmd', 'isDomain'));
+            Kernel::throw('CommandNotFound', compact('cmd'));
         }
         $class = $_cmd['class'] ?? null;
         if ((! $class) || (! class_exists($class))) {

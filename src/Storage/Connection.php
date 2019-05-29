@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Dof\Framework\Storage;
 
 use PDO;
-use Redis;
+
+// use Redis;
 
 final class Connection
 {
     private static $pool = [
         'mysql' => [],
         'redis' => [],
+        'memcached' => [],
     ];
 
     public static function get(
@@ -63,7 +65,7 @@ final class Connection
         }
     }
 
-    public static function redis(string $connection, iterable $config = []) : Redis
+    public static function redis(string $connection, iterable $config = []) : \Redis
     {
         if (! extension_loaded('redis')) {
             exception('RedisExtensionNotEnabled');
@@ -79,7 +81,7 @@ final class Connection
         $timeout = $config->get('timeout', 3, ['int']);
 
         try {
-            $redis = new Redis;
+            $redis = new \Redis;
             $redis->connect($host, $port, $timeout);
             if ($auth) {
                 $redis->auth($pswd);
@@ -92,5 +94,16 @@ final class Connection
         } catch (Throwable $e) {
             exception('ConnectionToRedisFailed', compact('host', 'port'), $e);
         }
+    }
+
+    public static function memcached(string $connection, iterable $config = []) : \Memcached
+    {
+        if (! extension_loaded('memcached')) {
+            exception('MemcachedExtensionNotEnabled');
+        }
+
+        $config = is_collection($config) ? $config : collect($config);
+
+        // TODO
     }
 }

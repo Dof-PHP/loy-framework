@@ -1133,10 +1133,43 @@ if (! function_exists('get_buffer_string')) {
 
             if ($exception) {
                 $exception($e);
+            } else {
+                exception('GetBufferStringException', [], $e);
             }
         }
 
         return '';
+    }
+}
+if (! function_exists('render')) {
+    function render(array $data, string $tpl, \Closure $exception = null) : string
+    {
+        if (! is_file($tpl)) {
+            exception('RenderTemplateNotExists', compact('tpl'));
+        }
+
+        return get_buffer_string(function () use ($data, $tpl) {
+            extract($data, EXTR_OVERWRITE);
+
+            include $tpl;
+        }, $exception);
+    }
+}
+if (! function_exists('render_to')) {
+    function render_to(array $data, string $tpl, string $dest, \Closure $exception = null)
+    {
+        save($dest, render($data, $tpl, $exception));
+    }
+}
+if (! function_exists('save')) {
+    function save(string $path, string $str, int $flag = 0)
+    {
+        $save = dirname($path);
+        if (! is_dir($save)) {
+            mkdir($save, 0775, true);
+        }
+
+        file_put_contents($path, $str, $flag);
     }
 }
 if (! function_exists('get_last_trace')) {

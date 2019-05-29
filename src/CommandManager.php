@@ -12,23 +12,22 @@ final class CommandManager
     const COMMAND_DIR = 'Command';
 
     private static $dirs = [];
-    private static $commands = [
-        'default' => [],
-        'domain'  => [],
-    ];
+    private static $commands = [];
+    private static $domain = [];
+    private static $default = [];
 
     public static function load(array $dirs)
     {
         $cache = Kernel::formatCacheFile(__CLASS__);
         if (is_file($cache)) {
-            list(self::$dirs, self::$commands) = load_php($cache);
+            list(self::$dirs, self::$commands, self::$domain, self::$default) = load_php($cache);
             return;
         }
 
         self::compile($dirs);
 
         if (ConfigManager::matchEnv(['ENABLE_COMMAND_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
-            array2code([self::$dirs, self::$commands], $cache);
+            array2code([self::$dirs, self::$commands, self::$domain, self::$default], $cache);
         }
     }
 
@@ -42,16 +41,17 @@ final class CommandManager
 
     public static function compile(array $dirs, bool $cache = false)
     {
-        self::$commands['default'] = [];
-        self::loadDirs([dirname(get_file_of_namespace(Command::class))], 'default');
+        // Reset
+        self::$dirs = [];
+        self::$commands = [];
+        self::$domain = [];
+        self::$default = [];
 
         if (count($dirs) < 1) {
             return;
         }
 
-        // Reset
-        self::$dirs = [];
-        self::$commands['domain'] = [];
+        self::loadDirs([dirname(get_file_of_namespace(Command::class))], 'default');
 
         array_map(function ($item) {
             $dir = ospath($item, self::COMMAND_DIR);
@@ -63,7 +63,7 @@ final class CommandManager
         self::loadDirs(self::$dirs, 'domain');
 
         if ($cache) {
-            array2code([self::$dirs, self::$commands], Kernel::formatCacheFile(__CLASS__));
+            array2code([self::$dirs, self::$commands, self::$domain, self::$default], Kernel::formatCacheFile(__CLASS__));
         }
     }
 
@@ -97,38 +97,57 @@ final class CommandManager
             $command = $cmdPrefix ? join('.', [$cmdPrefix, $cmd]) : $cmd;
             $comment = $docMethod['DESC'] ?? null;
             $comment = $commentGroup ? join(': ', [$commentGroup, $comment]) : $comment;
-            $options = $docMethod['OPTION']  ?? [];
+            $options = $docMethod['OPTION'] ?? [];
             $options = array_merge($optionGroup, $options);
 
-            $_options = [];
-            foreach ($options as $option) {
-                $name = $option['NAME'] ?? false;
-                if (! $name) {
-                    continue;
-                }
-                unset($option['NAME']);
-
-                $_options[$name] = $option;
-            }
-
-            self::$commands[$type][strtolower($command)] = [
+            $_cmd = [
                 'class'   => $namespace,
                 'method'  => $method,
                 'comment' => $comment,
-                'options' => $_options,
+                'options' => $options,
             ];
+
+            $command = strtolower($command);
+
+            if ($exists = (self::$commands[$command] ?? false)) {
+                exception('CommandExistsAlready', [
+                    'exists' => $exists,
+                    'conflict' => $_cmd,
+                ]);
+            }
+
+            self::$commands[$command] = $_cmd;
+
+            $idx = count(self::$commands ?? []) - 1;
+            if (ci_equal($type, 'domain')) {
+                $domain = DomainManager::getKeyByNamespace($namespace);
+                self::$domain[$domain][$command] = $idx;
+            } else {
+                self::$default[$command] = $idx;
+            }
         }
     }
 
-    public static function __annotationParameterFilterOption(array $params = []) : ?array
+    public static function __annotationFilterOption(string $option, array $ext, string $namespace) : ?array
     {
-        $params = array_change_key_case($params, CASE_UPPER);
+        $ext = array_change_key_case($ext, CASE_UPPER);
 
-        if (strtolower($params['DEFAULT'] ?? '') === '__null__') {
-            $params['DEFAULT'] = null;
+        $notes = $ext['NOTES'] ?? '';
+        $default = $ext['DEFAULT'] ?? null;
+
+        if ((count($ext) === 1) && empty(array_filter(array_values($ext)))) {
+            $notes = array_keys($ext)[0] ?? '';
         }
 
-        return $params;
+        return [trim(strtolower($option)) => [
+            'NOTES' => $notes,
+            'DEFAULT' => $default,
+        ]];
+    }
+
+    public static function __annotationMultipleMergeOption()
+    {
+        return true;
     }
 
     public static function __annotationMultipleOption() : bool
@@ -136,11 +155,19 @@ final class CommandManager
         return true;
     }
 
-    public static function get(string $name, bool $isDomain = false) : ?array
+    public static function get(string $name) : ?array
     {
-        return $isDomain
-            ? self::$commands['domain'][$name] ?? null
-            : self::$commands['default'][$name] ?? null;
+        return self::$commands[$name] ?? null;
+    }
+
+    public static function getDomain()
+    {
+        return self::$domain;
+    }
+
+    public static function getDefault()
+    {
+        return self::$default;
     }
 
     public static function getCommands()

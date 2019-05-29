@@ -19,6 +19,11 @@ class ORMStorage extends Storage
      */
     protected $id;
 
+    final public function type()
+    {
+        return 'orm';
+    }
+
     final public function builder()
     {
         return $this->__storage->builder();

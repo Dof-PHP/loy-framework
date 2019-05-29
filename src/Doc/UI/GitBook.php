@@ -159,29 +159,20 @@ class GitBook
         foreach ($this->modelData as $ns => $model) {
             $key = $this->formatDocNamespace($ns);
             $this->appendMenuTree($key, null, $key);
-            $this->save(
-                ($this->render($this->docModel, $this->formatModelDocData($model, $key))),
-                ospath($path, "{$key}.md")
-            );
+            $this->render($this->docModel, ospath($path, "{$key}.md"), $this->formatModelDocData($model, $key));
         }
 
         $readme = ospath($path, self::README);
         if (is_file($readme)) {
             unlink($readme);
         }
-        $this->save(
-            $this->render($this->readme, ['version' => 'Data Model']),
-            $readme
-        );
+        $this->render($this->readme, $readme, ['version' => 'Data Model']);
 
         $summary = ospath($path, self::SUMMARY);
         if (is_file($summary)) {
             unlink($summary);
         }
-        $this->save(
-            $this->render($this->summary, ['tree' => $this->menuTree, 'readme' => true]),
-            $summary
-        );
+        $this->render($this->summary, $summary, ['tree' => $this->menuTree, 'readme' => true]);
 
         $this->menuTree  = '';
         $this->menuDepth = 0;
@@ -216,29 +207,20 @@ class GitBook
         foreach ($this->wrapinData as $ns => $wrapin) {
             $key = $this->formatDocNamespace($ns);
             $this->appendMenuTree($key, null, $key);
-            $this->save(
-                ($this->render($this->docWrapin, $this->formatWrapinDocData($wrapin, $key))),
-                ospath($path, "{$key}.md")
-            );
+            $this->render($this->docWrapin, ospath($path, "{$key}.md"), $this->formatWrapinDocData($wrapin, $key));
         }
 
         $readme = ospath($path, self::README);
         if (is_file($readme)) {
             unlink($readme);
         }
-        $this->save(
-            $this->render($this->readme, ['version' => 'Wrapin List']),
-            $readme
-        );
-
+        $this->render($this->readme, $readme, ['version' => 'Wrapin List']);
+        
         $summary = ospath($ver, self::SUMMARY);
         if (is_file($summary)) {
             unlink($summary);
         }
-        $this->save(
-            $this->render($this->summary, ['tree' => $this->menuTree, 'readme' => true]),
-            $summary
-        );
+        $this->render($this->summary, $summary, ['tree' => $this->menuTree, 'readme' => true]);
 
         $this->menuTree  = '';
         $this->menuDepth = 0;
@@ -288,10 +270,8 @@ class GitBook
             if (is_file($readme)) {
                 unlink($readme);
             }
-            $this->save(
-                $this->render($this->readme, ['version' => $version]),
-                $readme
-            );
+            $this->render($this->readme, $readme, ['version' => $version]);
+
             $summary = ospath($ver, self::SUMMARY);
             if (is_file($summary)) {
                 unlink($summary);
@@ -300,10 +280,8 @@ class GitBook
             if (is_file($error)) {
                 unlink($error);
             }
-            $this->save(
-                $this->render($this->docError, ['errors' => $this->errorData]),
-                $error
-            );
+            $this->render($this->docError, $error, ['errors' => $this->errorData]);
+            
             $appendixes = $domain['appendixes'] ?? [];
             if ($appendixes) {
                 $_appendixes = ospath($ver, '_appendixes');
@@ -330,14 +308,11 @@ class GitBook
                     $appendix['href'] = join(DIRECTORY_SEPARATOR, ['_appendixes', $key, $href]);
                 }
             }
-            $this->save(
-                $this->render($this->summary, [
-                    'tree' => $this->menuTree,
-                    'appendixes' => $appendixes,
-                    'errors' => true,
-                ]),
-                $summary
-            );
+            $this->render($this->summary, $summary, [
+                'tree' => $this->menuTree,
+                'appendixes' => $appendixes,
+                'errors' => true,
+            ]);
 
             $this->menuTree  = '';
             $this->menuDepth = 0;
@@ -365,19 +340,13 @@ class GitBook
         if (is_file($builder)) {
             unlink($builder);
         }
-        $this->save(
-            $this->render($this->builder, ['versions' => $this->versions, 'output' => $this->output]),
-            $builder
-        );
+        $this->render($this->builder, $builder, ['versions' => $this->versions, 'output' => $this->output]);
 
         $verindex = ospath($this->output, self::VER_INDEX);
         if (is_file($verindex)) {
             unlink($verindex);
         }
-        $this->save(
-            $this->render($this->verindex, ['default' => $this->versions[0] ?? 404]),
-            $verindex
-        );
+        $this->render($this->verindex, $verindex, ['default' => $this->versions[0] ?? 404]);
 
         // Foramt book.json versions plugin configs with default version display logic
         foreach ($this->selects as list('version' => $_version)) {
@@ -393,10 +362,7 @@ class GitBook
             if (is_file($bookjson)) {
                 unlink($bookjson);
             }
-            $this->save(
-                $this->render($this->bookjson, ['options' => enjson($_selects)]),
-                $bookjson
-            );
+            $this->render($this->bookjson, $bookjson, ['options' => enjson($_selects)]);
         }
     }
 
@@ -443,7 +409,7 @@ class GitBook
 
             $_title = $doc['title'] ?? '?';
             $this->appendMenuTree($_title, $path, $_doc);
-            $this->save(($this->render($this->docApi, $doc)), ospath($dir, "{$_doc}.md"));
+            $this->render($this->docApi, ospath($dir, "{$_doc}.md"), $doc);
         }
     }
 
@@ -545,22 +511,9 @@ class GitBook
         return join('.', $arr);
     }
 
-    private function save(string $content, string $save)
+    public function render(string $tpl, string $save, array $data = [])
     {
-        file_put_contents($save, $content);
-    }
-
-    public function render(string $tpl, array $data = []) : string
-    {
-        if (! is_file($tpl)) {
-            exception('RenderTemplateNotExists', compact('tpl'));
-        }
-
-        return get_buffer_string(function () use ($data, $tpl) {
-            extract($data, EXTR_OVERWRITE);
-
-            include $tpl;
-        }, function ($e) use ($tpl) {
+        render_to($data, $tpl, $save, function ($e) use ($tpl) {
             exception('GitBookRenderError', compact('tpl'), $e);
         });
     }

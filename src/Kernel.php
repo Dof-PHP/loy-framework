@@ -19,6 +19,8 @@ final class Kernel
     const CACHE   = 'cache';
     const LOGGING = 'log';
     const LOCATE  = __DIR__;
+    const SERVICE = 'Service';
+    const TEMPLATE = 'templates';
 
     /** @var string: Project Root Directory */
     private static $root;
@@ -149,6 +151,11 @@ final class Kernel
     public static function getUptime()
     {
         return self::$uptime;
+    }
+
+    public static function root() : string
+    {
+        return dirname(self::LOCATE);
     }
 
     public static function getRoot()
