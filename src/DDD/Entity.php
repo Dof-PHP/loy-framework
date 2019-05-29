@@ -35,7 +35,7 @@ abstract class Entity extends Model
             $instance->{$setter}(TypeHint::convert($val, $type));
         }
 
-        if (is_null($instance->pk())) {
+        if (is_null($instance->getId())) {
             exception('MissingEntityIdentity', compact('data', 'entity'));
         }
 
