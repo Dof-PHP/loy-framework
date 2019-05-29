@@ -65,27 +65,27 @@ class Command
                 $console->exception('CommandToHelpNotExist', [$cmd]);
             }
 
-            $console->line($console->render("Usage: php dof {$cmd} [--options ...] [parameters ...]", 'YELLOW'), 2);
+            $console->line($console->render("Usage: php dof {$cmd} [--options ...] [[--] parameters ...]", 'YELLOW'), 2);
             extract($attr);
 
             $console->line(
-                $console->render('Command: ', $console::TITLE_COLOR)
+                $console->render('* Command: ', $console::TITLE_COLOR)
                 .$console->render($cmd, $console::SUCCESS_COLOR)
             );
             $console->line();
-            $console->info('Comment: '.$comment);
+            $console->info('* Comment: '.$comment);
             $console->line();
-            $console->title('Options: ');
+            $console->title('* Options: ');
             foreach ($options as $option => $_attr) {
                 extract($_attr);
                 $default = $DEFAULT ?: 'NULL';
                 $console->line(
                     $console->render("\t--{$option}\t", $console::SUCCESS_COLOR)
                     .$console->render($NOTES, $console::INFO_COLOR)
-                    .$console->render("\t(Default: {$default})", $console::TITLE_COLOR)
+                    .$console->render("\t(Default: {$default})", 'CYAN')
                 );
             }
-            $console->title('Arguments: ');
+            $console->title('* Arguments: ');
             foreach ($argvs as $order => $desc) {
                 $console->line(
                     $console->render("\t#{$order}\t", $console::SUCCESS_COLOR)
@@ -94,10 +94,10 @@ class Command
             }
 
             $console->line();
-            $console->info('Class: '.$class);
-            $console->info('Method: '.$method);
+            $console->info('* Class: '.$class);
+            $console->info('* Method: '.$method);
         } else {
-            $console->line($console->render('Usage: php dof {COMMAND} [--options ...] [parameters ...]', 'YELLOW'));
+            $console->line($console->render('Usage: php dof {COMMAND} [--options ...] [[--] parameters ...]', 'YELLOW'));
         }
 
         $console->line();
