@@ -5,8 +5,13 @@ declare(strict_types=1);
 namespace Dof\Framework;
 
 use Dof\Framework\DDD\Entity;
+use Dof\Framework\DDD\Model;
 use Dof\Framework\DDD\Storage;
+use Dof\Framework\DDD\ORMStorage;
+use Dof\Framework\DDD\KVStorage;
 use Dof\Framework\DDD\Repository;
+use Dof\Framework\DDD\ORMRepository;
+use Dof\Framework\DDD\KVRepository;
 use Dof\Framework\Facade\Annotation;
 
 final class RepositoryManager
@@ -17,9 +22,9 @@ final class RepositoryManager
     private static $repositories = [];
 
     /**
-     * Convert a storage result into entity object
+     * Convert a storage result into an object of entity or data model
      */
-    public static function convert(string $storage, array $result = null) : ?Entity
+    public static function convert(string $storage, array $result = null) : ?Model
     {
         if (! $result) {
             return null;
@@ -37,7 +42,7 @@ final class RepositoryManager
         }
         $repository = $orm['meta']['REPOSITORY'] ?? null;
         if (! $repository) {
-            exception('NoRepositoryBoundStorageOrm', compact('storage'));
+            exception('NoRepositoryBoundStorage', compact('storage'));
         }
         $_repository = self::get($repository);
         if (! $_repository) {
@@ -147,18 +152,39 @@ final class RepositoryManager
         if (! $namespace) {
             return;
         }
+        if (! is_subclass_of($namespace, Repository::class)) {
+            exception('InvalidRepositoryInterface', compact('namespace'));
+        }
         if ($exists = (self::$repositories[$namespace] ?? false)) {
             exception('DuplicateRepositoryInterface', compact('exists'));
         }
-
-        if (! ($ofClass['doc']['ENTITY'] ?? false)) {
-            exception('RepositoryNoEntityToManage', compact('namespace'));
+        if (is_subclass_of($namespace, ORMRepository::class) && (! ($ofClass['doc']['ENTITY'] ?? false))) {
+            exception('ORMRepositoryNoEntityToManage', compact('namespace'));
+        }
+        if (is_subclass_of($namespace, KVRepository::class) && (! ($ofClass['doc']['MODEL'] ?? false))) {
+            exception('KVRepositoryNoDataModelToManage', compact('namespace'));
         }
         if (! ($ofClass['doc']['IMPLEMENTOR'] ?? false)) {
             exception('RepositoryNoImplementorToStorage', compact('namespace'));
         }
 
         self::$repositories[$namespace] = $ofClass['doc'] ?? [];
+    }
+
+    public static function __annotationFilterModel(string $model, array $ext, string $repository) : string
+    {
+        $model  = trim($model);
+        $_model = get_annotation_ns($model, $repository);
+
+        if ((! $_model) || (! class_exists($_model))) {
+            exception('MissingOrModelNotExists', compact('model', 'repository'));
+        }
+
+        if (! is_subclass_of($_model, Model::class)) {
+            exception('InvalidModelClass', compact('model', 'repository'));
+        }
+
+        return $_model;
     }
 
     public static function __annotationFilterEntity(string $entity, array $ext, string $repository) : string
@@ -171,7 +197,7 @@ final class RepositoryManager
         }
 
         if (! is_subclass_of($_entity, Entity::class)) {
-            exception('InvalidEntityClass', compact('entity'));
+            exception('InvalidEntityClass', compact('entity', 'repository'));
         }
 
         return $_entity;
@@ -186,6 +212,11 @@ final class RepositoryManager
             exception('MissingOrStorageNotExists', compact('storage', 'repository'));
         }
         $__storage = Storage::class;
+        if (is_subclass_of($repository, ORMRepository::class)) {
+            $__storage = ORMStorage::class;
+        } elseif (is_subclass_of($repository, KVRepository::class)) {
+            $__storage = KVStorage::class;
+        }
         if (! (is_subclass_of($storage, $__storage))) {
             $error = "Storage Not SubClass Of {$__storage}";
             exception('InvalidStorageClass', compact('error', 'storage', 'repository'));

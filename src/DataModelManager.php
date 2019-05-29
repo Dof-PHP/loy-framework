@@ -8,7 +8,7 @@ use Dof\Framework\Facade\Annotation;
 
 final class DataModelManager
 {
-    const MODEL_DIR = 'DM';
+    const MODEL_DIR = 'Model';
 
     private static $dirs = [];
     private static $models = [];

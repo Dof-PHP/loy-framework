@@ -496,6 +496,10 @@ SQL;
                 $this->mysql()->rawExec($dropTable);
             }
             $this->mysql()->rawExec($createTable);
+
+            if (method_exists($this->storage, 'onTableCreated')) {
+                $this->storage::new()->onTableCreated();
+            }
         }
     }
 

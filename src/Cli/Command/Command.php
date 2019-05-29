@@ -50,7 +50,7 @@ class Command
 
     /**
      * @CMD(help)
-     * @Desc(Print Dof help messages)
+     * @Desc(Print help messages of Dof commands)
      * @Argv(1){notes=The command name used to print help message}
      */
     public function help($console)
@@ -133,9 +133,14 @@ class Command
     /**
      * @CMD(root)
      * @Desc(Get Dof framework root)
+     * @Option(project){notes=Get project root instead}
      */
     public function getRoot($console)
     {
+        if ($console->hasOption('project')) {
+            return $console->success(Kernel::getRoot(), true);
+        }
+
         return $console->success(Kernel::root(), true);
     }
 

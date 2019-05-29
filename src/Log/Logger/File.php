@@ -12,7 +12,7 @@ class File implements LoggerInterface
     use LoggerTrait;
 
     /** @var string: Where Log files will be stored, relative to project root */
-    private $directory = ['var', 'log'];
+    private $directory = 'log';
 
     /** @var string: The dirname for achieving log files */
     private $archive =  'archive';
@@ -50,7 +50,7 @@ class File implements LoggerInterface
     public function save(string $log)
     {
         $user = get_php_user();
-        $path = ospath(Kernel::getRoot(), $this->directory, $user);
+        $path = ospath(Kernel::getRoot(), Kernel::RUNTIME, join('-', [$this->directory, $user]));
         $file = ospath($path, join('.', [$this->level, PHP_SAPI, $user, $this->suffix]));
         if (! is_dir($path)) {
             mkdir($path, $this->permission, true);
@@ -73,15 +73,17 @@ class File implements LoggerInterface
         }
 
         $fp = fopen($file, 'a+');
-        // stream_set_blocking($fp, 0);
-        // if (flock($fp, LOCK_EX)) {
-        fwrite($fp, $this->seperate($log));
-        // }
-        // flock($fp, LOCK_UN);
-        fclose($fp);
+        if (false !== $fp) {
+            // stream_set_blocking($fp, 0);
+            // if (flock($fp, LOCK_EX)) {
+            fwrite($fp, $this->seperate($log));
+            // }
+            // flock($fp, LOCK_UN);
+            fclose($fp);
 
-        // file_put_contents($file, $this->seperate($log), FILE_APPEND | LOCK_EX);
-        // error_log($this->seperate($log), 3, $file);
+            // file_put_contents($file, $this->seperate($log), FILE_APPEND | LOCK_EX);
+            // error_log($this->seperate($log), 3, $file);
+        }
     }
 
     public function seperate(string $log) : string
