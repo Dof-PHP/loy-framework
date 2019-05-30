@@ -5,20 +5,22 @@ declare(strict_types=1);
 namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
 
 use Dof\Framework\OFB\Pipe\Paginate;
-use Domain\Auth\Http\ERR;
-use Domain\Auth\Service\Create__NAME__;
-use Domain\Auth\Service\Show__NAME__;
-use Domain\Auth\Service\Delete__NAME__;
-use Domain\Auth\Service\List__NAME__;
-use Domain\Auth\Service\Update__NAME__;
+use Domain\__DOMAIN__\Http\ERR;
+use Domain\__DOMAIN__\Assembler\__NAME__;
+use Domain\__DOMAIN__\Service\Create__NAME__;
+use Domain\__DOMAIN__\Service\Delete__NAME__;
+use Domain\__DOMAIN__\Service\Update__NAME__;
+use Domain\__DOMAIN__\Service\Show__NAME__;
+use Domain\__DOMAIN__\Service\List__NAME__;
 
 /**
  * @Author(name@group.com)
  * @Version(v1)
  * @Auth(0)
- * @Group(?/?){?/?}
+ * @Group(?/?)
  * @Route(__NAME__)
  * @Model(Domain\__DOMAIN__\Entity\__NAME__)
+ * @Assembler(_)
  * @MimeOut(json)
  */
 class __NAME__
@@ -30,16 +32,16 @@ class __NAME__
     private $id;
 
     /**
-     * @Title(ARGV_TITLE)
+     * @Title(Parameter Title)
      * @Type(String)
      */
-    private $argv2;
+    private $param1;
 
     /**
      * @Title(Create Resource __NAME__)
      * @Route(/)
      * @Verb(post)
-     * @Argument(argv2)
+     * @Argument(param1)
      * @HeaderStatus(201){Created Success}
      */
     public function create(Create__NAME__ $service)
@@ -47,7 +49,7 @@ class __NAME__
         // $service->error(ERR::_, 500);
 
         return $service
-            ->setArgv2(strval(port()->argument->argv2))
+            ->setParam1(port('argument')->param1)
             ->execute();
     }
 
@@ -55,6 +57,7 @@ class __NAME__
      * @Title(Delete Resource __NAME__)
      * @Route({id})
      * @Verb(delete)
+     * @Argument(id){need:0&location=URL Path}
      * @HeaderStatus(204){Deleted Success}
      */
     public function delete(int $id, Delete__NAME__ $service)
@@ -70,18 +73,22 @@ class __NAME__
      * @Title(Update Resource __NAME__)
      * @Route({id})
      * @Verb(put)
-     * @Argument(argv2){need:0}
+     * @Argument(id){need:0&location=URL Path}
+     * @Argument(param1)
      */
     public function update(int $id, Update__NAME__ $service)
     {
         // $service->error(ERR::_, 500);
 
-        return $service->setId($id)->execute();
+        return $service
+            ->setId($id)
+            ->setParam1(port('argument')->param1)
+            ->execute();
     }
 
     /**
      * @Title(Show Resource __NAME__ Detail)
-     * @Route({id})
+     * @Argument(id){need:0&location=URL Path}
      * @Verb(get)
      */
     public function show(int $id, Show__NAME__ $service)

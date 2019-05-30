@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework\DDD;
 
 use Dof\Framework\TypeHint;
-use Dof\Framework\DataModelManager;
+use Dof\Framework\ModelManager;
 
 /**
  * Data Model
@@ -21,7 +21,7 @@ abstract class Model
     {
         $model = static::class;
         $instance = new $model;
-        $annotations = DataModelManager::get($model);
+        $annotations = ModelManager::get($model);
 
         foreach ($data as $property => $val) {
             $attr = $annotations['properties'][$property] ?? null;

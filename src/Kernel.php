@@ -119,7 +119,7 @@ final class Kernel
 
         EntityManager::load($domains);
 
-        DataModelManager::load($domains);
+        ModelManager::load($domains);
 
         StorageManager::load($domains);
 

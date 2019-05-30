@@ -13,7 +13,7 @@ use Dof\Framework\DDD\ORMStorage;
 use Dof\Framework\Storage\StorageSchema;
 use Dof\Framework\ConfigManager;
 use Dof\Framework\DomainManager;
-use Dof\Framework\DataModelManager;
+use Dof\Framework\ModelManager;
 use Dof\Framework\EntityManager;
 use Dof\Framework\StorageManager;
 use Dof\Framework\RepositoryManager;
@@ -522,7 +522,7 @@ class Command
 
         EntityManager::flush();
 
-        DataModelManager::flush();
+        ModelManager::flush();
 
         StorageManager::flush();
 
@@ -554,7 +554,7 @@ class Command
 
             EntityManager::compile($domains, true);
 
-            DataModelManager::compile($domains, true);
+            ModelManager::compile($domains, true);
 
             StorageManager::compile($domains, true);
 
@@ -755,6 +755,10 @@ class Command
     /**
      * @CMD(entity.add)
      * @Desc(Add an entity class in a domain)
+     * @Option(domain){notes=Domain name of entity to be created}
+     * @Option(name){notes=Name of entity to be created}
+     * @Option(force){notes=Whether force recreate entity when given entity name is exists}
+     * @Option(withts){notes=Whether the entity to be created has timestamp properties}
      */
     public function addEntity($console)
     {
@@ -776,7 +780,7 @@ class Command
         }
 
         $withts = $console->hasOption('withts');
-        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'entity.tpl');
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'entity.tpl');
         if (! is_file($template)) {
             $console->exception('EntityClassTemplateNotExist', [$template]);
         }
@@ -806,6 +810,10 @@ class Command
     /**
      * @CMD(port.add)
      * @Desc(Add a port class in a domain)
+     * @Option(domain){notes=Domain name of port to be created}
+     * @Option(name){notes=Name of port to be created}
+     * @Option(force){notes=Whether force recreate port when given port name is exists}
+     * @Option(crud){notes=Whether add crud port methods into port&default=false}
      */
     public function addPort($console)
     {
@@ -826,7 +834,8 @@ class Command
             $console->exception('PortAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
-        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'port.tpl');
+        $type = $console->hasOption('crud') ? 'crud' : 'basic';
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', "port-{$type}.tpl");
         if (! is_file($template)) {
             $console->exception('PortClassTemplateNotExist', [$template]);
         }
@@ -853,6 +862,9 @@ class Command
     /**
      * @CMD(storage.add.orm)
      * @Desc(Add an orm storage class in a domain)
+     * @Option(domain){notes=Domain name of orm storage to be created}
+     * @Option(name){notes=Name of orm storage to be created}
+     * @Option(force){notes=Whether force recreate orm storage when given orm storage name is exists}
      */
     public function addORMStorage($console)
     {
@@ -873,7 +885,7 @@ class Command
             $console->exception('StorageAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
-        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'storage-orm.tpl');
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'storage-orm.tpl');
         if (! is_file($template)) {
             $console->exception('ORMStorageClassTemplateNotExist', [$template]);
         }
@@ -901,6 +913,9 @@ class Command
     /**
      * @CMD(storage.add.kv)
      * @Desc(Add an kv storage class in a domain)
+     * @Option(domain){notes=Domain name of kv storage to be created}
+     * @Option(name){notes=Name of kv storage to be created}
+     * @Option(force){notes=Whether force recreate kv storage when given kv storage name is exists}
      */
     public function addKVStorage($console)
     {
@@ -921,7 +936,7 @@ class Command
             $console->exception('KVStorageAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
-        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'storage-kv.tpl');
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'storage-kv.tpl');
         if (! is_file($template)) {
             $console->exception('KVStorageClassTemplateNotExist', [$template]);
         }
@@ -933,13 +948,13 @@ class Command
             $namespace = '\\'.$namespace;
         }
 
-        $orm = file_get_contents($template);
-        $orm = str_replace('__DOMAIN__', $domain, $orm);
-        $orm = str_replace('__NAMESPACE__', $namespace, $orm);
-        $orm = str_replace('__PARENT__', 'KVStorage', $orm);
-        $orm = str_replace('__NAME__', basename($name), $orm);
+        $kv = file_get_contents($template);
+        $kv = str_replace('__DOMAIN__', $domain, $kv);
+        $kv = str_replace('__NAMESPACE__', $namespace, $kv);
+        $kv = str_replace('__PARENT__', 'KVStorage', $kv);
+        $kv = str_replace('__NAME__', basename($name), $kv);
 
-        save($class, $orm);
+        save($class, $kv);
 
         $_class = get_namespace_of_file($class, true);
 
@@ -949,6 +964,9 @@ class Command
     /**
      * @CMD(repo.add)
      * @Desc(Add a repository interface in a domain)
+     * @Option(domain){notes=Domain name of repository to be created}
+     * @Option(name){notes=Name of repository to be created}
+     * @Option(force){notes=Whether force recreate repository when given repository name is exists}
      */
     public function addRepository($console)
     {
@@ -969,7 +987,7 @@ class Command
             $console->exception('StorageAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
-        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'repository.tpl');
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'repository.tpl');
         if (! is_file($template)) {
             $console->exception('RepositoryInterfaceTemplateNotExist', [$template]);
         }
@@ -996,6 +1014,9 @@ class Command
     /**
      * @CMD(service.add)
      * @Desc(Add a service class in a domain)
+     * @Option(domain){notes=Domain name of service to be created}
+     * @Option(name){notes=Name of service to be created}
+     * @Option(force){notes=Whether force recreate service when given service name is exists}
      */
     public function addService($console)
     {
@@ -1016,7 +1037,7 @@ class Command
             $console->exception('ServiceAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
-        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'service.tpl');
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'service.tpl');
         if (! is_file($template)) {
             $console->exception('ServiceClassTemplateNotExist', [$template]);
         }
@@ -1041,10 +1062,16 @@ class Command
     }
 
     /**
-     * @CMD(curd)
-     * @Desc(Generate all CURD operations related classes based on entity)
+     * @CMD(crud)
+     * @Desc(Generate all CRUD operations related classes based on a resource/entity name)
+     * @Option(domain){notes=Domain name of classes to be created}
+     * @Option(entity){notes=Entity name}
+     * @Option(orm){notes=ORM name}
+     * @Option(repo){notes=Repository name}
+     * @Option(port){notes=Port name}
+     * @Option(service){notes=Service name}
      */
-    public function curd()
+    public function crud()
     {
         // TODO
     }

@@ -6,7 +6,7 @@ namespace Dof\Framework;
 
 use Dof\Framework\Facade\Annotation;
 
-final class DataModelManager
+final class ModelManager
 {
     const MODEL_DIR = 'Model';
 

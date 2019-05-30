@@ -7,6 +7,9 @@ namespace Dof\Framework\DDD;
 use Dof\Framework\EntityManager;
 use Dof\Framework\TypeHint;
 
+/**
+ * A special model which has identity
+ */
 abstract class Entity extends Model
 {
     /**
