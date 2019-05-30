@@ -8,6 +8,7 @@ final class TypeHint
 {
     const SUPPORTS = [
         'uint' => true,
+        'pint' => true,
         'int' => true,
         'integer' => true,
         'double' => true,
@@ -48,6 +49,17 @@ final class TypeHint
         }
 
         exception('TypeHintStringFailed', compact('val'));
+    }
+
+    public static function convertToPint($val)
+    {
+        $val = self::convertToInt($val);
+
+        if ($val < 1) {
+            exception('TypeHintPintFailed', compact('val'));
+        }
+
+        return $val;
     }
 
     public static function convertToUint($val)
@@ -95,13 +107,22 @@ final class TypeHint
         return is_scalar($val);
     }
 
+    public static function isPint($val) : bool
+    {
+        if (! self::isUint($val)) {
+            return false;
+        }
+
+        return $val > 0;
+    }
+
     public static function isUint($val) : bool
     {
         if (! self::isInt($val)) {
             return false;
         }
 
-        return $val > 0;
+        return $val >= 0;
     }
 
     public static function isBool($val) : bool
