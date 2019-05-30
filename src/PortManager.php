@@ -521,7 +521,7 @@ final class PortManager
             'subtitle' => $subtitle,
         ];
 
-        $groups = array_merge(self::formatDocGroups($defaultGroup), self::formatDocGroups($group));
+        $groups = self::formatDocGroups(array_merge($defaultGroup, $group), $class);
 
         if ($groups) {
             $docs['group'] = self::dynamicAppendDocWithGroups($docs['group'] ?? [], $doc, $groups);
@@ -679,25 +679,19 @@ final class PortManager
         return join('.', $arr);
     }
 
-    private static function formatDocGroups($group)
+    private static function formatDocGroups(array $groups, string $domain)
     {
-        if (! $group) {
+        if (! $groups) {
             return [];
         }
-        list($key, $val) = $group;
-        $keys = array_trim_from_string($key, '/');
-        $vals = array_trim_from_string($val, '/');
-        $cntV = count($vals);
-        $cntK = count($keys);
-        if ($cntK !== $cntV) {
-            $_vals = [];
-            for ($i = $cntK-1; $i >= 0; $i--) {
-                $_vals[] = $vals[$i] ?? ($keys[$cntK-1-$i] ?? 'unknown');
-            }
-        } else {
-            $_vals = $vals;
+
+        $res = [];
+        foreach ($groups as $group) {
+            $title = ConfigManager::getDomainDomainByNamespace($domain, 'docs.groups')[$group] ?? $group;
+            $res[$group] = $title;
         }
-        return array_combine($keys, $_vals);
+
+        return $res;
     }
 
     /**
@@ -710,12 +704,13 @@ final class PortManager
             $data[$name]['title'] = $title;
             if (false === next($groups)) {
                 $data[$name]['list'][] = $append;
-                $data[$name]['group']  = [];
                 return $data;
             }
 
             $_data = $data[$name]['group'] ?? [];
             unset($keys[$name]);
+
+            // Here $keys must be unempty coz we check next($groups) before
             $data[$name]['group'] = self::dynamicAppendDocWithGroups($_data, $append, $keys);
             $data[$name]['list']  = array_merge(($data[$name]['list'] ?? []), ($_data['list'] ?? []));
             return $data;
@@ -1197,11 +1192,9 @@ final class PortManager
         return $_wrapin;
     }
 
-    public static function __annotationFilterGroup(string $group, array $params = [])
+    public static function __annotationFilterGroup(string $group, array $ext, string $namespace)
     {
-        $title = $params['title'] ?? (array_keys($params)[0] ?? null);
-
-        return [trim(strtolower($group)), $title];
+        return array_trim_from_string($group, '/');
     }
 
     public static function __annotationFilterVersion(string $version, array $ext)

@@ -250,7 +250,7 @@ if (! function_exists('get_annotation_ns')) {
     }
 }
 if (! function_exists('logging')) {
-    function logging(string $level, string $message, array $context)
+    function logging(string $level, string $message, ...$context)
     {
         return call_user_func_array([\Dof\Framework\Facade\Log::class, $level], [$message, $context]);
     }
