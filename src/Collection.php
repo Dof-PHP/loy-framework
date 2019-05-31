@@ -96,8 +96,8 @@ class Collection implements
 
     public function __call(string $method, array $argvs)
     {
-        if (is_object($this->origin) && method_exists($this->origin, $method)) {
-            return $this->origin->{$name}($argvs);
+        if (method_exists($this->origin, $method)) {
+            return call_user_func_array([$this->origin, $method], $argvs);
         }
 
         return $this->__get($method);

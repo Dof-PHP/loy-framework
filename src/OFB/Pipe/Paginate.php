@@ -5,44 +5,48 @@ declare(strict_types=1);
 namespace Dof\Framework\OFB\Pipe;
 
 use Dof\Framework\DSL\IFRSN;
+use Dof\Framework\ConfigManager;
 
 class Paginate
 {
+    const MAX_PAGE_SIZE = 50;
+
     public function pipein($request, $response, $route, $port)
     {
-        $size = $this->getPaginateDefaultSize();
+        $size = $this->getPaginateDefaultSize($port);
         $page = 1;
-        $paginate = $request->get('__paginate');
+        $paginate = $request->all('__paginate');
+
         if ($paginate) {
             $paginate = sprintf('paginate(%s)', $paginate);
             $paginate = IFRSN::parse($paginate);
             $paginate = $paginate['paginate']['fields'] ?? null;
             if ($paginate) {
-                $size = $paginate['size'] ?? $this->getPaginateDefaultSize();
+                $size = $paginate['size'] ?? $this->getPaginateDefaultSize($port);
                 $page = $paginate['page'] ?? 1;
             }
         }
 
-        if ($paginateSize = $request->get('__paginate_size', null)) {
+        if ($paginateSize = $request->all('__paginate_size', null)) {
             $size = $paginateSize;
         }
-        if ($paginatePage = $request->get('__paginate_page', null)) {
+        if ($paginatePage = $request->all('__paginate_page', null)) {
             $page = $paginatePage;
         }
 
         $route->params->pipe->set(__CLASS__, collect([
-            'size' => $this->validateSize($size),
-            'page' => $this->validatePage($page),
+            'size' => $this->validateSize($size, $port),
+            'page' => $this->validatePage($page, $port),
         ]));
 
         return true;
     }
 
-    protected function validateSize($size) : int
+    protected function validateSize($size, $port) : int
     {
         $size = intval($size);
-        $size = $size < 0 ? $this->getPaginateDefaultSize() : $size;
-        $size = $size > $this->getPaginateMaxSize() ? $this->getPaginateMaxSize() : $size;
+        $size = $size < 0 ? $this->getPaginateDefaultSize($port) : $size;
+        $size = $size > $this->getPaginateMaxSize($port) ? $this->getPaginateMaxSize($port) : $size;
 
         return $size;
     }
@@ -55,17 +59,25 @@ class Paginate
         return $page;
     }
 
-    protected function getPaginateMaxSize() : int
+    protected function getPaginateMaxSize($port) : int
     {
-        return 50;
+        if ($max = $port->annotations()->method('MaxPageSize')) {
+            return intval($max);
+        }
+
+        if ($max = ConfigManager::getDomainFinalDomainByNamespace($port->class, 'MAX_PAGINATE_SIZE')) {
+            return intval($max);
+        }
+
+        return self::MAX_PAGE_SIZE;
     }
 
-    protected function getPaginateDefaultSize() : int
+    protected function getPaginateDefaultSize($port) : int
     {
         return 10;
     }
 
-    protected function getPaginateParameterName() : string
+    protected function getPaginateParameterName($port) : string
     {
         return '__paginate';
     }

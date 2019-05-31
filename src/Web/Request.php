@@ -87,12 +87,12 @@ class Request
         return $key ? (is_array($input) ? array_get($input, $key, $default, $rules) : null) : $input;
     }
 
-    public function post(string $key, $default = null, array $rules = null)
+    public function post(string $key = null, $default = null, array $rules = null)
     {
         return $key ? array_get((array) $this->getPost(), $key, $default, $rules) : $this->getPost();
     }
 
-    public function get($key, $default = null, array $rules = null)
+    public function get(string $key = null, $default = null, array $rules = null)
     {
         return $key ? array_get($this->getGet(), $key, $default, $rules) : $this->getGet();
     }
