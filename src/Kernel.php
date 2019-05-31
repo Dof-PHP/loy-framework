@@ -20,6 +20,7 @@ final class Kernel
     const LOGGING = 'log';
     const LOCATE  = __DIR__;
     const SERVICE = 'Service';
+    const ASSEMBLER = 'Assembler';
     const TEMPLATE = 'templates';
 
     /** @var string: Project Root Directory */

@@ -20,6 +20,13 @@ class Assembler
     protected $compatibles = [];
 
     /**
+     * Assemblers will be used when current assember has reference field
+     *
+     * @var array
+     */
+    protected $assemblers = [];
+
+    /**
      * Converters are value converters which will be used when found field in origin or compatible mappings
      *
      * Key of a converter map item is the field name exists exactly in origin
@@ -69,8 +76,10 @@ class Assembler
         $converter = $this->converters[$key] ?? null;
         if ($converter) {
             if (! method_exists($this, $converter)) {
-                exception('FieldConvertNotExists', compact('converter'));
+                $class = get_class($this);
+                exception('FieldConverterNotExists', compact('converter', 'class'));
             }
+
             $val = $this->{$converter}($val, $params);
         }
 
@@ -100,23 +109,18 @@ class Assembler
         return $this->origin;
     }
 
-    /**
-     * Getter for compatibles
-     *
-     * @return array
-     */
-    final public function getCompatibles(): array
+    final public function compatibles(): array
     {
         return $this->compatibles;
     }
 
-    /**
-     * Getter for converters
-     *
-     * @return array
-     */
-    final public function getConverters(): array
+    final public function converters(): array
     {
         return $this->converters;
+    }
+
+    final public function assemblers(): array
+    {
+        return $this->assemblers;
     }
 }

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Dof\Framework\Storage;
 
 use PDO;
+use Closure;
 use Throwable;
 use Dof\Framework\Collection;
+use Dof\Framework\TypeHint;
 
 class MySQL implements StorageInterface
 {
@@ -15,6 +17,9 @@ class MySQL implements StorageInterface
 
     /** @var object|null: PDO Connection Instance */
     private $connection;
+
+    /** @var Closure: The getter to get acutal connection */
+    private $connectionGetter;
 
     /** @var \Dof\Framework\Storage\MySQLBuilder: Query builder based on table */
     private $builder;
@@ -62,7 +67,11 @@ class MySQL implements StorageInterface
 
     public function deletes(...$pks) : int
     {
-        return $this->builder()->where('id', $pks, 'in')->delete();
+        $pks = array_unique(array_filter($pks, function ($pk) {
+            return TypeHint::isPint($pk);
+        }));
+
+        return $this->builder()->in('id', $pks)->delete();
     }
 
     /**
@@ -70,6 +79,10 @@ class MySQL implements StorageInterface
      */
     public function delete(int $pk) : int
     {
+        if ($pk < 1) {
+            return 0;
+        }
+
         return $this->builder()->where('id', $pk)->delete();
     }
 
@@ -78,6 +91,10 @@ class MySQL implements StorageInterface
      */
     public function update(int $pk, array $data) : int
     {
+        if ($pk < 1) {
+            return 0;
+        }
+
         return $this->builder()->where('id', $pk)->update($data);
     }
 
@@ -86,6 +103,10 @@ class MySQL implements StorageInterface
      */
     public function find(int $pk) : ?array
     {
+        if ($pk < 1) {
+            return null;
+        }
+
         return $this->builder()->where('id', $pk)->first();
     }
 
@@ -256,6 +277,13 @@ class MySQL implements StorageInterface
         }
     }
 
+    public function setConnectionGetter(Closure $getter)
+    {
+        $this->connectionGetter = $getter;
+
+        return $this;
+    }
+
     public function setConnection($connection)
     {
         $this->connection = $connection;
@@ -263,6 +291,9 @@ class MySQL implements StorageInterface
 
     public function getConnection(bool $needdb = true)
     {
+        if ((! $this->connection) && $this->connectionGetter) {
+            $this->connection = ($this->connectionGetter)();
+        }
         if (! $this->connection) {
             exception('MissingMySQLConnection');
         }

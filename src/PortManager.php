@@ -509,7 +509,7 @@ final class PortManager
             'suffixs' => $suffix,
             'fields'  => [
                 'model' => self::formatDocModel($models),
-                'compatibles' => ($assembler ? singleton($assembler)->getCompatibles() : []),
+                'compatibles' => ($assembler ? singleton($assembler)->compatibles() : []),
             ],
             'wrapout' => self::formatDocWrapout($wrapout),
             'wraperr' => self::formatDocWraperr($wraperr),
@@ -1101,6 +1101,9 @@ final class PortManager
         $assembler = trim($assembler);
         if (! $assembler) {
             return null;
+        }
+        if ($assembler === '_') {
+            return $assembler;
         }
         if (class_exists($assembler)) {
             return $assembler;

@@ -26,6 +26,11 @@ class Paginator
         $this->setList($list)->setParams($params);
     }
 
+    public static function new(array $list = [], array $params = [])
+    {
+        return new static($list, $params);
+    }
+
     /**
      * Getter for list
      *

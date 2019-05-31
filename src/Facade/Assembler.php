@@ -79,7 +79,12 @@ class Assembler
                 $_result = $result[$name] ?? null;
             }
 
-            $data[$name] = Assembler::assemble($_result, $ref);
+            $_assembler = null;
+            if ($assembler) {
+                $_assembler = $assembler->assemblers()[$name] ?? null;
+            }
+
+            $data[$name] = Assembler::assemble($_result, $ref, $_assembler);
         }
 
         return $data;

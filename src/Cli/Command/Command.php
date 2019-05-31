@@ -658,17 +658,24 @@ class Command
     * @Option(force){notes=Whether execute the dangerous operations like drop/delete&default=false}
     * @Option(domain){notes=The domain name used to sync orm classes schema}
     * @Option(dump){notes=Dump the sqls will be executed rather than execute them directly&default=false}
+    * @Option(skip){notes=The orm class files to exclude, using `,` to separate}
     */
     public function syncORM($console)
     {
         $params = $console->getParams();
         $options = $console->getOptions();
+        $excludes = array_trim_from_string($console->getOption('skip', ''), ',');
+        array_walk($excludes, function (&$skip) {
+            $class = get_namespace_of_file($skip, true);
+            $skip = $class ? $class : '';
+        });
+        array_filter($excludes);
 
-        $syncSingle = function ($single) use ($console) {
+        $syncSingle = function ($single) use ($console, $excludes) {
             $storage = null;
             if (class_exists($single)) {
-                if (! is_subclass_of($single, Storage::class)) {
-                    $console->exception('SingleClassNotAStorage', compact('single'));
+                if (! is_subclass_of($single, ORMStorage::class)) {
+                    $console->exception('SingleClassNotAnORMStorage', compact('single'));
                 }
                 $storage = $single;
             } elseif (is_file($single)) {
@@ -681,9 +688,18 @@ class Command
             if (! $storage) {
                 $console->exception('InvalidStorageSingle', compact('single', 'storage'));
             }
-            
+
             $force = $console->hasOption('force');
             $dump = $console->hasOption('dump');
+
+            if (in_array($storage, $excludes)) {
+                if ($dump) {
+                    return $console->line("-- SKIP: {$storage}");
+                }
+
+                return $console->info("SKIPPED: {$storage}");
+            }
+
             $res = StorageSchema::sync($storage, $force, $dump);
             if ($dump) {
                 foreach ($res as $sql) {
@@ -757,7 +773,7 @@ class Command
      * @Desc(Add an entity class in a domain)
      * @Option(domain){notes=Domain name of entity to be created}
      * @Option(name){notes=Name of entity to be created}
-     * @Option(force){notes=Whether force recreate entity when given entity name is exists}
+     * @Option(force){notes=Whether force recreate entity when given entity name exists}
      * @Option(withts){notes=Whether the entity to be created has timestamp properties}
      */
     public function addEntity($console)
@@ -812,7 +828,7 @@ class Command
      * @Desc(Add a port class in a domain)
      * @Option(domain){notes=Domain name of port to be created}
      * @Option(name){notes=Name of port to be created}
-     * @Option(force){notes=Whether force recreate port when given port name is exists}
+     * @Option(force){notes=Whether force recreate port when given port name exists}
      * @Option(crud){notes=Whether add crud port methods into port&default=false}
      */
     public function addPort($console)
@@ -864,7 +880,7 @@ class Command
      * @Desc(Add an orm storage class in a domain)
      * @Option(domain){notes=Domain name of orm storage to be created}
      * @Option(name){notes=Name of orm storage to be created}
-     * @Option(force){notes=Whether force recreate orm storage when given orm storage name is exists}
+     * @Option(force){notes=Whether force recreate orm storage when given orm storage name exists}
      */
     public function addORMStorage($console)
     {
@@ -915,7 +931,7 @@ class Command
      * @Desc(Add an kv storage class in a domain)
      * @Option(domain){notes=Domain name of kv storage to be created}
      * @Option(name){notes=Name of kv storage to be created}
-     * @Option(force){notes=Whether force recreate kv storage when given kv storage name is exists}
+     * @Option(force){notes=Whether force recreate kv storage when given kv storage name exists}
      */
     public function addKVStorage($console)
     {
@@ -966,7 +982,7 @@ class Command
      * @Desc(Add a repository interface in a domain)
      * @Option(domain){notes=Domain name of repository to be created}
      * @Option(name){notes=Name of repository to be created}
-     * @Option(force){notes=Whether force recreate repository when given repository name is exists}
+     * @Option(force){notes=Whether force recreate repository when given repository name exists}
      */
     public function addRepository($console)
     {
@@ -1016,7 +1032,7 @@ class Command
      * @Desc(Add a service class in a domain)
      * @Option(domain){notes=Domain name of service to be created}
      * @Option(name){notes=Name of service to be created}
-     * @Option(force){notes=Whether force recreate service when given service name is exists}
+     * @Option(force){notes=Whether force recreate service when given service name exists}
      */
     public function addService($console)
     {
@@ -1074,5 +1090,56 @@ class Command
     public function crud()
     {
         // TODO
+    }
+
+    /**
+     * @CMD(asm.add)
+     * @Desc(Add Assembler in a domain)
+     * @Option(domain){notes=Domain name of assembler to be created}
+     * @Option(name){notes=Assembler name}
+     * @Option(force){notes=Whether force recreate assembler when given assembler name exists}
+     */
+    public function addAssembler($csl)
+    {
+        $name = $csl->getOption('name');
+        if (! $name) {
+            $csl->exception('MissingAssemblerName');
+        }
+        $domain = $csl->getOption('domain');
+        if (! $domain) {
+            $csl->exception('MissingDomainName');
+        }
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $csl->exception('DomainNotExists', [$domain]);
+        }
+        $class = ospath($path, Kernel::ASSEMBLER, "{$name}.php");
+        if (is_file($class) && (! $cls->hasOption('force'))) {
+            $csl->exception('AssemblerAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'assembler.tpl');
+        if (! is_file($template)) {
+            $csl->exception('AssemblerClassTemplateNotExist', [$template]);
+        }
+
+        $namespace = str_replace('/', '\\', dirname($name));
+
+        if ($namespace === '.') {
+            $namespace = '';
+        } else {
+            $namespace = '\\'.$namespace;
+        }
+
+        $assembler = file_get_contents($template);
+        $assembler = str_replace('__DOMAIN__', $domain, $assembler);
+        $assembler = str_replace('__NAMESPACE__', $namespace, $assembler);
+        $assembler = str_replace('__NAME__', basename($name), $assembler);
+
+        save($class, $assembler);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $csl->success("Created Assembler: {$_class} ({$class})");
     }
 }

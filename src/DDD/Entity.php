@@ -18,11 +18,16 @@ abstract class Entity extends Model
      */
     protected $id;
 
+    public static function annotations()
+    {
+        return EntityManager::get(static::class);
+    }
+
     public static function init(array $data)
     {
         $entity = static::class;
         $instance = new $entity;
-        $annotations = EntityManager::get($entity);
+        $annotations = $this->annotations();
 
         foreach ($data as $property => $val) {
             $attr = $annotations['properties'][$property] ?? null;

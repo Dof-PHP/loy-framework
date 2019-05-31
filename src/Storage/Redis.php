@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Storage;
 
+use Closure;
 use Throwable;
 use Dof\Framework\Collection;
 use Dof\Framework\TypeHint;
@@ -17,6 +18,9 @@ class Redis implements StorageInterface
 
     private $connection;
 
+    /** @var Closure: The getter to get acutal connection */
+    private $connectionGetter;
+
     /** @var array: Commands executed in the lifetime of this instance */
     private $cmds = [];
     
@@ -27,14 +31,25 @@ class Redis implements StorageInterface
 
     public function __call(string $method, array $params = [])
     {
-        $this->appendCMD($method, ...$params);
+        $start = microtime(true);
 
-        return $this->getConnection()->{$method}(...$params);
+        $result = $this->getConnection()->{$method}(...$params);
+
+        $this->appendCMD($start, $method, ...$params);
+
+        return $result;
     }
 
     public function __logging()
     {
         return $this->cmds;
+    }
+
+    public function setConnectionGetter(Closure $getter)
+    {
+        $this->connectionGetter = $getter;
+
+        return $this;
     }
 
     public function setConnection($connection)
@@ -46,6 +61,10 @@ class Redis implements StorageInterface
 
     public function getConnection()
     {
+        if ((! $this->connection) && $this->connectionGetter) {
+            $this->connection = ($this->connectionGetter)();
+        }
+
         if (! $this->connection) {
             exception('MissingRedisConnection');
         }
@@ -70,9 +89,13 @@ class Redis implements StorageInterface
         return $this->annotations;
     }
 
-    private function appendCMD(...$params)
+    private function appendCMD(float $start, string $cmd, ...$params)
     {
-        $this->cmds[] = fixed_string(join(' ', $params), 255);
+        $this->cmds[] = [
+            microtime(true) - $start,
+            $cmd,
+            fixed_string(join(' ', $params), 255)
+        ];
 
         return $this;
     }

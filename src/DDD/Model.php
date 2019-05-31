@@ -6,6 +6,7 @@ namespace Dof\Framework\DDD;
 
 use Dof\Framework\TypeHint;
 use Dof\Framework\ModelManager;
+use Dof\Framework\Container;
 
 /**
  * Data Model
@@ -17,11 +18,26 @@ abstract class Model
         return new static;
     }
 
+    public static function attrs()
+    {
+        return static::annotations()['properties'] ?? [];
+    }
+
+    public static function meta()
+    {
+        return static::annotations()['meta'] ?? [];
+    }
+
+    public static function annotations()
+    {
+        return ModelManager::get(static::class);
+    }
+
     public static function init(array $data)
     {
         $model = static::class;
         $instance = new $model;
-        $annotations = ModelManager::get($model);
+        $annotations = $this->annotations();
 
         foreach ($data as $property => $val) {
             $attr = $annotations['properties'][$property] ?? null;
@@ -61,7 +77,8 @@ abstract class Model
             }
             $getter = 'get'.ucfirst($attr);
             if (method_exists($this, $getter)) {
-                return $this->{$getter}();
+                $params = Container::build(static::class, $getter);
+                return $this->{$getter}(...$params);
             }
         }
     }
@@ -106,6 +123,9 @@ abstract class Model
                 return $this->set($attr, ($params[0] ?? null));
             }
         }
+
+        $class = static::class;
+        exception('MethodNotExists', compact('method', 'class'));
     }
 
     final public function __toArray()

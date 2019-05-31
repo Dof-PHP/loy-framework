@@ -227,7 +227,11 @@ final class StorageManager
         $config = array_merge($config, $meta);
         $instance = new $storage($annotations);
         unset($config['database'], $meta['database']);
-        $instance->setConnection(Connection::get($driver, $connection, $config));
+
+        // Avoid an actual connection to db driver when we are using cache
+        $instance->setConnectionGetter(function () use ($driver, $connection, $config) {
+            return Connection::get($driver, $connection, $config);
+        });
 
         if (method_exists($instance, '__logging')) {
             Kernel::register('before-shutdown', function () use ($instance, $storage, $driver, $namespace) {
