@@ -697,7 +697,10 @@ class Command
                     return $console->line("-- SKIP: {$storage}");
                 }
 
-                return $console->info("SKIPPED: {$storage}");
+                return $console->line(
+                    $console->render('SKIPPED: ', 'BLUE')
+                    .$console->render($storage, $console::INFO_COLOR)
+                );
             }
 
             $res = StorageSchema::sync($storage, $force, $dump);
