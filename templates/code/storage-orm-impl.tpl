@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Domain\__DOMAIN__\Storage__NAMESPACE__;
 
 use Dof\Framework\DDD\__STORAGE__;
-
-// use Domain\__DOMAIN__\Repository\__NAME__Repository;
+use Domain\__DOMAIN__\Repository\__NAME__Repository;
 
 /**
- * @_Repository(__NAME__Repository)
+ * @Repository(__NAME__Repository)
  * @Driver(mysql)
  * @Database(?)
  * @Table(__NAME__)
@@ -18,8 +17,7 @@ use Dof\Framework\DDD\__STORAGE__;
  * @Charset(utf8mb4)
  * @SoftDelete(1)
  */
-// class __NAME__ORM extends __STORAGE__ implements __NAME__Repository
-class __NAME__ORM extends __STORAGE__
+class __NAME__ORM extends __STORAGE__ implements __NAME__Repository
 {
     /**
      * @Column(column_1)

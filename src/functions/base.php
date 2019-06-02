@@ -1290,3 +1290,18 @@ if (! function_exists('swap')) {
         $b = $c;
     }
 }
+if (! function_exists('path2ns')) {
+    function path2ns(string $path, bool $full = false)
+    {
+        if ($full) {
+            return str_replace('/', '\\', $path);
+        }
+
+        $namespace = str_replace('/', '\\', dirname($path));
+        if ($namespace === '.') {
+            return '';
+        }
+
+        return '\\'.$namespace;
+    }
+}

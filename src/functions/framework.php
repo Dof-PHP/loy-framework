@@ -439,3 +439,11 @@ if (! function_exists('array_get')) {
         return $validator->getResult()[$key] ?? null;
     }
 }
+if (! function_exists('storage')) {
+    function storage(string $driver, array $config)
+    {
+        $conn = \Dof\Framework\Storage\Connection::get('mysql', '__MYSQL__', $config);
+
+        return (new \Dof\Framework\Storage\MySQL)->setConnection($conn);
+    }
+}

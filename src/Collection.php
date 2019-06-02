@@ -81,6 +81,7 @@ class Collection implements
         }
 
         if ($key && is_string($key)) {
+            $this->keys[] = $key;
             $this->data[$key] = $value;
         } else {
             $this->data[] = $value;

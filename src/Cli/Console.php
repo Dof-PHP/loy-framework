@@ -159,6 +159,13 @@ class Console
         return $this->options->has($name);
     }
 
+    public function setOption(string $name, $val)
+    {
+        $this->options->set($name, $val);
+
+        return $this;
+    }
+
     public function getOption(string $name, $default = null)
     {
         return $this->options->get($name, $default);

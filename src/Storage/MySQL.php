@@ -51,12 +51,17 @@ class MySQL implements StorageInterface
 
             $start = microtime(true);
 
-            $statement = $this->getConnection()->prepare($sql);
-            $id = $statement->execute($values);
+            $connection = $this->getConnection();
+            $statement = $connection->prepare($sql);
+            $statement->execute($values);
+            $id = $connection->lastInsertId();
 
             $this->appendSql($sql, $start, $values);
 
-            return (int) $id;
+            // NOTES:
+            // - lastInsertId() only work after the INSERT query
+            // - In transaction, lastInsertId() should be called before commit()
+            return intval($id);
         } catch (Throwable $e) {
             if (($e->errorInfo[1] ?? null) === 1062) {
                 exception('ViolatedUniqueConstraint', compact('sql', 'values'), $e);
@@ -287,6 +292,8 @@ class MySQL implements StorageInterface
     public function setConnection($connection)
     {
         $this->connection = $connection;
+
+        return $this;
     }
 
     public function getConnection(bool $needdb = true)

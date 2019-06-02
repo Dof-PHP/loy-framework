@@ -775,9 +775,9 @@ class Command
      * @CMD(entity.add)
      * @Desc(Add an entity class in a domain)
      * @Option(domain){notes=Domain name of entity to be created}
-     * @Option(name){notes=Name of entity to be created}
+     * @Option(entity){notes=Name of entity to be created}
      * @Option(force){notes=Whether force recreate entity when given entity name exists}
-     * @Option(withts){notes=Whether the entity to be created has timestamp properties}
+     * @Option(withts){notes=Whether the entity to be created has timestamp properties&default=true}
      */
     public function addEntity($console)
     {
@@ -789,7 +789,7 @@ class Command
         if (! $path) {
             $console->exception('DomainNotExists', [$domain]);
         }
-        $name = $console->getOption('name');
+        $name = $console->getOption('entity');
         if (! $name) {
             $console->exception('MissingEntityName');
         }
@@ -798,24 +798,16 @@ class Command
             $console->exception('EntityAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
-        $withts = $console->hasOption('withts');
         $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'entity.tpl');
         if (! is_file($template)) {
             $console->exception('EntityClassTemplateNotExist', [$template]);
         }
 
-        $namespace = str_replace('/', '\\', dirname($name));
-        if ($namespace === '.') {
-            $namespace = '';
-        } else {
-            $namespace = '\\'.$namespace;
-        }
-
-        $parent = $withts ? 'EntityWithTS' : 'Entity';
+        $parent = $console->getOption('withts', true) ? 'EntityWithTS' : 'Entity';
 
         $entity = file_get_contents($template);
         $entity = str_replace('__DOMAIN__', $domain, $entity);
-        $entity = str_replace('__NAMESPACE__', $namespace, $entity);
+        $entity = str_replace('__NAMESPACE__', path2ns($name), $entity);
         $entity = str_replace('__PARENT__', $parent, $entity);
         $entity = str_replace('__NAME__', basename($name), $entity);
 
@@ -823,14 +815,17 @@ class Command
 
         $_class = get_namespace_of_file($class, true);
 
-        $console->success("Created Entity: {$_class} ({$class})");
+        $console->line(
+            $console->render('Created Entity: ', $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
     }
 
     /**
      * @CMD(port.add)
      * @Desc(Add a port class in a domain)
      * @Option(domain){notes=Domain name of port to be created}
-     * @Option(name){notes=Name of port to be created}
+     * @Option(port){notes=Name of port to be created}
      * @Option(force){notes=Whether force recreate port when given port name exists}
      * @Option(crud){notes=Whether add crud port methods into port&default=false}
      */
@@ -844,7 +839,7 @@ class Command
         if (! $path) {
             $console->exception('DomainNotExists', [$domain]);
         }
-        $name = $console->getOption('name');
+        $name = $console->getOption('port');
         if (! $name) {
             $console->exception('MissingPortName');
         }
@@ -853,37 +848,36 @@ class Command
             $console->exception('PortAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
-        $type = $console->hasOption('crud') ? 'crud' : 'basic';
-        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', "port-{$type}.tpl");
+        $tpl = $console->hasOption('crud') ? 'port-crud.tpl' : 'port-basic.tpl';
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', $tpl);
         if (! is_file($template)) {
             $console->exception('PortClassTemplateNotExist', [$template]);
         }
 
-        $namespace = str_replace('/', '\\', dirname($name));
-        if ($namespace === '.') {
-            $namespace = '';
-        } else {
-            $namespace = '\\'.$namespace;
-        }
-
         $port = file_get_contents($template);
         $port = str_replace('__DOMAIN__', $domain, $port);
-        $port = str_replace('__NAMESPACE__', $namespace, $port);
+        $port = str_replace('__NAMESPACE__', path2ns($name), $port);
         $port = str_replace('__NAME__', basename($name), $port);
 
         save($class, $port);
 
         $_class = get_namespace_of_file($class, true);
 
-        $console->success("Created Port: {$_class} ({$class})");
+        $console->line(
+            $console->render('Created Port: ', $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
     }
 
     /**
      * @CMD(storage.add.orm)
      * @Desc(Add an orm storage class in a domain)
      * @Option(domain){notes=Domain name of orm storage to be created}
-     * @Option(name){notes=Name of orm storage to be created}
+     * @Option(storage){notes=Name of orm storage to be created}
      * @Option(force){notes=Whether force recreate orm storage when given orm storage name exists}
+     * @Option(withts){notes=Whether orm storage has timestamps&default=true}
+     * @Option(impl){notes=Whether orm storage implements a repository&default=false}
+     *
      */
     public function addORMStorage($console)
     {
@@ -895,7 +889,7 @@ class Command
         if (! $path) {
             $console->exception('DomainNotExists', [$domain]);
         }
-        $name = $console->getOption('name');
+        $name = $console->getOption('storage');
         if (! $name) {
             $console->exception('MissingORMStorageName');
         }
@@ -904,37 +898,37 @@ class Command
             $console->exception('StorageAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
-        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'storage-orm.tpl');
+        $tpl = $console->getOption('impl', false) ? 'storage-orm-impl.tpl' : 'storage-orm.tpl';
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', $tpl);
         if (! is_file($template)) {
             $console->exception('ORMStorageClassTemplateNotExist', [$template]);
         }
 
-        $namespace = str_replace('/', '\\', dirname($name));
-        if ($namespace === '.') {
-            $namespace = '';
-        } else {
-            $namespace = '\\'.$namespace;
-        }
+        $storage = $console->getOption('withts', true) ? 'ORMStorageWithTS' : 'ORMStorage';
 
         $orm = file_get_contents($template);
         $orm = str_replace('__DOMAIN__', $domain, $orm);
-        $orm = str_replace('__NAMESPACE__', $namespace, $orm);
-        $orm = str_replace('__PARENT__', 'ORMStorage', $orm);
+        $orm = str_replace('__NAMESPACE__', path2ns($name), $orm);
         $orm = str_replace('__NAME__', basename($name), $orm);
+        $orm = str_replace('__STORAGE__', $storage, $orm);
 
         save($class, $orm);
 
         $_class = get_namespace_of_file($class, true);
 
-        $console->success("Created ORM Storage: {$_class} ({$class})");
+        $console->line(
+            $console->render('Created ORM Storage: ', $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
     }
 
     /**
      * @CMD(storage.add.kv)
      * @Desc(Add an kv storage class in a domain)
      * @Option(domain){notes=Domain name of kv storage to be created}
-     * @Option(name){notes=Name of kv storage to be created}
+     * @Option(storage){notes=Name of kv storage to be created}
      * @Option(force){notes=Whether force recreate kv storage when given kv storage name exists}
+     * @Option(impl){notes=Whether kv storage implements a repository&default=false}
      */
     public function addKVStorage($console)
     {
@@ -946,7 +940,7 @@ class Command
         if (! $path) {
             $console->exception('DomainNotExists', [$domain]);
         }
-        $name = $console->getOption('name');
+        $name = $console->getOption('storage');
         if (! $name) {
             $console->exception('MissingKVStorageName');
         }
@@ -955,37 +949,39 @@ class Command
             $console->exception('KVStorageAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
-        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'storage-kv.tpl');
+        $tpl = $console->getOption('impl', false) ? 'storage-kv-impl.tpl' : 'storage-kv.tpl';
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', $tpl);
         if (! is_file($template)) {
             $console->exception('KVStorageClassTemplateNotExist', [$template]);
         }
 
-        $namespace = str_replace('/', '\\', dirname($name));
-        if ($namespace === '.') {
-            $namespace = '';
-        } else {
-            $namespace = '\\'.$namespace;
-        }
+        $storage = $console->getOption('withts', true) ? 'ORMStorageWithTS' : 'ORMStorage';
 
         $kv = file_get_contents($template);
         $kv = str_replace('__DOMAIN__', $domain, $kv);
-        $kv = str_replace('__NAMESPACE__', $namespace, $kv);
-        $kv = str_replace('__PARENT__', 'KVStorage', $kv);
+        $kv = str_replace('__NAMESPACE__', path2ns($name), $kv);
         $kv = str_replace('__NAME__', basename($name), $kv);
+        $orm = str_replace('__STORAGE__', $storage, $kv);
 
         save($class, $kv);
 
         $_class = get_namespace_of_file($class, true);
 
-        $console->success("Created KV Storage: {$_class} ({$class})");
+        $console->line(
+            $console->render('Created KV Storage: ', $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
     }
 
     /**
      * @CMD(repo.add)
      * @Desc(Add a repository interface in a domain)
      * @Option(domain){notes=Domain name of repository to be created}
-     * @Option(name){notes=Name of repository to be created}
+     * @Option(repo){notes=Name of repository to be created}
      * @Option(force){notes=Whether force recreate repository when given repository name exists}
+     * @Option(type){notes=Repository type: Entity/ORM | Model/KV&default=Entity/ORM}
+     * @Option(entity){notes=Entity path}
+     * @Option(model){notes=Model path}
      */
     public function addRepository($console)
     {
@@ -997,7 +993,7 @@ class Command
         if (! $path) {
             $console->exception('DomainNotExists', [$domain]);
         }
-        $name = $console->getOption('name');
+        $name = $console->getOption('repo');
         if (! $name) {
             $console->exception('MissingRepositoryName');
         }
@@ -1006,36 +1002,51 @@ class Command
             $console->exception('StorageAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
-        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'repository.tpl');
+        $type = $console->getOption('type', 'entity');
+        $isEntity = ciin_array($type, ['entity', 'orm']);
+        $tpl = $isEntity ? 'repository-entity.tpl' : 'repository-model.tpl';
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', $tpl);
         if (! is_file($template)) {
             $console->exception('RepositoryInterfaceTemplateNotExist', [$template]);
         }
 
-        $namespace = str_replace('/', '\\', dirname($name));
-        if ($namespace === '.') {
-            $namespace = '';
-        } else {
-            $namespace = '\\'.$namespace;
+        $storage = $name = basename($name);
+        if ($_storage = $console->getOption('storage')) {
+            $storage = path2ns($_storage, true);
         }
 
         $repo = file_get_contents($template);
         $repo = str_replace('__DOMAIN__', $domain, $repo);
-        $repo = str_replace('__NAMESPACE__', $namespace, $repo);
-        $repo = str_replace('__NAME__', basename($name), $repo);
+        $repo = str_replace('__NAMESPACE__', path2ns($name), $repo);
+        $repo = str_replace('__NAME__', $name, $repo);
+        $repo = str_replace('__STORAGE__', $storage.'ORM', $repo);
+
+        if ($isEntity) {
+            $entity = $console->getOption('entity', $name);
+            $repo = str_replace('__ENTITY__', path2ns($entity, true), $repo);
+        } else {
+            $model = $console->getOption('model', $name);
+            $repo = str_replace('__MODEL__', path2ns($model, true), $repo);
+        }
 
         save($class, $repo);
 
         $_class = get_namespace_of_file($class, true);
 
-        $console->success("Created Repository: {$_class} ({$class})");
+        $console->line(
+            $console->render("Created Repository ({$type}): ", $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
     }
 
     /**
      * @CMD(service.add)
      * @Desc(Add a service class in a domain)
      * @Option(domain){notes=Domain name of service to be created}
-     * @Option(name){notes=Name of service to be created}
+     * @Option(service){notes=Name of service to be created}
      * @Option(force){notes=Whether force recreate service when given service name exists}
+     * @Option(entity){notes=Entity name used for CRUD template}
+     * @Option(crud){notes=CRUD template type, one of create/delete/update/show/list}
      */
     public function addService($console)
     {
@@ -1047,7 +1058,7 @@ class Command
         if (! $path) {
             $console->exception('DomainNotExists', [$domain]);
         }
-        $name = $console->getOption('name');
+        $name = $console->getOption('service');
         if (! $name) {
             $console->exception('MissingServiceName');
         }
@@ -1056,93 +1067,139 @@ class Command
             $console->exception('ServiceAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
-        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'service.tpl');
+        $tpl = 'service-basic.tpl';
+        if ($console->hasOption('crud')) {
+            $crud = strtolower(strval($console->getOption('crud')));
+            $types = ['create', 'delete', 'update', 'show', 'list'];
+            if ((! $crud) || (! in_array($crud, $types))) {
+                $console->exception('InvalidCRUDType', compact('crud', 'types'));
+            }
+            $tpl = "service-crud-{$crud}.tpl";
+        }
+
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', $tpl);
         if (! is_file($template)) {
             $console->exception('ServiceClassTemplateNotExist', [$template]);
         }
 
-        $namespace = str_replace('/', '\\', dirname($name));
-        if ($namespace === '.') {
-            $namespace = '';
-        } else {
-            $namespace = '\\'.$namespace;
-        }
-
         $service = file_get_contents($template);
         $service = str_replace('__DOMAIN__', $domain, $service);
-        $service = str_replace('__NAMESPACE__', $namespace, $service);
+        $service = str_replace('__NAMESPACE__', path2ns($name), $service);
         $service = str_replace('__NAME__', basename($name), $service);
+
+        if ($entity = $console->getOption('entity')) {
+            $service = str_replace('__ENTITY__', path2ns($entity, true), $service);
+        }
 
         save($class, $service);
 
         $_class = get_namespace_of_file($class, true);
 
-        $console->success("Created Service: {$_class} ({$class})");
-    }
-
-    /**
-     * @CMD(crud)
-     * @Desc(Generate all CRUD operations related classes based on a resource/entity name)
-     * @Option(domain){notes=Domain name of classes to be created}
-     * @Option(entity){notes=Entity name}
-     * @Option(orm){notes=ORM name}
-     * @Option(repo){notes=Repository name}
-     * @Option(port){notes=Port name}
-     * @Option(service){notes=Service name}
-     */
-    public function crud()
-    {
-        // TODO
+        $console->line(
+            $console->render("Created Service: ", $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
     }
 
     /**
      * @CMD(asm.add)
      * @Desc(Add Assembler in a domain)
      * @Option(domain){notes=Domain name of assembler to be created}
-     * @Option(name){notes=Assembler name}
+     * @Option(asm){notes=Assembler name}
      * @Option(force){notes=Whether force recreate assembler when given assembler name exists}
      */
-    public function addAssembler($csl)
+    public function addAssembler($console)
     {
-        $name = $csl->getOption('name');
-        if (! $name) {
-            $csl->exception('MissingAssemblerName');
-        }
-        $domain = $csl->getOption('domain');
+        $domain = $console->getOption('domain');
         if (! $domain) {
-            $csl->exception('MissingDomainName');
+            $console->exception('MissingDomainName');
+        }
+        $name = $console->getOption('asm');
+        if (! $name) {
+            $console->exception('MissingAssemblerName');
         }
         $path = DomainManager::getByKey($domain);
         if (! $path) {
-            $csl->exception('DomainNotExists', [$domain]);
+            $console->exception('DomainNotExists', [$domain]);
         }
         $class = ospath($path, Kernel::ASSEMBLER, "{$name}.php");
-        if (is_file($class) && (! $csl->hasOption('force'))) {
-            $csl->exception('AssemblerAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('AssemblerAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
-
         $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'assembler.tpl');
         if (! is_file($template)) {
-            $csl->exception('AssemblerClassTemplateNotExist', [$template]);
-        }
-
-        $namespace = str_replace('/', '\\', dirname($name));
-
-        if ($namespace === '.') {
-            $namespace = '';
-        } else {
-            $namespace = '\\'.$namespace;
+            $console->exception('AssemblerClassTemplateNotExist', [$template]);
         }
 
         $assembler = file_get_contents($template);
         $assembler = str_replace('__DOMAIN__', $domain, $assembler);
-        $assembler = str_replace('__NAMESPACE__', $namespace, $assembler);
+        $assembler = str_replace('__NAMESPACE__', path2ns($name), $assembler);
         $assembler = str_replace('__NAME__', basename($name), $assembler);
 
         save($class, $assembler);
 
         $_class = get_namespace_of_file($class, true);
 
-        $csl->success("Created Assembler: {$_class} ({$class})");
+        $console->line(
+            $console->render("Created Assembler: ", $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
+    }
+
+    /**
+     * @CMD(crud)
+     * @Desc(Generate all CRUD operations related classes based on a resource/entity name)
+     * @Option(domain){notes=Domain name of classes to be created}
+     * @Option(entity){notes=Entity directory path}
+     * @Option(storage){notes=ORM storage directory path}
+     * @Option(repo){notes=Repository directory path}
+     * @Option(port){notes=Port directory path}
+     * @Option(service){notes=Service directory path}
+     * @Option(asm){notes=Assembler directory path}
+     * @Option(withts){notes=Entity and ORM storage to be created need timestamps or not&default=true}
+     */
+    public function crud($console)
+    {
+        $entity = $console->getOption('entity');
+        if (! $entity) {
+            $console->exception('MissingEntityName');
+        }
+        $this->addEntity($console);
+        $_entity = basename($entity);
+
+        $repo = $console->hasOption('repo')
+            ? join('/', [$console->getOption('repo'), $_entity])
+            : $_entity;
+        $console->setOption('repo', $repo);
+        $this->addRepository($console);
+
+        $storage = $console->hasOption('storage')
+            ? join('/', [$console->getOption('storage'), $_entity])
+            : $_entity;
+        $console->setOption('impl', true)->setOption('storage', $storage);
+        $this->addORMStorage($console);
+
+        $port = $console->hasOption('port')
+            ? join('/', [$console->getOption('port'), $_entity])
+            : $_entity;
+        $console->setOption('crud', true)->setOption('port', $port);
+        $this->addPort($console);
+
+        $console->setOption('crud', 'create')->setOption('service', "CRUD/Create{$_entity}");
+        $this->addService($console);
+        $console->setOption('crud', 'delete')->setOption('service', "CRUD/Delete{$_entity}");
+        $this->addService($console);
+        $console->setOption('crud', 'update')->setOption('service', "CRUD/Update{$_entity}");
+        $this->addService($console);
+        $console->setOption('crud', 'show')->setOption('service', "CRUD/Show{$_entity}");
+        $this->addService($console);
+        $console->setOption('crud', 'list')->setOption('service', "CRUD/List{$_entity}");
+        $this->addService($console);
+
+        $asm = $console->hasOption('asm')
+            ? join('/', [$console->getOption('asm'), $_entity])
+            : $_entity;
+        $console->setOption('asm', $asm);
+        $this->addAssembler($console);
     }
 }

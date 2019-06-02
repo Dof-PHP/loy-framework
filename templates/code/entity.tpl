@@ -7,14 +7,14 @@ namespace Domain\__DOMAIN__\Entity__NAMESPACE__;
 use Dof\Framework\DDD\__PARENT__;
 
 /**
- * @Title(ENTITY_TITLE)
+ * @Title(Entity Title)
  */
 class __NAME__ extends __PARENT__
 {
     /**
-     * @Title(PROPERTY_NAME)
+     * @Title(Property Name)
      * @Type(String)
-     * @Notes(PROPERTY_NOTES)
+     * @Notes(Property Notes)
      */
     protected $property1;
 }

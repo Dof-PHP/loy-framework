@@ -6,12 +6,11 @@ namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
 
 use Dof\Framework\OFB\Pipe\Paginate;
 use Domain\__DOMAIN__\Http\ERR;
-use Domain\__DOMAIN__\Assembler\__NAME__;
-use Domain\__DOMAIN__\Service\Create__NAME__;
-use Domain\__DOMAIN__\Service\Delete__NAME__;
-use Domain\__DOMAIN__\Service\Update__NAME__;
-use Domain\__DOMAIN__\Service\Show__NAME__;
-use Domain\__DOMAIN__\Service\List__NAME__;
+use Domain\__DOMAIN__\Service\CRUD\Create__NAME__;
+use Domain\__DOMAIN__\Service\CRUD\Delete__NAME__;
+use Domain\__DOMAIN__\Service\CRUD\Update__NAME__;
+use Domain\__DOMAIN__\Service\CRUD\Show__NAME__;
+use Domain\__DOMAIN__\Service\CRUD\List__NAME__;
 
 /**
  * @Author(name@group.com)
@@ -20,7 +19,7 @@ use Domain\__DOMAIN__\Service\List__NAME__;
  * @Group(?/?)
  * @Route(__NAME__)
  * @Model(Domain\__DOMAIN__\Entity\__NAME__)
- * @Assembler(_)
+ * @Assembler(Domain\__DOMAIN__\Assembler\__NAME__)
  * @MimeOut(json)
  */
 class __NAME__
@@ -59,6 +58,7 @@ class __NAME__
      * @Verb(delete)
      * @Argument(id){need:0&location=URL Path}
      * @HeaderStatus(204){Deleted Success}
+     * @Assembler(_)
      */
     public function delete(int $id, Delete__NAME__ $service)
     {
@@ -89,6 +89,7 @@ class __NAME__
     /**
      * @Title(Show Resource __NAME__ Detail)
      * @Argument(id){need:0&location=URL Path}
+     * @Route({id})
      * @Verb(get)
      */
     public function show(int $id, Show__NAME__ $service)
