@@ -6,6 +6,7 @@ namespace Dof\Framework\Facade;
 
 use Dof\Framework\DDD\Assembler as AssembleObject;
 use Dof\Framework\DDD\Service;
+use Dof\Framework\Container;
 use Dof\Framework\Paginator;
 
 class Assembler
@@ -95,6 +96,10 @@ class Assembler
         $val = null;
 
         if (is_object($result)) {
+            // $getter = 'get'.ucfirst($key);
+            // $val = method_exists($result, $getter)
+            // ? $result->{$getter}(...(Container::build(get_class($result), $getter)))
+            // : ($result->{$key} ?? null);
             $val = $result->{$key} ?? null;
         } elseif (is_array($result)) {
             $val = $result[$key] ?? null;

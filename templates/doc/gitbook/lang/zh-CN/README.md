@@ -145,6 +145,8 @@ XXX XX XXX
 | `Uint` | 非负整数 | `0` |
 | `Nint` | 负整数 | `-1` |
 | `String` | 字符串 | `foo` |
+| `IdList` | ID 列表字符串，ID 之间使用英文逗号隔开且所有 ID 不重复 | `1,2,3,4` |
+| `IdArray` | ID 列表数组，数组内所有 ID 不重复 | `[1, 2, 3, 4]` |
 | `Array` | 广义数组 | `[1, 2, 'a' => 3, 'b' => 4]` |
 | `ValueArray`/`ScalarArray` | 值数组/标量数组 | `[1, 2, 3, 4]` |
 | `IndexArray` | 下标数组 | `[1, 2, 'a', 'b']` |
@@ -154,7 +156,7 @@ XXX XX XXX
 ### 说明
 
 - 接口参数基本类型的 KEY 不区分大小写。
-- `Array`/`IndexArray`/`ValueArray`/`ScalarArray`/`ListArray`/`ObjectArray`/`AssocArray` 本质都是数组，只是在某些场景下可能需要对数组本身进行区分，因此进一步分为这几类。
+- `Array`/`IndexArray`/`IdArray`/`ValueArray`/`ScalarArray`/`ListArray`/`ObjectArray`/`AssocArray` 本质都是数组，只是在某些场景下可能需要对数组本身进行区分，因此进一步分为这几类。
 
 ## 接口参数校验规则
 

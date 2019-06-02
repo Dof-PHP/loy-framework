@@ -1117,7 +1117,7 @@ class Command
             $csl->exception('DomainNotExists', [$domain]);
         }
         $class = ospath($path, Kernel::ASSEMBLER, "{$name}.php");
-        if (is_file($class) && (! $cls->hasOption('force'))) {
+        if (is_file($class) && (! $csl->hasOption('force'))) {
             $csl->exception('AssemblerAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 

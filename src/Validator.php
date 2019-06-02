@@ -237,25 +237,50 @@ class Validator
         return true;
     }
 
-    private function validateIdlist($key, string $string = '0')
+    private function validateIdarray($key)
     {
         $val = $this->data[$key] ?? null;
-        if (! $val) {
+        if ((! $val) || (! is_array($val))) {
             return false;
         }
 
-        $isString = ($string == '1');
-        if ($isString) {
-            $this->result[$key] = array_unique(array_trim_from_string($val, ','));
-
+        $val = array_unique($val);
+        $_val = array_filter($val, function ($val) {
+            return TypeHint::isPint($val);
+        });
+        if (count($_val) !== count($val)) {
             return true;
         }
 
-        if (! is_array($val)) {
+        array_walk($val, function ($id) {
+            $id = intval($id);
+        });
+        $this->result[$key] = $val;
+
+        return true;
+    }
+
+    private function validateIdlist($key)
+    {
+        $val = $this->data[$key] ?? null;
+        if ((! $val) || (! is_string($val))) {
             return false;
         }
 
-        $this->result[$key] = array_unique($val);
+        $val = array_unique(array_trim_from_string($val, ','));
+
+        $_val = array_filter($val, function ($val) {
+            return TypeHint::isPint($val);
+        });
+
+        if (count($_val) !== count($val)) {
+            return true;
+        }
+        array_walk($val, function ($id) {
+            $id = intval($id);
+        });
+
+        $this->result[$key] = $val;
 
         return true;
     }

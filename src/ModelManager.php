@@ -93,6 +93,33 @@ final class ModelManager
         }
     }
 
+    public static function __annotationMultipleMergeArgument()
+    {
+        return 'kv';
+    }
+
+    public static function __annotationMultipleArgument() : bool
+    {
+        return true;
+    }
+
+    public static function __annotationFilterArgument(string $arguments, array $argvs) : array
+    {
+        return array_trim_from_string($arguments, ',');
+    }
+
+    public static function __annotationFilterRepository(string $repository) : string
+    {
+        if (! interface_exists($repository)) {
+            exception('RepositoryNotExists', compact('repository'));
+        }
+        if (! is_subclass_of($repository, Repository::class)) {
+            exception('InvalidRepositoryInterface', compact('repository'));
+        }
+
+        return trim($repository);
+    }
+
     public static function get(string $namespace)
     {
         return self::$models[$namespace] ?? null;

@@ -9,10 +9,21 @@ class EntityWithTS extends Entity
     /**
      * @Title(Created timestamp)
      * @Type(Uint)
+     * @Notes(If no field parameters, then return timestamp as default)
+     * @Argument(format){default=timestamp}
      */
     protected $createdAt;
 
-    public function getCreatedAt(): int
+    /**
+     * @Title(Updated timestamp)
+     * @Type(Uint)
+     * @Notes(If no field parameters, then return timestamp as default)
+     * @Default(0)
+     * @Argument(format){default=timestamp}
+     */
+    protected $updatedAt;
+
+    public function getCreatedAt() : int
     {
         return $this->createdAt;
     }
@@ -21,6 +32,18 @@ class EntityWithTS extends Entity
     {
         $this->createdAt = $createdAt;
     
+        return $this;
+    }
+
+    public function getUpdatedAt() : int
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(int $updatedAt)
+    {
+        $this->updatedAt = $updatedAt;
+
         return $this;
     }
 }
