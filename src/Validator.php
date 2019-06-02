@@ -34,8 +34,10 @@ class Validator
         foreach ($this->rules as $key => $rules) {
             // check if we need validate current parameters aginst rules first
             $_rules = array_keys($rules);
-            $need   = !is_null($this->data[$key] ?? null);
-            if (! $need) {
+            $val = $this->data[$key] ?? null;
+            $noneed = is_null($val) || ('' === $val);
+            $need = !$noneed;
+            if ($noneed) {
                 foreach ($_rules as $_rule) {
                     if (Validator::REQUIRE_RULES[strtolower($_rule)] ?? false) {
                         $need = true;
@@ -43,6 +45,9 @@ class Validator
                     }
                 }
             }
+
+            // If value is null or empty and no require rules on that value
+            // Then we skip the next validateions
             if (! $need) {
                 continue;
             }
@@ -508,8 +513,8 @@ class Validator
                 if (! $rule) {
                     continue;
                 }
-                $ext  = $rarr[1] ?? '';
-                $msg  = $msg ?: $this->getDefaultRuleMessage($rule, $key, $ext);
+                $ext = $rarr[1] ?? '';
+                $msg = $msg ?: $this->getDefaultRuleMessage($rule, $key, $ext);
 
                 if (Validator::REQUIRE_RULES[strtolower($rule)] ?? false) {
                     if ($hasRequireRule) {
