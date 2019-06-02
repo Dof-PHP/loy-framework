@@ -101,9 +101,29 @@ class MySQLBuilder
         return $this;
     }
 
+    public function rlike(string $column, $value)
+    {
+        $value = trim(strval($value));
+
+        $this->where[] = [$column, 'LIKE', "{$value}%"];
+
+        return $this;
+    }
+
+    public function llike(string $column, $value)
+    {
+        $value = trim(strval($value));
+
+        $this->where[] = [$column, 'LIKE', "%{$value}"];
+
+        return $this;
+    }
+
     public function like(string $column, $value)
     {
-        $this->where[] = [$column, 'LIKE', $value];
+        $value = trim(strval($value));
+
+        $this->where[] = [$column, 'LIKE', "%{$value}%"];
 
         return $this;
     }
