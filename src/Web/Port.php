@@ -11,7 +11,12 @@ final class Port
 {
     use CollectionFacadeTrait;
 
-    public function annotations()
+    public static function argvs() : array
+    {
+        return self::getInstance()->argument->toArray();
+    }
+
+    public static function annotations()
     {
         list($ofClass, , $ofMethods) = Annotation::get(self::$instance->class);
 
@@ -21,7 +26,7 @@ final class Port
         ], __CLASS__);
     }
 
-    public function class(string $annotation = null)
+    public static function class(string $annotation = null)
     {
         list($ofClass, , ) = Annotation::get(self::$instance->class);
 
@@ -32,7 +37,7 @@ final class Port
             : $annotations;
     }
 
-    public function method(string $annotation = null)
+    public static function method(string $annotation = null)
     {
         list(, , $ofMethods) = Annotation::get(self::$instance->class);
         $annotations = $ofMethods[self::$instance->method]['doc'] ?? [];

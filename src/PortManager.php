@@ -858,7 +858,7 @@ final class PortManager
         return true;
     }
 
-    public static function __annotationMultipleMergeArgument() : bool
+    public static function __annotationMultipleMergeArgument()
     {
         return true;
     }

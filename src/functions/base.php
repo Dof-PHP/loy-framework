@@ -460,7 +460,7 @@ if (! function_exists('array_trim')) {
     }
 }
 if (! function_exists('array_trim_from_string')) {
-    function array_trim_from_string(string $str, string $explode = ',')
+    function array_trim_from_string(string $str, string $explode = ',') : array
     {
         $str = trim($str);
         $arr = explode($explode, $str);

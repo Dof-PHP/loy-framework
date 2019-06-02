@@ -194,6 +194,15 @@ if (! function_exists('port')) {
         return $annotation ? $port->{$annotation} : $port;
     }
 }
+if (! function_exists('pargvs')) {
+    /**
+     * Get the port arguments array
+     */
+    function pargvs(string $annotation = null)
+    {
+        return \Dof\Framework\Web\Port::argvs();
+    }
+}
 if (! function_exists('route')) {
     /**
      * Get the route collection instance related to current request

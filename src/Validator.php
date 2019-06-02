@@ -237,6 +237,29 @@ class Validator
         return true;
     }
 
+    private function validateIdlist($key, string $string = '0')
+    {
+        $val = $this->data[$key] ?? null;
+        if (! $val) {
+            return false;
+        }
+
+        $isString = ($string == '1');
+        if ($isString) {
+            $this->result[$key] = array_unique(array_trim_from_string($val, ','));
+
+            return true;
+        }
+
+        if (! is_array($val)) {
+            return false;
+        }
+
+        $this->result[$key] = array_unique($val);
+
+        return true;
+    }
+
     private function validateArray($key)
     {
         return is_array($this->data[$key] ?? null);
