@@ -53,7 +53,7 @@ class Validator
             }
 
             foreach ($rules as $rule => list($msg, $ext)) {
-                $ext = ci_equal($rule, 'default') ? [$msg] : array_trim_from_string($ext, ',');
+                $ext = ci_equal($rule, 'default') ? [$ext] : array_trim_from_string($ext, ',');
                 $res = $this->validate($rule, $key, $ext);
                 if (is_null($res)) {
                     break;
@@ -482,6 +482,12 @@ class Validator
         }
     }
 
+    /**
+     * 1. Check raw input validate rules and set prior the order for default and require rules
+     * 2. Format every single rule item into [MSG, EXT]
+     *
+     * @param array $rules: Raw input validation rules
+     */
     private function check(array $rules)
     {
         $result = [];

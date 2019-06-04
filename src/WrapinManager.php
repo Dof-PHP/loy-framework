@@ -143,6 +143,7 @@ final class WrapinManager
             if (! $argument) {
                 continue;
             }
+
             $_key = null;    // The field name first find a non-null value in key list
             $keys = array_keys(($argument['COMPATIBLE'] ?? []));
             array_unshift($keys, $key);
@@ -154,6 +155,9 @@ final class WrapinManager
             $ext = $argument['__ext__'] ?? [];
             unset($argument['__ext__']);
             foreach ($argument as $annotation => $value) {
+                $_annotation = array_trim_from_string($annotation, ':');
+                $annotation = $_annotation[0] ?? $annotation;
+                $value = $_annotation[1] ?? $value;
                 if (self::RESERVE_KEYS[$annotation] ?? false) {
                     continue;
                 }
@@ -172,7 +176,7 @@ final class WrapinManager
 
                 $rule = $annotation;
                 if ($annotation === 'DEFAULT') {
-                    $rules[$key][$annotation] = $value;
+                    $rules[$key][] = sprintf('%s:%s', $annotation, $value);
                     continue;
                 }
                 if ($annotation === 'VALIDATOR') {

@@ -7,6 +7,7 @@ namespace Dof\Framework\DDD;
 use Dof\Framework\StorageManager;
 use Dof\Framework\RepositoryManager;
 use Dof\Framework\Paginator;
+use Dof\Framework\Collection;
 
 /**
  * In Dof, ORMStorage also the configuration of ORM
@@ -158,6 +159,24 @@ class ORMStorage extends Storage
         }
 
         return RepositoryManager::map(static::class, $result);
+    }
+
+    final public function collect(array $result = null) : ?Collection
+    {
+        return collect($result);
+    }
+
+    final public function collects(array $result = null) : ?array
+    {
+        if (is_null($result)) {
+            return null;
+        }
+
+        foreach ($result as &$item) {
+            $item = collect($item);
+        }
+
+        return $result;
     }
 
     /**

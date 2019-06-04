@@ -833,7 +833,7 @@ final class PortManager
             if (($_rule === 'NEED') && ($_ext == '0')) {
                 $neednot = true;
             }
-            $_ext = $_ext ? ":{$_ext}": '';
+            $_ext = ('' === $_ext) ? '' : ":{$_ext}";
             $params[$_rule.$_ext] = $error;
         }
 
