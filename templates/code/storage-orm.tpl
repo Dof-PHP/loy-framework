@@ -11,7 +11,7 @@ use Dof\Framework\DDD\__STORAGE__;
 /**
  * @_Repository(__NAME__Repository)
  * @Driver(mysql)
- * @Database(?)
+ * @Database(__DOMAIN__)
  * @Table(__NAME__)
  * @Comment(Comment of Table __NAME__)
  * @Engine(InnoDB)
