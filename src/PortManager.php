@@ -839,7 +839,7 @@ final class PortManager
 
         // Add default NEED rule for saving definitions
         if ($neednot) {
-            unset($params['NEED']);
+            unset($params['NEED'], $params['NEED:0']);
         } else {
             $params['NEED'] = null;
         }

@@ -65,7 +65,7 @@ size => 10
 可以总结为：
 
 - 当一个 WrapOut 只有 `__DATA__` 占位符时，`__DATA__` 里面是一个单项数据 A。
-- 当一个 WrapOut 既有 `__PAGINATOR__` 又有 `__DATA__` 时，`__DATA__` 里面相当于包含了若干个结构相同的单向数据 A。
+- 当一个 WrapOut 既有 `__PAGINATOR__` 又有 `__DATA__` 时，`__DATA__` 里面相当于包含了若干个结构相同的单项数据 A。
 
 ### 接口返回字段的查询参数
 
@@ -151,12 +151,13 @@ XXX XX XXX
 | `ValueArray`/`ScalarArray` | 值数组/标量数组 | `[1, 2, 3, 4]` |
 | `IndexArray` | 下标数组 | `[1, 2, 'a', 'b']` |
 | `ListArray` | 列表数组（子项同构） | `[['a' => 1, 'b' => 2], ['a' => 3, 'b' => 4]]` |
+| `ListArrayOfReference` | 列表数组（子项同构且每项关联到某个具体的数据模型） | `[['attr1' => 1, 'attr2' => 2], ['attr1' => 3, 'attr2' => 4]]` |
 | `AssocArray`/`ObjectArray` | 关联数组/对象数组 | `['a' => 1, 'b' => 2]` |
 
 ### 说明
 
 - 接口参数基本类型的 KEY 不区分大小写。
-- `Array`/`IndexArray`/`IdArray`/`ValueArray`/`ScalarArray`/`ListArray`/`ObjectArray`/`AssocArray` 本质都是数组，只是在某些场景下可能需要对数组本身进行区分，因此进一步分为这几类。
+- `Array`/`IndexArray`/`IdArray`/`ValueArray`/`ScalarArray`/`ListArray`/`ListArrayOfReference`/`ObjectArray`/`AssocArray` 本质都是数组，只是在某些场景下可能需要对数组本身进行区分，因此进一步分为这几类。
 
 ## 接口参数校验规则
 
