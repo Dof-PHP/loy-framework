@@ -454,7 +454,7 @@ class GitBook
                 'name' => $name,
                 'type' => $options['TYPE']  ?? null,
                 'title' => $options['TITLE'] ?? null,
-                'notes' => $options['notes'] ?? null,
+                'notes' => $options['NOTES'] ?? null,
                 'arguments' => $options['__ext__']['ARGUMENT'] ?? [],
             ];
         }
