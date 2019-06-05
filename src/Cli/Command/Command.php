@@ -822,6 +822,52 @@ class Command
     }
 
     /**
+     * @CMD(dm.add)
+     * @Desc(Add an data model class in a domain)
+     * @Option(domain){notes=Domain name of model to be created}
+     * @Option(model){notes=Name of data model to be created}
+     * @Option(force){notes=Whether force recreate model when given model name exists}
+     */
+    public function addModel($console)
+    {
+        $domain = $console->getOption('domain');
+        if (! $domain) {
+            $console->exception('MissingDomainName');
+        }
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $console->exception('DomainNotExists', [$domain]);
+        }
+        $name = $console->getOption('model');
+        if (! $name) {
+            $console->exception('MissingModelName');
+        }
+        $class = ospath($path, ModelManager::MODEL_DIR, "{$name}.php");
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('ModelAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'model.tpl');
+        if (! is_file($template)) {
+            $console->exception('ModelClassTemplateNotExist', [$template]);
+        }
+
+        $model = file_get_contents($template);
+        $model = str_replace('__DOMAIN__', $domain, $model);
+        $model = str_replace('__NAMESPACE__', path2ns($name), $model);
+        $model = str_replace('__NAME__', basename($name), $model);
+
+        save($class, $model);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $console->line(
+            $console->render('Created Model: ', $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
+    }
+
+    /**
      * @CMD(port.add)
      * @Desc(Add a port class in a domain)
      * @Option(domain){notes=Domain name of port to be created}
