@@ -92,6 +92,8 @@ abstract class Model
             } else {
                 $this->{$attr} = $val;
             }
+        } else {
+            $this->{$attr} = $val;
         }
 
         return $this;
@@ -104,7 +106,7 @@ abstract class Model
 
     final public function __set(string $attr, $val)
     {
-        $this->set($attr, $val);
+        return $this->set($attr, $val);
     }
 
     final public function __call(string $method, array $params = [])

@@ -193,7 +193,7 @@ class ORMStorage extends Storage
     final public function converts($result = null)
     {
         if (! $result) {
-            return;
+            return [];
         }
 
         if ($result instanceof Paginator) {

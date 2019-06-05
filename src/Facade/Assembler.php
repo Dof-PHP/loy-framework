@@ -23,10 +23,6 @@ class Assembler
         if (! $fields) {
             return null;
         }
-
-        if ($result instanceof Service) {
-            $result = $result->execute();
-        }
         if ($result instanceof Paginator) {
             $data = [];
             $list = $result->getList();
@@ -36,7 +32,9 @@ class Assembler
 
             return $data;
         }
-
+        if ($result instanceof Service) {
+            $result = $result->execute();
+        }
         if (! $result) {
             return null;
         }
