@@ -447,3 +447,16 @@ if (! function_exists('storage')) {
         return (new \Dof\Framework\Storage\MySQL)->setConnection($conn);
     }
 }
+if (! function_exists('parse_service_exception')) {
+    function parse_service_exception(\Throwable $e)
+    {
+        $data = parse_throwable($e);
+
+        $message = $data['__previous']['message'] ?? 'UnknownServiceException';
+        $context = $data['__previous']['context'] ?? [];
+
+        unset($context['__errors']);
+
+        return [$message, $context];
+    }
+}

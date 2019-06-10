@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Domain\__DOMAIN__\Storage__NAMESPACE__;
 
-use Dof\Framework\DDD\__STORAGE__;
+use Dof\Framework\DDD\KVStorage;
 
 // use Domain\__DOMAIN__\Repository\__NAME__Repository;
 
@@ -15,8 +15,8 @@ use Dof\Framework\DDD\__STORAGE__;
  * @Database(15)
  * @Key(?)
  */
-// class __NAME__ extends __STORAGE__ implements __NAME__Repository
-class __NAME__ extends __STORAGE__
+// class __NAME__ extends KVStorage implements __NAME__Repository
+class __NAME__ extends KVStorage
 {
     /**
      * @Type(String)

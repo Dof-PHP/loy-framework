@@ -1001,13 +1001,10 @@ class Command
             $console->exception('KVStorageClassTemplateNotExist', [$template]);
         }
 
-        $storage = $console->getOption('withts', true) ? 'ORMStorageWithTS' : 'ORMStorage';
-
         $kv = file_get_contents($template);
         $kv = str_replace('__DOMAIN__', $domain, $kv);
         $kv = str_replace('__NAMESPACE__', path2ns($name), $kv);
         $kv = str_replace('__NAME__', basename($name), $kv);
-        $orm = str_replace('__STORAGE__', $storage, $kv);
 
         save($class, $kv);
 
@@ -1026,8 +1023,6 @@ class Command
      * @Option(repo){notes=Name of repository to be created}
      * @Option(force){notes=Whether force recreate repository when given repository name exists}
      * @Option(type){notes=Repository type: Entity/ORM | Model/KV&default=Entity/ORM}
-     * @Option(entity){notes=Entity path}
-     * @Option(model){notes=Model path}
      */
     public function addRepository($console)
     {
@@ -1060,12 +1055,15 @@ class Command
         if ($_storage = $console->getOption('storage')) {
             $storage = path2ns($_storage, true);
         }
+        if ($isEntity) {
+            $storage .= 'ORM';
+        }
 
         $repo = file_get_contents($template);
         $repo = str_replace('__DOMAIN__', $domain, $repo);
         $repo = str_replace('__NAMESPACE__', path2ns($name), $repo);
         $repo = str_replace('__NAME__', $name, $repo);
-        $repo = str_replace('__STORAGE__', $storage.'ORM', $repo);
+        $repo = str_replace('__STORAGE__', $storage, $repo);
 
         if ($isEntity) {
             $entity = $console->getOption('entity', $name);

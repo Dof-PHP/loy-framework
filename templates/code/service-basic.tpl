@@ -10,8 +10,11 @@ class __NAME__ extends Service
 {
     private $param1;
 
-    public function __construct()
+    private $repository;
+
+    public function __construct($repository = null)
     {
+        $this->repository = $repository;
     }
 
     public function execute()
