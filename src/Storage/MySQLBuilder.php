@@ -334,7 +334,9 @@ class MySQLBuilder
         $placeholders = array_fill(0, count($params), '/\?/');
 
         array_walk($params, function (&$val) {
-            $val = "'{$val}'";    // TODO&FIXME
+            $val = $this->origin
+            ? $this->origin->quote($val)
+            : "'{$val}'";    // TODO&FIXME
         });
 
         return $params ? preg_replace($placeholders, $params, $sql) : $sql;
@@ -560,8 +562,10 @@ class MySQLBuilder
             }
         }
 
+        $table = $this->table ?: '#{TABLE}';
+
         $sql = "INSERT INTO %s (%s) VALUES %s";
-        $sql = sprintf($sql, $columns, $_values);
+        $sql = sprintf($sql, $table, $columns, $_values);
 
         return $this->sql ? $this->generate($sql, $params) : $this->origin->exec($sql, $params);
     }
