@@ -534,7 +534,7 @@ class Command
 
         PortManager::flush();
 
-        $console->exit();
+        $console->success('Done!');
     }
 
     /**

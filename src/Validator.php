@@ -35,7 +35,7 @@ class Validator
             // check if we need validate current parameters aginst rules first
             $_rules = array_keys($rules);
             $val = $this->data[$key] ?? null;
-            $noneed = is_null($val) || ('' === $val);
+            $noneed = is_null($val) || ('' === $val) || (is_array($val) && empty($val));
             $need = !$noneed;
             if ($noneed) {
                 foreach ($_rules as $_rule) {

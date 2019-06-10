@@ -11,6 +11,7 @@ class MySQLBuilder
 {
     private $origin;
 
+    private $sql = false;
     private $db;
     private $table;
     private $select = [];
@@ -28,6 +29,7 @@ class MySQLBuilder
     public function reset()
     {
         $this->origin = null;
+        $this->sql = false;
         $this->db = null;
         $this->table = null;
         $this->select = [];
@@ -83,6 +85,13 @@ class MySQLBuilder
     public function not(string $column, $value)
     {
         $this->where[] = [$column, '!=', $value];
+
+        return $this;
+    }
+
+    public function inRaw(string $column, $value)
+    {
+        $this->whereRaw[] = [$column, 'INRAW', $value];
 
         return $this;
     }
@@ -313,12 +322,32 @@ class MySQLBuilder
     {
         $params = [];
 
-        $sql = $this->sql($params);
+        $sql = $this->buildSql($params);
 
-        return $this->origin->get($sql, $params);
+        return $this->sql ? $this->generate($sql, $params) : $this->origin->get($sql, $params);
     }
 
-    public function sql(array &$params) : string
+    private function generate(string $sql, array $params) : string
+    {
+        $sql = $this->origin ? $this->origin->generate($sql) : $sql;
+
+        $placeholders = array_fill(0, count($params), '/\?/');
+
+        array_walk($params, function (&$val) {
+            $val = "'{$val}'";    // TODO&FIXME
+        });
+
+        return $params ? preg_replace($placeholders, $params, $sql) : $sql;
+    }
+
+    public function sql(bool $sql)
+    {
+        $this->sql = $sql;
+
+        return $this;
+    }
+
+    public function buildSql(array &$params) : string
     {
         $selects = '#{COLUMNS}';
         if ($this->select) {
@@ -413,10 +442,12 @@ class MySQLBuilder
 
         array_unshift($params, $value);
 
-        $sql = 'UPDATE #{TABLE} SET `%s` = ? %s';
-        $sql = sprintf($sql, $column, $where);
+        $table = $this->table ?: '#{TABLE}';
 
-        return $this->origin->exec($sql, $params);
+        $sql = 'UPDATE %s SET `%s` = ? %s';
+        $sql = sprintf($sql, $table, $column, $where);
+
+        return $this->sql ? $this->generate($sql, $params) : $this->origin->exec($sql, $params);
     }
 
     /**
@@ -442,22 +473,26 @@ class MySQLBuilder
             array_push($params, $param);
         }
 
+        $table = $this->table ?: '#{TABLE}';
+
         $columns = join(', ', $columns);
 
-        $sql = 'UPDATE #{TABLE} SET %s %s ';
-        $sql = sprintf($sql, $columns, $where);
+        $sql = 'UPDATE %s SET %s %s ';
+        $sql = sprintf($sql, $table, $columns, $where);
 
-        return $this->origin->exec($sql, $params);
+        return $this->sql ? $this->generate($sql, $params) : $this->origin->exec($sql, $params);
     }
 
     public function delete()
     {
         list($where, $params) = $this->buildWhere();
 
-        $sql = 'DELETE FROM #{TABLE} %s';
-        $sql = sprintf($sql, $where);
+        $table = $this->table ?: '#{TABLE}';
 
-        return $this->origin->exec($sql, $params);
+        $sql = 'DELETE FROM %s %s';
+        $sql = sprintf($sql, $table, $where);
+
+        return $this->sql ? $this->generate($sql, $params) : $this->origin->exec($sql, $params);
     }
 
     /**
@@ -475,10 +510,12 @@ class MySQLBuilder
             return "`{$column}`";
         }, $columns));
 
-        $sql = "INSERT INTO #{TABLE} (%s) VALUES (%s)";
-        $sql = sprintf($sql, $columns, $_values);
+        $table = $this->table ?: '#{TABLE}';
 
-        return $this->origin->insert($sql, $values);
+        $sql = "INSERT INTO %s (%s) VALUES (%s)";
+        $sql = sprintf($sql, $table, $columns, $_values);
+
+        return $this->sql ? $this->generate($sql, $values) : $this->origin->insert($sql, $values);
     }
 
     public function insert(array $list)
@@ -523,10 +560,10 @@ class MySQLBuilder
             }
         }
 
-        $sql = "INSERT INTO #{TABLE} (%s) VALUES %s";
+        $sql = "INSERT INTO %s (%s) VALUES %s";
         $sql = sprintf($sql, $columns, $_values);
 
-        return $this->origin->exec($sql, $params);
+        return $this->sql ? $this->generate($sql, $params) : $this->origin->exec($sql, $params);
     }
 
     private function buildWhere() : array
@@ -535,8 +572,13 @@ class MySQLBuilder
         $params = [];
 
         $buildWhere = function (string $column, string $operator, $val, &$params, bool $expression = false) : string {
+            $operator = trim($operator);
             $placeholder = '?';
-            if (ciin_array(trim($operator), ['in', 'not in'])) {
+            if (! $expression) {
+                $column = "`{$column}`";
+            }
+
+            if (ciin_array($operator, ['in', 'not in'])) {
                 $placeholder = '(?)';
                 if (is_array($val) || is_string($val)) {
                     $val = is_string($val) ? array_trim_from_string($val, ',') : $val;
@@ -548,7 +590,7 @@ class MySQLBuilder
                     $builder = new self;
                     $_params = [];
                     $val($builder);
-                    $sql = $builder->sql($_params);
+                    $sql = $builder->buildSql($_params);
                     $placeholder = "({$sql})";
                     foreach ($_params as $param) {
                         array_push($params, $param);
@@ -556,14 +598,15 @@ class MySQLBuilder
                 } else {
                     $params[] = (array) $val;
                 }
-            } elseif (ciin_array(trim($operator), ['IS NOT NULL', 'IS NULL'])) {
+            } elseif (ciin_array($operator, ['is not null', 'is null'])) {
                 $placeholder = '';
+            // No params need when null conditions
+            } elseif (ci_equal($operator, 'inraw')) {
+                $column = "`{$column}`";
+                $operator = 'IN';
+                $placeholder = "({$val})";
             } else {
                 $params[] = $val;
-            }
-
-            if (! $expression) {
-                $column = "`{$column}`";
             }
 
             return "{$column} {$operator} {$placeholder}";
