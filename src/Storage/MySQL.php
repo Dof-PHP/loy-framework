@@ -130,7 +130,11 @@ class MySQL implements StorageInterface
     {
         $start = microtime(true);
 
-        $result = $this->getConnection(false)->exec($sql);
+        try {
+            $result = $this->getConnection(false)->exec($sql);
+        } catch (Throwable $e) {
+            exception('RawExecMySQLFailed', compact('sql'), $e);
+        }
 
         $this->appendSQL($sql, $start);
 
@@ -141,9 +145,12 @@ class MySQL implements StorageInterface
     {
         $start = microtime(true);
 
-        $statement = $this->getConnection(false)->query($sql);
-
-        $result = $statement->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $statement = $this->getConnection(false)->query($sql);
+            $result = $statement->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            exception('RawExecMySQLFailed', compact('sql'), $e);
+        }
 
         $this->appendSQL($sql, $start);
 
