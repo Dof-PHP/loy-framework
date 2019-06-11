@@ -1268,4 +1268,35 @@ class Command
             $this->addAssembler($console);
         }
     }
+
+    /**
+     * @CMD(domain.add)
+     * @Desc(Create a new domain)
+     * @Argv(1){notes=Domain name to be Created}
+     */
+    public function addDomain($console)
+    {
+        $name = $console->getParams()[0] ?? null;
+        if (! $name) {
+            $console->exception('MissingDomainName');
+        }
+
+        if (DomainManager::getByKey($name)) {
+            $console->exception('DomainAlreadyExists', compact('name'));
+        }
+
+        $_name = ucfirst($name);
+
+        $file = ospath(Kernel::getRoot(), DomainManager::DOMAIN_PATH, $_name, DomainManager::DOMAIN_FLAG, DomainManager::DOMAIN_FILE);
+        $init = <<<PHP
+<?php
+
+return [
+];
+PHP;
+
+        save($file, $init);
+
+        $console->success('Done!');
+    }
 }

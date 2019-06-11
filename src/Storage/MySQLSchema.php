@@ -113,8 +113,19 @@ class MySQLSchema
                     exception('PropertiesOfColumnNotFound', compact('table', 'column'));
                 }
 
-                $type = $property['TYPE'] ?? null;
+                $_type = $type = $property['TYPE'] ?? null;
+                if (! $type) {
+                    exception('MissingTypeOnColumn', compact('column'));
+                }
                 $length = $property['LENGTH'] ?? null;
+                if (! ciin_array($type, ['text', 'blob'])) {
+                    if (is_null($length)) {
+                        exception('MissingLengthOnColumn', compact('column', 'type'));
+                    }
+
+                    $_type .= "({$length})";
+                }
+
                 $notnull = 'NOT NULL';
                 if (($property['NOTNULL'] ?? null) == '0') {
                     $notnull = '';
@@ -133,7 +144,7 @@ class MySQLSchema
                     $autoinc = 'AUTO_INCREMENT';
                 }
 
-                $add .= "ADD COLUMN `{$column}` {$type}($length) {$notnull} {$autoinc} {$default} {$comment}";
+                $add .= "ADD COLUMN `{$column}` {$_type} {$notnull} {$autoinc} {$default} {$comment}";
                 if (false !== next($columnsAdd)) {
                     $add .= ",\n";
                 }
@@ -157,11 +168,21 @@ class MySQLSchema
 
             $typeInCode = trim(strval($attrs['TYPE'] ?? null));
             $lengthInCode = trim(strval($attrs['LENGTH'] ?? null));
-            if ((! $typeInCode) || (! $lengthInCode)) {
+            if (! $typeInCode) {
                 exception('MissingTypeInColumnAnnotations', compact('table', 'column'));
             }
             $unsignedInCode = (($attrs['UNSIGNED'] ?? null) == 1) ? 'unsigned' : '';
-            $typeInCode = trim("{$typeInCode}({$lengthInCode}) {$unsignedInCode}");
+            if (ciin_array($typeInCode, ['text', 'blob'])) {
+                $typeInCode = trim("{$typeInCode} {$unsignedInCode}");
+            } else {
+                if (! $lengthInCode) {
+                    $type = $typeInCode;
+                    exception('MissingLengthInColumnAnnotations', compact('table', 'column', 'type'));
+                }
+
+                $typeInCode = trim("{$typeInCode}({$lengthInCode}) {$unsignedInCode}");
+            }
+
             $notnullInCode = ci_equal($attrs['NOTNULL'] ?? '1', '1');
             $defaultInCode = array_key_exists('DEFAULTNULL', $attrs) ? null : ($attrs['DEFAULT'] ?? null);
             $commentInCode = trim(strval($attrs['COMMENT'] ?? '')) ?: trim(strval($attrs['TITLE'] ?? ''));
@@ -466,14 +487,19 @@ class MySQLSchema
             if (! $attr) {
                 continue;
             }
-            $type = $attr['TYPE'] ?? null;
+            $_type = $type = $attr['TYPE'] ?? null;
             if (! $type) {
-                continue;
+                exception('MissingTypeOnColumn', compact('column'));
             }
             $len = $attr['LENGTH'] ?? null;
-            if (is_null($len)) {
-                continue;
+            if (! ciin_array($type, ['text', 'blob'])) {
+                if (is_null($len)) {
+                    exception('MissingLengthOnColumn', compact('column', 'type'));
+                }
+
+                $_type .= "({$len})";
             }
+
             if ($column === $pkName) {
                 $pkType = $type;
                 $pkLength = $len;
@@ -495,7 +521,7 @@ class MySQLSchema
                 $comment = 'COMMENT '.$this->mysql()->quote($_comment);
             }
 
-            $fields .= "`{$column}` {$type}({$len}) {$unsigned} {$nullable} {$default} {$comment}, \n";
+            $fields .= "`{$column}` {$_type} {$unsigned} {$nullable} {$default} {$comment}, \n";
         }
 
         $useDb = "USE `{$db}`;";
