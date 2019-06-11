@@ -25,7 +25,7 @@ class Update__ENTITY__ extends Service
     {
         $entity = $this->repository->find($this->id);
         if (! $entity) {
-            $this->exception('__ENTITY__NotFound', [$this->id]);
+            $this->exception('__ENTITY__NotExists', ['id' => $this->id]);
         }
 
         $entity
@@ -33,7 +33,7 @@ class Update__ENTITY__ extends Service
             ->setUpdatedAt(time());
 
         try {
-            return $this->repository->save($role);
+            return $this->repository->save($entity);
         } catch (Throwable $e) {
             if (EXCP::is($e, EXCP::VIOLATED_UNIQUE_CONSTRAINT)) {
                 $this->exception('Duplicate__ENTITY__Param1', ['param1' => $this->param1]);

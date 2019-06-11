@@ -21,8 +21,8 @@ class Delete__ENTITY__ extends Service
     public function execute()
     {
         $entity= $this->repository->find($this->id);
-        if (! $role) {
-            $this->exception('__ENTITY__NotFound', [$this->id]);
+        if (! $entity) {
+            $this->exception('__ENTITY__NotExists', ['id' => $this->id]);
         }
 
         $this->repository->remove($entity);
