@@ -22,7 +22,7 @@ class __NAME__ORM extends __STORAGE__ implements __NAME__Repository
     /**
      * @Column(column_1)
      * @Type(varchar)
-     * @Comment(?)
+     * @Comment(Comment Of table column)
      * @Length(16)
      * @Default()
      */

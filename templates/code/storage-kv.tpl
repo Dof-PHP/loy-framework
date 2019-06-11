@@ -13,7 +13,7 @@ use Dof\Framework\DDD\KVStorage;
  * @Driver(redis)
  * @Type(Hash)
  * @Database(15)
- * @Key(?)
+ * @Key(__NAME__:%s)
  */
 // class __NAME__ extends KVStorage implements __NAME__Repository
 class __NAME__ extends KVStorage

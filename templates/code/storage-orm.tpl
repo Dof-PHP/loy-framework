@@ -24,7 +24,7 @@ class __NAME__ORM extends __STORAGE__
     /**
      * @Column(column_1)
      * @Type(varchar)
-     * @Comment(?)
+     * @Comment(Comment of table column)
      * @Length(16)
      * @Default()
      */

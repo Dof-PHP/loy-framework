@@ -16,7 +16,7 @@ use Domain\__DOMAIN__\Service\CRUD\List__NAME__;
  * @Author(name@group.com)
  * @Version(v1)
  * @Auth(0)
- * @Group(?/?)
+ * @Group(__DOMAIN__/__NAME__)
  * @Route(__NAME__)
  * @Model(Domain\__DOMAIN__\Entity\__NAME__)
  * @Assembler(Domain\__DOMAIN__\Assembler\__NAME__)
@@ -46,6 +46,7 @@ class __NAME__
     public function create(Create__NAME__ $service)
     {
         // $service->error(ERR::_, 500);
+        // extract(pargvs());
 
         return $service
             ->setParam1(port('argument')->param1)

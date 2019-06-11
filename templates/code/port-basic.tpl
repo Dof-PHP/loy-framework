@@ -29,7 +29,7 @@ class __NAME__
     /**
      * @Title(Port Title)
      * @SubTitle(Port SubTitle)
-     * @Route(?)
+     * @Route(/)
      * @Verb(post)
      * @Argument(param1)
      */

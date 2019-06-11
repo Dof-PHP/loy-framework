@@ -12,7 +12,7 @@ use Domain\__DOMAIN__\Repository\__NAME__Repository;
  * @Driver(redis)
  * @Type(Hash)
  * @Database(15)
- * @Key(?)
+ * @Key(__NAME__:%s)
  */
 class __NAME__ extends __STORAGE__ implements __NAME__Repository
 {
