@@ -47,6 +47,12 @@ class MySQL implements StorageInterface
     public function insert(string $sql, array $values) : int
     {
         try {
+            array_walk($values, function (&$val) {
+                if (! is_scalar($val)) {
+                    $val = enjson($val);
+                }
+            });
+
             $sql = $this->generate($sql);
 
             $start = microtime(true);

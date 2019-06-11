@@ -1023,6 +1023,9 @@ class Command
      * @Option(repo){notes=Name of repository to be created}
      * @Option(force){notes=Whether force recreate repository when given repository name exists}
      * @Option(type){notes=Repository type: Entity/ORM | Model/KV&default=Entity/ORM}
+     * @Option(storage){notes=Storage path relative to storage base}
+     * @Option(entity){notes=Entity path relative to entity base}
+     * @Option(model){notes=Model path relative to model base}
      */
     public function addRepository($console)
     {
@@ -1198,9 +1201,15 @@ class Command
      * @Option(storage){notes=ORM storage directory path}
      * @Option(repo){notes=Repository directory path}
      * @Option(port){notes=Port directory path}
+     * @Option(noport){notes=Do not create port class&default=false}
      * @Option(service){notes=Service directory path}
      * @Option(asm){notes=Assembler directory path}
+     * @Option(noasm){notes=Do not create assembler class&default=false}
      * @Option(withts){notes=Entity and ORM storage to be created need timestamps or not&default=true}
+     * @Option(nodelete){notes=Do not create delete service&default=false}
+     * @Option(noshow){notes=Do not create show service&default=false}
+     * @Option(noupdate){notes=Do not create update service&default=false}
+     * @Option(nolist){notes=Do not create list service&default=false}
      */
     public function crud($console)
     {
@@ -1211,39 +1220,52 @@ class Command
         $this->addEntity($console);
         $_entity = basename($entity);
 
-        $repo = $console->hasOption('repo')
-            ? join('/', [$console->getOption('repo'), $_entity])
-            : $_entity;
-        $console->setOption('repo', $repo);
-        $this->addRepository($console);
-
         $storage = $console->hasOption('storage')
             ? join('/', [$console->getOption('storage'), $_entity])
             : $_entity;
+
+        $repo = $console->hasOption('repo')
+            ? join('/', [$console->getOption('repo'), $_entity])
+            : $_entity;
+        $console->setOption('storage', $storage)->setOption('repo', $repo);
+        $this->addRepository($console);
+
         $console->setOption('impl', true)->setOption('storage', $storage);
         $this->addORMStorage($console);
 
-        $port = $console->hasOption('port')
-            ? join('/', [$console->getOption('port'), $_entity])
-            : $_entity;
-        $console->setOption('crud', true)->setOption('port', $port);
-        $this->addPort($console);
+        if (! $console->hasOption('noport')) {
+            $port = $console->hasOption('port')
+                ? join('/', [$console->getOption('port'), $_entity])
+                : $_entity;
+            $console->setOption('crud', true)->setOption('port', $port);
+            $this->addPort($console);
+        }
 
         $console->setOption('crud', 'create')->setOption('service', "CRUD/Create{$_entity}");
         $this->addService($console);
-        $console->setOption('crud', 'delete')->setOption('service', "CRUD/Delete{$_entity}");
-        $this->addService($console);
-        $console->setOption('crud', 'update')->setOption('service', "CRUD/Update{$_entity}");
-        $this->addService($console);
-        $console->setOption('crud', 'show')->setOption('service', "CRUD/Show{$_entity}");
-        $this->addService($console);
-        $console->setOption('crud', 'list')->setOption('service', "CRUD/List{$_entity}");
-        $this->addService($console);
+        if (! $console->hasOption('nodelete')) {
+            $console->setOption('crud', 'delete')->setOption('service', "CRUD/Delete{$_entity}");
+            $this->addService($console);
+        }
+        if (! $console->hasOption('noupdate')) {
+            $console->setOption('crud', 'update')->setOption('service', "CRUD/Update{$_entity}");
+            $this->addService($console);
+        }
+        if (! $console->hasOption('noshow')) {
+            $console->setOption('crud', 'show')->setOption('service', "CRUD/Show{$_entity}");
+            $this->addService($console);
+        }
+        if (! $console->hasOption('nolist')) {
+            $console->setOption('crud', 'list')->setOption('service', "CRUD/List{$_entity}");
+            $this->addService($console);
+        }
 
-        $asm = $console->hasOption('asm')
-            ? join('/', [$console->getOption('asm'), $_entity])
-            : $_entity;
-        $console->setOption('asm', $asm);
-        $this->addAssembler($console);
+        if (! $console->hasOption('noasm')) {
+            $asm = $console->hasOption('asm')
+                ? join('/', [$console->getOption('asm'), $_entity])
+                : $_entity;
+            $console->setOption('asm', $asm);
+            $this->addAssembler($console);
+        }
     }
 }

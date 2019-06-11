@@ -11,7 +11,7 @@ use Domain\__DOMAIN__\Repository\__ENTITY__Repository;
 use Domain\__DOMAIN__\Entity\__ENTITY__;
 // use Domain\__DOMAIN__\EXCP as ERR;
 
-class Create__NAME__ extends Service
+class Create__ENTITY__ extends Service
 {
     private $param1;
 
@@ -36,7 +36,7 @@ class Create__NAME__ extends Service
                $this->exception('Duplicate__ENTITY__Param1', ['param1' => $this->param1]);
             }
 
-            $this->exception('Add__ENTITY__Failed', [], $e);
+            $this->exception('Create__ENTITY__Failed', [], $e);
         }
     }
 

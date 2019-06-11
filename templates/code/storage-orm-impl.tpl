@@ -10,7 +10,7 @@ use Domain\__DOMAIN__\Repository\__NAME__Repository;
 /**
  * @Repository(__NAME__Repository)
  * @Driver(mysql)
- * @Database(?)
+ * @Database(__DOMAIN__)
  * @Table(__NAME__)
  * @Comment(Comment of Table __NAME__)
  * @Engine(InnoDB)
