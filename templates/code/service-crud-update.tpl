@@ -8,7 +8,6 @@ use Throwable;
 use Dof\Framework\EXCP;
 use Dof\Framework\DDD\Service;
 use Domain\__DOMAIN__\Repository\__ENTITY__Repository;
-use Domain\__DOMAIN__\Entity\__ENTITY__;
 
 class Update__ENTITY__ extends Service
 {
@@ -25,7 +24,7 @@ class Update__ENTITY__ extends Service
     public function execute()
     {
         $entity = $this->repository->find($this->id);
-        if (! $role) {
+        if (! $entity) {
             $this->exception('__ENTITY__NotFound', [$this->id]);
         }
 
