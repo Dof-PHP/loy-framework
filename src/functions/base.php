@@ -1294,14 +1294,14 @@ if (! function_exists('path2ns')) {
     function path2ns(string $path, bool $full = false)
     {
         if ($full) {
-            return str_replace('/', '\\', $path);
+            return str_replace(DIRECTORY_SEPARATOR, '\\', $path);
         }
 
-        $namespace = str_replace('/', '\\', dirname($path));
+        $namespace = str_replace(DIRECTORY_SEPARATOR, '\\', dirname($path));
         if ($namespace === '.') {
             return '';
         }
 
-        return '\\'.$namespace;
+        return $namespace;
     }
 }

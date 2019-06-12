@@ -222,3 +222,21 @@ GWT('Test is_assoc_array(): #2', ['abc' => 123, 'foo' => 'bar'], function ($give
 }, function ($result, $tester) {
     return $result === true;
 });
+
+GWT('Test path2ns(): #1', 'A/B/C', function ($given) {
+    return path2ns($given, false);
+}, function ($result, $tester) {
+    return $result === 'A\B';
+});
+
+GWT('Test path2ns(): #2', 'A/B/C', function ($given) {
+    return path2ns($given, true);
+}, function ($result, $tester) {
+    return $result === 'A\B\C';
+});
+
+GWT('Test path2ns(): #3', '/A/B/C', function ($given) {
+    return path2ns($given, true);
+}, function ($result, $tester) {
+    return $result === '\A\B\C';
+});

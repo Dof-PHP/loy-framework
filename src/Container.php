@@ -55,7 +55,7 @@ final class Container
                 continue;
             }
             if (! $type) {
-                $error = 'Unknown parameter type';
+                $error = 'Missing parameter type';
                 exception('UnInjectableDependency', compact('error', 'ns', 'name'));
             }
             if ($param['optional'] ?? false) {
