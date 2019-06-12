@@ -471,7 +471,7 @@ class MySQLSchema
                 $field = "`{$field}`";
             });
             $_fields = join(',', $_fields);
-            $indexes .= "KEY `{$index}` ($_fields), ";
+            $indexes .= "KEY `{$index}` ($_fields), \n";
         }
 
         foreach ($meta['UNIQUE'] ?? [] as $index => $_fields) {
@@ -526,6 +526,9 @@ class MySQLSchema
 
         $useDb = "USE `{$db}`;";
         $dropTable = "DROP TABLE IF EXISTS `{$db}`.`{$table}`;";
+        if ($meta['SOFTDELETE'] ?? false) {
+            $fields .= "`is_deleted` tinyint(1) unsigned NOT NULL DEFAULT '0', \n";
+        }
 
         $createTable = <<<SQL
 CREATE TABLE IF NOT EXISTS `{$table}` (

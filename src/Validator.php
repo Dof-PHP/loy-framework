@@ -249,18 +249,20 @@ class Validator
             return false;
         }
 
-        $val = array_unique($val);
+        $val = array_unique(array_filter($val));
         $_val = array_filter($val, function ($val) {
             return TypeHint::isPint($val);
         });
         if (count($_val) !== count($val)) {
-            return true;
+            return false;
         }
 
-        array_walk($val, function ($id) {
+        array_walk($val, function (&$id) {
             $id = intval($id);
         });
-        $this->result[$key] = $val;
+
+        // Avoid emtpy array be collected
+        $this->result[$key] = ($val === []) ? null : $val;
 
         return true;
     }
@@ -272,20 +274,22 @@ class Validator
             return false;
         }
 
-        $val = array_unique(array_trim_from_string($val, ','));
+        $val = array_unique(array_filter(array_trim_from_string($val, ',')));
 
         $_val = array_filter($val, function ($val) {
             return TypeHint::isPint($val);
         });
 
         if (count($_val) !== count($val)) {
-            return true;
+            return false;
         }
-        array_walk($val, function ($id) {
+
+        array_walk($val, function (&$id) {
             $id = intval($id);
         });
 
-        $this->result[$key] = $val;
+        // Avoid emtpy array be collected
+        $this->result[$key] = ($val === []) ? null : $val;
 
         return true;
     }
@@ -306,6 +310,19 @@ class Validator
         $this->result[$key] = $value = TypeHint::convertToInt($value);
 
         return $value < 0;
+    }
+
+    private function validateBint(string $key) : bool
+    {
+        $value = $this->data[$key] ?? null;
+
+        if (! TypeHint::isInt($value)) {
+            return false;
+        }
+
+        $this->result[$key] = $value = TypeHint::convertToInt($value);
+
+        return in_array($value, [0, 1]);
     }
 
     private function validatePint(string $key) : bool

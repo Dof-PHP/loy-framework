@@ -44,6 +44,10 @@ class ORMStorage extends Storage
         $storage = static::class;
         $annotation = StorageManager::get($storage);
         $columns = $annotation['columns'] ?? [];
+        if ($annotation['meta']['SOFTDELETE'] ?? false) {
+            $columns['is_deleted'] = 'isDeleted';
+        }
+
         if (! $columns) {
             exception('NoColumnsOnStorageToAdd', compact('storage'));
         }
@@ -107,11 +111,15 @@ class ORMStorage extends Storage
         }
     }
 
-    final public function save(Entity $entity) : Entity
+    final public function save(Entity &$entity) : Entity
     {
         $storage = static::class;
         $annotation = StorageManager::get($storage);
         $columns = $annotation['columns'] ?? [];
+        if ($annotation['meta']['SOFTDELETE'] ?? false) {
+            $columns['is_deleted'] = 'isDeleted';
+        }
+
         if (! $columns) {
             exception('NoColumnsOnStorageToUpdate', ['storage' => static::class]);
         }

@@ -249,9 +249,18 @@ class MySQL implements StorageInterface
         return $sql;
     }
 
-    public function getSelectColumns() : ?string
+    public function getSelectColumns(bool $asString = true)
     {
-        $columns = array_keys($this->annotations->columns->getData());
+        $columns = $this->annotations->columns->getData();
+        if ($this->annotations->meta->SOFTDELETE ?? false) {
+            $columns['is_deleted'] = 'isDeleted';
+        }
+
+        $columns = array_keys($columns);
+        if (! $asString) {
+            return $columns;
+        }
+
         if (! $columns) {
             return '*';
         }
@@ -270,7 +279,9 @@ class MySQL implements StorageInterface
             return null;
         }
 
-        return "`{$prefix}{$table}`";
+        $db = $this->annotations->meta->DATABASE ?? null;
+
+        return $db ? "`{$db}`.`{$prefix}{$table}`" : "`{$prefix}{$table}`";
     }
 
     public function quote(string $val)

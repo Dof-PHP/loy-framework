@@ -28,7 +28,7 @@ interface ORMRepository extends Repository
      * @param Entity: The entity instance to be updated
      * @return Entity: The entity updated
      */
-    public function save(Entity $entity) : Entity;
+    public function save(Entity &$entity) : Entity;
 
     /**
      * Find entity by primary key

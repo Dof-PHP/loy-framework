@@ -17,7 +17,9 @@ class MySQLBuilder
     private $select = [];
     private $alias = [];
     private $aliasRaw = [];
+    private $exists = [];
     private $where = [];
+    private $wheres = [];
     private $whereRaw = [];
     private $or = [];
     private $orRaw = [];
@@ -36,6 +38,8 @@ class MySQLBuilder
         $this->alias = [];
         $this->aliasRaw = [];
         $this->where = [];
+        $this->exists = [];
+        $this->wheres = [];
         $this->whereRaw = [];
         $this->or = [];
         $this->orRaw = [];
@@ -119,11 +123,38 @@ class MySQLBuilder
         return $this;
     }
 
+    public function orrlike(string $column, $value)
+    {
+        $value = trim(strval($value));
+
+        $this->or[] = [$column, 'LIKE', "{$value}%"];
+
+        return $this;
+    }
+
     public function llike(string $column, $value)
     {
         $value = trim(strval($value));
 
         $this->where[] = [$column, 'LIKE', "%{$value}"];
+
+        return $this;
+    }
+
+    public function orllike(string $column, $value)
+    {
+        $value = trim(strval($value));
+
+        $this->or[] = [$column, 'LIKE', "%{$value}"];
+
+        return $this;
+    }
+
+    public function orlike(string $column, $value)
+    {
+        $value = trim(strval($value));
+
+        $this->or[] = [$column, 'LIKE', "%{$value}%"];
 
         return $this;
     }
@@ -151,6 +182,20 @@ class MySQLBuilder
         $operator = $equal ? '>=' : '>';
 
         $this->where[] = [$column, $operator, $value];
+
+        return $this;
+    }
+
+    public function exists(Closure $query)
+    {
+        $this->exists[] = $query;
+
+        return $this;
+    }
+
+    public function wheres(Closure $query)
+    {
+        $this->wheres[] = $query;
 
         return $this;
     }
@@ -284,7 +329,7 @@ class MySQLBuilder
         return $this;
     }
 
-    public function paginate(int $page, int $size) : Paginator
+    public function paginate(int $page, int $size)
     {
         $alias = $this->alias;
         $aliasRaw = $this->aliasRaw;
@@ -301,7 +346,7 @@ class MySQLBuilder
 
         $list = $this->get();
 
-        return new Paginator($list, [
+        return $this->sql ? $list : new Paginator($list, [
             'page' => $page,
             'size' => $size,
             'total' => $total,
@@ -335,7 +380,7 @@ class MySQLBuilder
 
         array_walk($params, function (&$val) {
             $val = $this->origin
-            ? $this->origin->quote($val)
+            ? $this->origin->quote((string) $val)
             : "'{$val}'";    // TODO&FIXME
         });
 
@@ -373,7 +418,7 @@ class MySQLBuilder
             }
         } else {
             $selects = '';
-            $columns = array_keys($this->origin->annotations()->columns->toArray());
+            $columns = $this->origin ? $this->origin->getSelectColumns(false) : ['*'];
             foreach ($columns as $column) {
                 $selects .= "`{$column}`";
                 if (next($columns) !== false) {
@@ -570,7 +615,7 @@ class MySQLBuilder
         return $this->sql ? $this->generate($sql, $params) : $this->origin->exec($sql, $params);
     }
 
-    private function buildWhere() : array
+    private function buildWhere(bool $asGroup = false) : array
     {
         $where = '';
         $params = [];
@@ -617,7 +662,7 @@ class MySQLBuilder
         };
 
         if ($this->where || $this->whereRaw) {
-            $where .= ' WHERE ';
+            $where .= $asGroup ? '' : ' WHERE ';
             foreach ($this->where as list($column, $operator, $val)) {
                 $where .= $buildWhere($column, $operator, $val, $params, false);
                 if (false !== next($this->where)) {
@@ -635,11 +680,38 @@ class MySQLBuilder
                 }
             }
         }
+        if ($this->wheres) {
+            $where .= $asGroup ? '' : (($this->where || $this->whereRaw) ? ' AND ' : ' WHERE ');
+            foreach ($this->wheres as $query) {
+                $builder = new self;
+                $query($builder);
+                list($_where, $_params) = $builder->buildWhere(true);
+
+                $where .= "({$_where})";
+                foreach ($_params as $param) {
+                    array_push($params, $param);
+                }
+            }
+        }
+        if ($this->exists) {
+            $where .= $asGroup ? ' AND ' : (($this->where || $this->whereRaw) ? ' AND ' : ' WHERE ');
+            foreach ($this->exists as $query) {
+                $builder = new self;
+                $_params = [];
+                $query($builder);
+                $sql = $builder->buildSql($_params);
+                $where .= " EXISTS ({$sql})";
+                foreach ($_params as $param) {
+                    array_push($params, $param);
+                }
+            }
+        }
+
         if ($this->or || $this->orRaw) {
             if ($this->where || $this->whereRaw) {
                 $where .= ' OR ';
             } else {
-                $where .= ' WHRER ';
+                $where .= $asGroup ? ' AND ' : ' WHERE ';
             }
 
             foreach ($this->or as list($column, $operator, $val)) {
