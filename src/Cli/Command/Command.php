@@ -922,8 +922,9 @@ class Command
      * @Option(storage){notes=Name of orm storage to be created}
      * @Option(force){notes=Whether force recreate orm storage when given orm storage name exists}
      * @Option(withts){notes=Whether orm storage has timestamps&default=true}
+     * @Option(withtssd){notes=Whether orm storage has timestamps and is soft deleted&default=false}
+     * @Option(withsd){notes=Whether orm storage is soft deleted&default=false}
      * @Option(impl){notes=Whether orm storage implements a repository&default=false}
-     *
      */
     public function addORMStorage($console)
     {
@@ -951,6 +952,8 @@ class Command
         }
 
         $storage = $console->getOption('withts', true) ? 'ORMStorageWithTS' : 'ORMStorage';
+        $storage = $console->getOption('withtssd', false) ? 'ORMStorageWithTSSD' : $storage;
+        $storage = $console->getOption('withsd', false) ? 'ORMStorageWithSD' : $storage;
 
         $orm = file_get_contents($template);
         $orm = str_replace('__DOMAIN__', $domain, $orm);

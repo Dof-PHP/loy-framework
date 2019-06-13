@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Dof\Framework\DDD;
 
+/**
+ * Entity with timestamps
+ */
 class EntityWithTS extends Entity
 {
     /**
@@ -22,28 +25,4 @@ class EntityWithTS extends Entity
      * @Argument(format){default=timestamp}
      */
     protected $updatedAt;
-
-    public function getCreatedAt() : int
-    {
-        return $this->createdAt;
-    }
-    
-    public function setCreatedAt(int $createdAt)
-    {
-        $this->createdAt = $createdAt;
-    
-        return $this;
-    }
-
-    public function getUpdatedAt() : int
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(int $updatedAt)
-    {
-        $this->updatedAt = $updatedAt;
-
-        return $this;
-    }
 }

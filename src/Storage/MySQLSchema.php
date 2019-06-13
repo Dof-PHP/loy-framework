@@ -94,9 +94,6 @@ class MySQLSchema
     {
         $meta = $this->annotations['meta'] ?? [];
         $columns = $this->annotations['columns'] ?? [];
-        if ($meta['SOFTDELETE'] ?? false) {
-            $columns['is_deleted'] = 'isDeleted';
-        }
         $properties = $this->annotations['properties'] ?? [];
 
         $_columns = $this->mysql()->rawGet("SHOW FULL COLUMNS FROM `{$table}` FROM `{$db}`");
@@ -529,9 +526,6 @@ class MySQLSchema
 
         $useDb = "USE `{$db}`;";
         $dropTable = "DROP TABLE IF EXISTS `{$db}`.`{$table}`;";
-        if ($meta['SOFTDELETE'] ?? false) {
-            $fields .= "`is_deleted` tinyint(1) unsigned NOT NULL DEFAULT '0', \n";
-        }
 
         $createTable = <<<SQL
 CREATE TABLE IF NOT EXISTS `{$table}` (

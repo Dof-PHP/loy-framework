@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Dof\Framework\DDD;
 
+/**
+ * ORM Storage with timestamps
+ */
 class ORMStorageWithTS extends ORMStorage
 {
     /**
@@ -24,14 +27,4 @@ class ORMStorageWithTS extends ORMStorage
      * @Default(0)
      */
     protected $updatedAt;
-
-    /**
-     * @Column(deleted_at)
-     * @Type(int)
-     * @Length(10)
-     * @Unsigned(1)
-     * @Notnull(1)
-     * @Default(0)
-     */
-    protected $deletedAt;
 }

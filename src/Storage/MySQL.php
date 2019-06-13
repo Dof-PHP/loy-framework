@@ -252,10 +252,6 @@ class MySQL implements StorageInterface
     public function getSelectColumns(bool $asString = true)
     {
         $columns = $this->annotations->columns->getData();
-        if ($this->annotations->meta->SOFTDELETE ?? false) {
-            $columns['is_deleted'] = 'isDeleted';
-        }
-
         $columns = array_keys($columns);
         if (! $asString) {
             return $columns;

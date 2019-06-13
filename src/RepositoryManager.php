@@ -232,10 +232,6 @@ final class RepositoryManager
 
         $orm = StorageManager::get($storage);
 
-        if ($orm['meta']['SOFTDELETE'] ?? false) {
-            $orm['columns']['is_deleted'] = 'isDeleted';
-        }
-
         if (! $orm) {
             exception('ORMStorageClassNotFound', compact('orm'));
         }

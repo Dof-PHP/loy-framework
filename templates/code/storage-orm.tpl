@@ -16,7 +16,6 @@ use Dof\Framework\DDD\__STORAGE__;
  * @Comment(Comment of Table __NAME__)
  * @Engine(InnoDB)
  * @Charset(utf8mb4)
- * @SoftDelete(0)
  */
 // class __NAME__ORM extends __STORAGE__ implements __NAME__Repository
 class __NAME__ORM extends __STORAGE__
