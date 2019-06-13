@@ -94,6 +94,9 @@ class MySQLSchema
     {
         $meta = $this->annotations['meta'] ?? [];
         $columns = $this->annotations['columns'] ?? [];
+        if ($meta['SOFTDELETE'] ?? false) {
+            $columns['is_deleted'] = 'isDeleted';
+        }
         $properties = $this->annotations['properties'] ?? [];
 
         $_columns = $this->mysql()->rawGet("SHOW FULL COLUMNS FROM `{$table}` FROM `{$db}`");

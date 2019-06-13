@@ -39,7 +39,7 @@ class ORMStorage extends Storage
         return self::annotations()['meta']['TABLE'] ?? null;
     }
 
-    final public function add(Entity $entity) : Entity
+    final public function add(Entity &$entity) : Entity
     {
         $storage = static::class;
         $annotation = StorageManager::get($storage);

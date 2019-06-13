@@ -12,7 +12,7 @@ interface ORMRepository extends Repository
      * @param Entity $entity
      * @return int|null: Primary key when added succssflly or null on failed
      */
-    public function add(Entity $entity) : Entity;
+    public function add(Entity &$entity) : Entity;
 
     /**
      * Remove an entity from repository

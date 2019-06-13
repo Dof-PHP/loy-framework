@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Domain\__DOMAIN__\Service__NAMESPACE__;
 
+// use Domain\__DOMAIN__\Repository\EntityRepository;
 use Dof\Framework\DDD\Service;
 
 class __NAME__ extends Service
@@ -12,10 +13,10 @@ class __NAME__ extends Service
 
     private $repository;
 
-    public function __construct($repository = null)
-    {
-        $this->repository = $repository;
-    }
+//    public function __construct(EntityRepository $repository)
+//    {
+          // $this->repository = $repository;
+//    }
 
     public function execute()
     {
