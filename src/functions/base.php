@@ -539,13 +539,17 @@ if (! function_exists('array_unset')) {
     }
 }
 if (! function_exists('is_index_array')) {
-    function is_index_array(array $arr) : bool
+    function is_index_array($val) : bool
     {
-        if ([] === $arr) {
+        if (! is_array($val)) {
             return false;
         }
 
-        return array_keys($arr) === range(0, (count($arr) - 1));
+        if ([] === $val) {
+            return false;
+        }
+
+        return array_keys($val) === range(0, (count($val) - 1));
     }
 }
 if (! function_exists('is_assoc_array')) {
