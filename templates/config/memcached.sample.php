@@ -10,7 +10,8 @@ return [
             'weight' => 1,
             'sasl_auth' => false,
             'sasl_user' => '',
-            'libketama_compatible' => false,
+            // 'persistent_id' => null,
+            // 'libketama_compatible' => false,
             'sasl_pswd' => '',
         ],
 
