@@ -3,8 +3,6 @@
 return [
     'default' => 'mem1.5',
 
-    'persistent_id' => null,
-
     'pool' => [
         'mem1.5' => [
             'host'   => '127.0.0.1',
