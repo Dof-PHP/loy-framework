@@ -16,8 +16,4 @@ use Domain\__DOMAIN__\Repository\__NAME__Repository;
  */
 class __NAME__ extends __STORAGE__ implements __NAME__Repository
 {
-    /**
-     * @Type(String)
-     */
-    protected $attr1;
 }

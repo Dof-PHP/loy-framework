@@ -5,27 +5,19 @@ declare(strict_types=1);
 namespace Dof\Framework\Storage;
 
 use PDO;
-use Closure;
 use Throwable;
 use Dof\Framework\Collection;
 use Dof\Framework\TypeHint;
 
-class MySQL implements StorageInterface
+class MySQL extends Storage implements StorageInterface
 {
-    /** @var \Dof\Framework\Collection: Data used for SQL querying */
-    private $annotations = [];
-
-    /** @var object|null: PDO Connection Instance */
-    private $connection;
-
-    /** @var Closure: The getter to get acutal connection */
-    private $connectionGetter;
-
     /** @var \Dof\Framework\Storage\MySQLBuilder: Query builder based on table */
     private $builder;
 
     /** @var array: Sqls executed in this instance lifetime */
     private $sqls = [];
+
+    private $needdb = true;
 
     public function builder() : MySQLBuilder
     {
@@ -121,17 +113,15 @@ class MySQL implements StorageInterface
         return $this->builder()->where('id', $pk)->first();
     }
 
-    public function __construct(array $annotations = [])
-    {
-        $this->annotations = collect($annotations);
-    }
-
     public function rawExec(string $sql)
     {
         $start = microtime(true);
 
         try {
-            $result = $this->getConnection(false)->exec($sql);
+            $needdb = $this->needdb;
+            $this->needdb = false;
+            $result = $this->getConnection()->exec($sql);
+            $this->needdb = $needdb;
         } catch (Throwable $e) {
             exception('RawExecMySQLFailed', compact('sql'), $e);
         }
@@ -146,7 +136,10 @@ class MySQL implements StorageInterface
         $start = microtime(true);
 
         try {
-            $statement = $this->getConnection(false)->query($sql);
+            $needdb = $this->needdb;
+            $this->needdb = false;
+            $statement = $this->getConnection()->query($sql);
+            $this->needdb = $needdb;
             $result = $statement->fetchAll(PDO::FETCH_ASSOC);
         } catch (Throwable $e) {
             exception('RawExecMySQLFailed', compact('sql'), $e);
@@ -284,7 +277,12 @@ class MySQL implements StorageInterface
     {
         $type = $this->getPDOValueConst($val);
 
-        return $this->getConnection(false)->quote($val, $type);
+        $needdb = $this->needdb;
+        $this->needdb = false;
+        $res = $this->getConnection()->quote($val, $type);
+        $this->needdb = $needdb;
+
+        return $res;
     }
 
     public function getPDOValueConst($val)
@@ -302,30 +300,11 @@ class MySQL implements StorageInterface
         }
     }
 
-    public function setConnectionGetter(Closure $getter)
+    public function getConnection()
     {
-        $this->connectionGetter = $getter;
+        parent::getConnection();
 
-        return $this;
-    }
-
-    public function setConnection($connection)
-    {
-        $this->connection = $connection;
-
-        return $this;
-    }
-
-    public function getConnection(bool $needdb = true)
-    {
-        if ((! $this->connection) && $this->connectionGetter) {
-            $this->connection = ($this->connectionGetter)();
-        }
-        if (! $this->connection) {
-            exception('MissingMySQLConnection');
-        }
-
-        if ($needdb) {
+        if ($this->needdb) {
             $db = $this->annotations->meta->DATABASE ?? null;
             if (! $db) {
                 exception('MissingDatabaseInMySQLAnnotations', uncollect($this->annotations->meta ?? []));
@@ -336,11 +315,6 @@ class MySQL implements StorageInterface
         }
 
         return $this->connection;
-    }
-
-    public function annotations()
-    {
-        return $this->annotations;
     }
 
     public function showSessionId()
@@ -364,13 +338,18 @@ class MySQL implements StorageInterface
         return $this;
     }
 
+    // See: <https://www.php.net/manual/en/mysqli.persistconns.php>
     public function __cleanup()
     {
-        // Unlock tables of current session
-        $this->exec('UNLOCK TABLES');
-
-        // Rollback uncommited transactions
         // TODO
+        // Rollback uncommited active transactions
+        // Close and drop temporary tables
+        // Unlock tables of current session
+        $this->rawExec('UNLOCK TABLES');
+        // Reset session variables
+        // Close prepared statements (always happens with PHP)
+        // Close handler
+        // Release locks acquired with GET_LOCK()
     }
 
     public function __logging()

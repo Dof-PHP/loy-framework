@@ -68,7 +68,7 @@ final class Connection
     public static function redis(string $connection, iterable $config = []) : \Redis
     {
         if (! extension_loaded('redis')) {
-            exception('RedisExtensionNotEnabled');
+            exception('MissingRedisExtension');
         }
 
         $config = is_collection($config) ? $config : collect($config);
@@ -99,11 +99,39 @@ final class Connection
     public static function memcached(string $connection, iterable $config = []) : \Memcached
     {
         if (! extension_loaded('memcached')) {
-            exception('MemcachedExtensionNotEnabled');
+            exception('MissingMemcachedExtension');
         }
 
         $config = is_collection($config) ? $config : collect($config);
 
-        // TODO
+        $memcached = new \Memcached($connection);
+        //See: <https://help.aliyun.com/document_detail/48432.html>
+        $memcached->setOptions([
+            \Memcached::OPT_COMPRESSION     => false,
+            \Memcached::OPT_BINARY_PROTOCOL => true,
+            \Memcached::OPT_TCP_NODELAY     => true,
+        ]);
+        if ($config->libketama_compatible ?? true) {
+            $memcached->setOption(\Memcached::OPT_LIBKETAMA_COMPATIBLE, true);
+        }
+
+        $host = $config->get('host', '', ['need', 'string']);
+        $port = $config->get('port', 11211, ['need', 'pint']);
+        $weight = $config->get('weight', 0, ['need', 'int']);
+
+        $memcached->addServer($host, $port, $weight);
+
+        if ($config->get('sasl_auth', false)) {
+            $user = $config->get('sasl_user', '', ['string']);
+            $pswd = $config->get('sasl_pswd', '', ['string']);
+
+            $memcached->setSaslAuthData($user, $pswd);
+        }
+
+        if (false === $memcached->getStats()) {
+            exception('LostConnectionToMemcached', compact('host', 'port'));
+        }
+
+        return $memcached;
     }
 }

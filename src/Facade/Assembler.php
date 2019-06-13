@@ -32,6 +32,14 @@ class Assembler
 
             return $data;
         }
+        if (is_index_array($result)) {
+            $data = [];
+            foreach ($result as $item) {
+                $data[] = Assembler::assemble($item, $fields, $assembler);
+            }
+
+            return $data;
+        }
         if ($result instanceof Service) {
             $result = $result->execute();
         }

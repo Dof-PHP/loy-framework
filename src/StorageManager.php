@@ -8,6 +8,7 @@ use Throwable;
 use Dof\Framework\Kernel;
 use Dof\Framework\Storage\MySQL;
 use Dof\Framework\Storage\Redis;
+use Dof\Framework\Storage\Memcached;
 use Dof\Framework\Storage\Connection;
 use Dof\Framework\Facade\Annotation;
 use Dof\Framework\Facade\Log;
@@ -18,6 +19,7 @@ final class StorageManager
     const SUPPORT_DRIVERS = [
         'mysql' => MySQL::class,
         'redis' => Redis::class,
+        'memcached' => Memcached::class,
     ];
 
     const CONN_DEFAULT = 'default';
@@ -106,13 +108,17 @@ final class StorageManager
         if ($exists = (self::$storages[$namespace] ?? false)) {
             exception('DuplicateStorageClass', compact('exists'));
         }
-        if (! ($ofClass['doc']['DRIVER'] ?? false)) {
+        $driver = $ofClass['doc']['DRIVER'] ?? null;
+        if (! $driver) {
             exception('MissingStorageDriver', compact('namespace'));
+        }
+        if (! (self::SUPPORT_DRIVERS[$driver] ?? null)) {
+            exception('StorageDriverNotSupport', compact('driver'));
         }
         // Require database annotation here coz Dof\Framework\Storage\Connection will keep the first db name
         // When first connect to driver server and if other storages have different db name
         // Then it will coz table not found kind of errors
-        if (! ($ofClass['doc']['DATABASE'] ?? false)) {
+        if ((! ci_equal($driver, 'memcached')) && (! ($ofClass['doc']['DATABASE'] ?? false))) {
             exception('MissingStorageDatabaseName', compact('namespace'));
         }
 
@@ -124,7 +130,7 @@ final class StorageManager
             if (! $column) {
                 continue;
             }
-            self::$storages[$namespace]['columns'][$column]      = $property;
+            self::$storages[$namespace]['columns'][$column] = $property;
             self::$storages[$namespace]['properties'][$property] = $_column;
         }
     }

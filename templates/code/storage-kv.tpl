@@ -18,8 +18,4 @@ use Dof\Framework\DDD\KVStorage;
 // class __NAME__ extends KVStorage implements __NAME__Repository
 class __NAME__ extends KVStorage
 {
-    /**
-     * @Type(String)
-     */
-    protected $attr1;
 }
