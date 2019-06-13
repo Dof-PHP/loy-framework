@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
 
 // use Dof\Framework\OFB\Pipe\Paginate;
-// use Domain\Auth\Http\ERR;
-// use Domain\Auth\Service\Action__NAME__;
+// use Domain\__DOMAIN__\Http\ERR;
+// use Domain\__DOMAIN__\Service\Action__NAME__;
 // use Dof\Framework\OFB\Wrapper\Pagination;
 
 /**

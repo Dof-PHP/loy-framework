@@ -15,7 +15,7 @@ use Domain\__DOMAIN__\Repository\__NAME__Repository;
  * @Comment(Comment of Table __NAME__)
  * @Engine(InnoDB)
  * @Charset(utf8mb4)
- * @SoftDelete(1)
+ * @SoftDelete(0)
  */
 class __NAME__ORM extends __STORAGE__ implements __NAME__Repository
 {

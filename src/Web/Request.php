@@ -332,6 +332,8 @@ class Request
 
         $logHeaders = ConfigManager::getEnv('HTTP_REQUEST_LOG_HEADERS', false);
         $logParams = ConfigManager::getEnv('HTTP_REQUEST_LOG_PARAMS', false);
+        $logClient = ConfigManager::getEnv('HTTP_REQUEST_LOG_CLIENT', false);
+        $logServer = ConfigManager::getEnv('HTTP_REQUEST_LOG_SERVER', false);
         $domain = Route::get('class');
         if ($domain) {
             $logParams = ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_REQUEST_LOG_PARAMS', false);
@@ -360,8 +362,40 @@ class Request
 
             $log[0] = $params;
         }
+        if ($logClient) {
+            $log[1] = [
+                http_client_name(),
+                http_client_os(),
+                http_client_ip(),
+                $_SERVER['REMOTE_PORT'] ?? null,
+            ];
+        }
+        if ($logServer) {
+            $log[2] = [
+                $_SERVER['USER'] ?? null,
+                $_SERVER['SERVER_NAME'] ?? null,
+                $_SERVER['SERVER_ADDR'] ?? null,
+                $_SERVER['SERVER_PORT'] ?? null,
+                getmypid(),
+                // $_SERVER['REQUEST_SCHEME'] ?? null,
+                $_SERVER['SERVER_SOFTWARE'] ?? null,
+                $_SERVER['GATEWAY_INTERFACE'] ?? null,
+            ];
+        }
         if ($logHeaders) {
-            $log[1] = $this->getHeaders();
+            if (is_array($logHeaders)) {
+                $headers = $this->getHeaders();
+                foreach ($logHeaders as $header) {
+                    if (! is_string($header)) {
+                        continue;
+                    }
+                    if ($_header = ($headers[$header] ?? false)) {
+                        $log[3][$header] = $_header;
+                    }
+                }
+            } else {
+                $log[3] = $this->getHeaders();
+            }
         }
         if ($log) {
             $context[] = $log;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework\Log\Logger;
 
 use Dof\Framework\Kernel;
+use Dof\Framework\ConfigManager;
 use Dof\Framework\Log\LoggerInterface;
 
 class File implements LoggerInterface
@@ -41,7 +42,7 @@ class File implements LoggerInterface
 
         // Hard-code an index array to shorten log text
         $this->save(enjson([
-            microftime('T Ymd His'),
+            microftime('T Ymd His', ' '),
             stringify($message),
             $context,
         ]));
@@ -50,8 +51,9 @@ class File implements LoggerInterface
     public function save(string $log)
     {
         $user = get_php_user();
+        $pid = $this->processId();
         $path = ospath(Kernel::getRoot(), Kernel::RUNTIME, join('-', [$this->directory, $user]));
-        $file = ospath($path, join('.', [$this->level, PHP_SAPI, $user, $this->suffix]));
+        $file = ospath($path, join('.', [$this->level, PHP_SAPI, $user, $pid, $this->suffix]));
         if (! is_dir($path)) {
             mkdir($path, $this->permission, true);
         }
@@ -66,7 +68,7 @@ class File implements LoggerInterface
                 mkdir($archive, $this->permission, true);
             }
 
-            $_archive = join('.', [microftime('Ymd-His', '-'), $user, $this->level, PHP_SAPI, $this->suffix]);
+            $_archive = join('.', [microftime('Ymd-His', '-'), $user, $this->level, PHP_SAPI, $pid, $this->suffix]);
             $_archive = ospath($archive, $_archive);
 
             rename($file, $_archive);
@@ -84,6 +86,11 @@ class File implements LoggerInterface
             // file_put_contents($file, $this->seperate($log), FILE_APPEND | LOCK_EX);
             // error_log($this->seperate($log), 3, $file);
         }
+    }
+
+    private function processId()
+    {
+        return ConfigManager::getEnv('FILE_LOGGING_SINGLE', false) ? 'single' : getmypid();
     }
 
     public function seperate(string $log) : string

@@ -1302,6 +1302,6 @@ if (! function_exists('path2ns')) {
             return '';
         }
 
-        return $namespace;
+        return '\\'.$namespace;
     }
 }
