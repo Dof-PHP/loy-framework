@@ -133,12 +133,14 @@ class Validator
             exception('MinValueIsNotInteger', compact('min'));
         }
         $min = TypeHint::convertToInt($min);
-        if (TypeHint::isInt($value)) {
+
+        $type = $this->rules[$key]['TYPE'][1] ?? 'string';
+        if (ciin_array($type, ['int', 'pint', 'uint', 'bint'])) {
             $this->result[$key] = $value = TypeHint::convertToInt($value);
 
             return $value >= $min;
         }
-        if (TypeHint::isString($value)) {
+        if (ci_equal($type, 'string')) {
             $this->result[$key] = $value = TypeHint::convertToString($value);
 
             return mb_strlen($value) >= $min;
