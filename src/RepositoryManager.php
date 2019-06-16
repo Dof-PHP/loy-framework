@@ -336,9 +336,8 @@ final class RepositoryManager
             if (! TypeHint::support($type)) {
                 exception('UnsupportedEntityType', compact('type', 'attribute', 'entity'));
             }
-            $setter = 'set'.ucfirst($attribute);
 
-            $instance->{$setter}(TypeHint::convert($val, $type));
+            $instance->{$attribute} = TypeHint::convert($val, $type, true);
         }
 
         if (is_null($instance->getId())) {
