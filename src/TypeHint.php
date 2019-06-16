@@ -28,17 +28,17 @@ final class TypeHint
         'char' => true,
     ];
 
-    public static function convert($val, string $type)
+    public static function convert($val, string $type, bool $force = false)
     {
         $converter = 'convertTo'.ucfirst(strtolower($type));
         if (! method_exists(__CLASS__, $converter)) {
             exception('TypeHintConverterNotExists', ['type' => $type]);
         }
 
-        return self::$converter($val);
+        return self::$converter($val, $force);
     }
 
-    public static function convertToArray($val) : array
+    public static function convertToArray($val, bool $force = false) : array
     {
         if ($val instanceof Collection) {
             return (array) $val->toArray();
@@ -47,14 +47,14 @@ final class TypeHint
         return (array) $val;
     }
 
-    public static function convertToChar($val)
+    public static function convertToChar($val, bool $force = false)
     {
-        return self::convertToString($val);
+        return self::convertToString($val, $force);
     }
 
-    public static function convertToVarchar($val)
+    public static function convertToVarchar($val, bool $force = false)
     {
-        return self::convertToString($val);
+        return self::convertToString($val, $force);
     }
 
     public static function convertToString($val, bool $force = false)
@@ -140,12 +140,12 @@ final class TypeHint
         exception('TypeHintIntFailed', compact('val'));
     }
 
-    public static function convertToBoolean($val) : bool
+    public static function convertToBoolean($val, bool $force = false) : bool
     {
-        return self::convertToBool($val);
+        return self::convertToBool($val, $force);
     }
 
-    public static function convertToBool($val) : bool
+    public static function convertToBool($val, bool $force = false) : bool
     {
         return boolval($val);
     }
