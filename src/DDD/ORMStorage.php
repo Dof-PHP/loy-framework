@@ -123,21 +123,21 @@ class ORMStorage extends Storage
         $data = [];
         foreach ($columns as $column => $property) {
             $getter = 'get'.ucfirst($property);
+            $attribute = $annotation['properties'][$property] ?? [];
             $val = $entity->{$getter}() ?? null;
             // Null value check and set default if specific
             if (is_null($val)) {
-                $_property = $annotation['properties'][$property] ?? null;
-                $val = $_property['DEFAULT'] ?? null;
+                $val = $attribute['DEFAULT'] ?? null;
             }
 
-            $type = $property['TYPE'] ?? null;
+            $type = $attribute['TYPE'] ?? null;
             if (! $type) {
                 $entity = get_class($entity);
-                exception('MissingEntityType', compact('type', 'property', 'storage', 'entity'));
+                exception('MissingEntityType', compact('type', 'attribute', 'storage', 'entity'));
             }
             if (! TypeHint::support($type)) {
                 $entity = get_class($entity);
-                exception('UnsupportedEntityType', compact('type', 'property', 'storage', 'entity'));
+                exception('UnsupportedEntityType', compact('type', 'attribute', 'storage', 'entity'));
             }
 
             $data[$column] = TypeHint::convert($val, $type);
