@@ -131,8 +131,13 @@ class ORMStorage extends Storage
             }
 
             $type = $property['TYPE'] ?? null;
+            if (! $type) {
+                $entity = get_class($entity);
+                exception('MissingEntityType', compact('type', 'property', 'storage', 'entity'));
+            }
             if (! TypeHint::support($type)) {
-                exception('UnsupportedEntityType', compact('type', 'attribute', 'entity'));
+                $entity = get_class($entity);
+                exception('UnsupportedEntityType', compact('type', 'property', 'storage', 'entity'));
             }
 
             $data[$column] = TypeHint::convert($val, $type);
