@@ -191,7 +191,7 @@ final class StorageManager
      * Initialize storage driver instance for storage class
      *
      * @param string $namespace: Namespace of storage class
-     * @return \Dof\Framework\Storage\StorageInterface
+     * @return \Dof\Framework\Storage\Storable
      */
     public static function init(string $namespace)
     {

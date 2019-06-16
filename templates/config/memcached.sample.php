@@ -32,4 +32,9 @@ return [
             'user-0',
         ],
     ],
+
+    'cache' => [
+        'mem1.5',
+        'user-0',
+    ],
 ];

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Storage;
 
-interface StorageInterface
+interface Storable
 {
     public function setConnection($connection);
 

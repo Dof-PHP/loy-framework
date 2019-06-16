@@ -159,7 +159,11 @@ class ORMStorage extends Storage
             return null;
         }
 
-        return RepositoryManager::map(static::class, $result);
+        $entity = RepositoryManager::map(static::class, $result);
+
+        RepositoryManager::add(static::class, $entity);
+
+        return $entity;
     }
 
     final public function collect(array $result = null) : ?Collection

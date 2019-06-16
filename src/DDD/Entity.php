@@ -57,6 +57,11 @@ abstract class Entity extends Model
         return $this;
     }
 
+    final public function getPk()
+    {
+        return $this->id;
+    }
+
     final public function getId()
     {
         return $this->id;

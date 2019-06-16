@@ -50,7 +50,7 @@ class MySQLBuilder
         return $this;
     }
 
-    public function setOrigin(StorageInterface $origin)
+    public function setOrigin(Storable $origin)
     {
         $this->origin = $origin;
 

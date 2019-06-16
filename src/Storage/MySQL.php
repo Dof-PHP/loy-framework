@@ -9,7 +9,7 @@ use Throwable;
 use Dof\Framework\Collection;
 use Dof\Framework\TypeHint;
 
-class MySQL extends Storage implements StorageInterface
+class MySQL extends Storage implements Storable
 {
     /** @var \Dof\Framework\Storage\MySQLBuilder: Query builder based on table */
     private $builder;

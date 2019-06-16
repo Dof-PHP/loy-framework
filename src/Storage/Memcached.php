@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Storage;
 
-class Memcached extends Storage implements StorageInterface
+class Memcached extends Storage implements Storable, Cachable
 {
     private $cmds = [];
 
@@ -33,5 +33,35 @@ class Memcached extends Storage implements StorageInterface
         ];
 
         return $this;
+    }
+
+    public function get(string $key)
+    {
+        $start = microtime(true);
+
+        $result = $this->getConnection()->get($key);
+
+        $this->appendCMD($start, 'get', $key);
+
+        return $this->getConnection()->getResultCode() === \Memcached::RES_NOTFOUND
+                ? null : $result;
+    }
+
+    public function del(string $key)
+    {
+        $start = microtime(true);
+
+        $this->getConnection()->delete($key, 0);
+
+        $this->appendCMD($start, 'del', $key);
+    }
+
+    public function set(string $key, $value, int $expiration = 0)
+    {
+        $start = microtime(true);
+
+        $this->getConnection()->set($key, $value, $expiration);
+
+        $this->appendCMD($start, 'set', $key, $value, $expiration);
     }
 }

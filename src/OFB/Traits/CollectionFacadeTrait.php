@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Dof\Framework;
+namespace Dof\Framework\OFB\Traits;
 
 trait CollectionFacadeTrait
 {
