@@ -8,6 +8,7 @@ use Dof\Framework\StorageManager;
 use Dof\Framework\RepositoryManager;
 use Dof\Framework\Paginator;
 use Dof\Framework\Collection;
+use Dof\Framework\TypeHint;
 
 /**
  * In Dof, ORMStorage also the configuration of ORM
@@ -145,6 +146,24 @@ class ORMStorage extends Storage
         RepositoryManager::update($storage, $entity);
 
         return $entity;
+    }
+
+    final public function finds(array $pks)
+    {
+        $list = [];
+
+        $pks = array_unique($pks);
+        foreach ($pks as $pk) {
+            if (! TypeHint::isPint($pk)) {
+                continue;
+            }
+            $pk = TypeHint::convertToPint($pk);
+            if ($entity = $this->find($pk)) {
+                $list[] = $entity;
+            }
+        }
+
+        return $list;
     }
 
     final public function find(int $pk) : ?Entity
