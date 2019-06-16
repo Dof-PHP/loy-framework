@@ -66,4 +66,26 @@ abstract class Entity extends Model
     {
         return $this->id;
     }
+
+    public function set(string $attr, $val)
+    {
+        $annotation = EntityManager::get(static::class);
+        $type = $annotation['properties'][$attr]['TYPE'] ?? null;
+        if ($type) {
+            $val = TypeHint::convert($val, $type, true);
+        }
+
+        if (property_exists($this, $attr)) {
+            $setter = 'set'.ucfirst($attr);
+            if (method_exists($this, $setter)) {
+                $this->{$setter}($val);
+            } else {
+                $this->{$attr} = $val;
+            }
+        } else {
+            $this->{$attr} = $val;
+        }
+
+        return $this;
+    }
 }

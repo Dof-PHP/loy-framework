@@ -60,7 +60,7 @@ final class TypeHint
     public static function convertToString($val, bool $force = false)
     {
         if ($force) {
-            return strval($force);
+            return strval($val);
         }
 
         if (self::isString($val)) {

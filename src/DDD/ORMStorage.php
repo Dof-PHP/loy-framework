@@ -53,15 +53,24 @@ class ORMStorage extends Storage
 
         $data = [];
         foreach ($columns as $column => $property) {
-            $getter = 'get'.ucfirst($property);
-            $val = $entity->{$getter}() ?? null;
+            $attribute = $annotation['properties'][$property] ?? [];
+            $val = $entity->{$property} ?? null;
             // Null value check and set default if necessary
             if (is_null($val)) {
-                $_property = $annotation['properties'][$property] ?? null;
-                $val = $_property['DEFAULT'] ?? null;
+                $val = $attribute['DEFAULT'] ?? null;
             }
 
-            $data[$column] = $val;
+            $type = $attribute['TYPE'] ?? null;
+            if (! $type) {
+                $entity = get_class($entity);
+                exception('MissingEntityType', compact('type', 'attribute', 'storage', 'entity'));
+            }
+            if (! TypeHint::support($type)) {
+                $entity = get_class($entity);
+                exception('UnsupportedEntityType', compact('type', 'attribute', 'storage', 'entity'));
+            }
+
+            $data[$column] = TypeHint::convert($val, $type, true);
         }
 
         if (! $data) {
@@ -72,9 +81,7 @@ class ORMStorage extends Storage
         }
 
         $id = $this->__storage->add($data);
-        $data['id'] = $id;
-        $entity = RepositoryManager::map($storage, $data);
-        // $entity->setId($id);
+        $entity->setId($id);
 
         // Add entity into repository cache
         RepositoryManager::add($storage, $entity);
@@ -124,9 +131,8 @@ class ORMStorage extends Storage
 
         $data = [];
         foreach ($columns as $column => $property) {
-            $getter = 'get'.ucfirst($property);
             $attribute = $annotation['properties'][$property] ?? [];
-            $val = $entity->{$getter}() ?? null;
+            $val = $entity->{$property} ?? null;
             // Null value check and set default if specific
             if (is_null($val)) {
                 $val = $attribute['DEFAULT'] ?? null;
@@ -152,10 +158,7 @@ class ORMStorage extends Storage
             ]);
         }
 
-        $pk = $entity->getId();
-        $this->__storage->update($pk, $data);
-        $data['id'] = $pk;
-        $entity = RepositoryManager::map($storage, $data);
+        $this->__storage->update($entity->getId(), $data);
 
         // Update/Reset repository cache
         RepositoryManager::update($storage, $entity);
