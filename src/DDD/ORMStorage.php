@@ -140,7 +140,7 @@ class ORMStorage extends Storage
                 exception('UnsupportedEntityType', compact('type', 'attribute', 'storage', 'entity'));
             }
 
-            $data[$column] = TypeHint::convert($val, $type);
+            $data[$column] = TypeHint::convert($val, $type, true);
         }
 
         if (! $data) {

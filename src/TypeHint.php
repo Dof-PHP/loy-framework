@@ -9,6 +9,7 @@ final class TypeHint
     const SUPPORTS = [
         'uint' => true,
         'pint' => true,
+        'bint' => true,
         'int' => true,
         'integer' => true,
         'double' => true,
@@ -56,8 +57,12 @@ final class TypeHint
         return self::convertToString($val);
     }
 
-    public static function convertToString($val)
+    public static function convertToString($val, bool $force = false)
     {
+        if ($force) {
+            return strval($force);
+        }
+
         if (self::isString($val)) {
             return (string) $val;
         }
@@ -69,9 +74,9 @@ final class TypeHint
         exception('TypeHintStringFailed', compact('val'));
     }
 
-    public static function convertToPint($val)
+    public static function convertToPint($val, bool $force = false)
     {
-        $val = self::convertToInt($val);
+        $val = $force ? intval($val) : self::convertToInt($val);
 
         if ($val < 1) {
             exception('TypeHintPintFailed', compact('val'));
@@ -80,9 +85,20 @@ final class TypeHint
         return $val;
     }
 
-    public static function convertToUint($val)
+    public static function convertToBint($val, bool $force = false)
     {
-        $val = self::convertToInt($val);
+        $val = $force ? intval($val) : self::convertToInt($val);
+
+        if (($val !== 0) && ($val !== 1)) {
+            exception('TypeHintBintFailed');
+        }
+
+        return $val;
+    }
+
+    public static function convertToUint($val, bool $force = false)
+    {
+        $val = $force ? intval($val) : self::convertToInt($val);
 
         if ($val < 0) {
             exception('TypeHintUintFailed', compact('val'));
@@ -91,28 +107,32 @@ final class TypeHint
         return $val;
     }
 
-    public static function convertToInteger($val)
+    public static function convertToInteger($val, bool $force = false)
     {
-        return self::convertToInt($val);
+        return self::convertToInt($val, $force);
     }
 
-    public static function convertToBigint($val)
+    public static function convertToBigint($val, bool $force = false)
     {
-        return self::convertToInt($val);
+        return self::convertToInt($val, $force);
     }
 
-    public static function convertToSmallint($val)
+    public static function convertToSmallint($val, bool $force = false)
     {
-        return self::convertToInt($val);
+        return self::convertToInt($val, $force);
     }
 
-    public static function convertToTinyint($val)
+    public static function convertToTinyint($val, bool $force = false)
     {
-        return self::convertToInt($val);
+        return self::convertToInt($val, $force);
     }
 
-    public static function convertToInt($val)
+    public static function convertToInt($val, bool $force = false)
     {
+        if ($force) {
+            return intval($val);
+        }
+
         if (self::isInt($val)) {
             return intval($val);
         }
@@ -202,6 +222,17 @@ final class TypeHint
         return $unsigned
             ? (($val >= 0) && ($val <= 255))
             : (($val >= -128) && ($val <= 127));
+    }
+
+    public static function isBint($val) : bool
+    {
+        if (! self::isInt($val)) {
+            return false;
+        }
+
+        $val = self::convertToInt($val);
+
+        return ($val === 0) || ($val === 1);
     }
 
     public static function isUint($val) : bool
