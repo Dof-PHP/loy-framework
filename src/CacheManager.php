@@ -106,10 +106,9 @@ final class CacheManager
     {
         switch ($driver) {
             case 'redis':
-                $dbNum = intval($config['dbnum'] ?? 16)  - 1;
+                $dbNum = intval($config['dbnum'] ?? 16) - 1;
                 $db = self::hash($key) % $dbNum;
                 return ['meta' => ['DATABASE' => $db]];
-                break;
             default:
                 return [];
         }

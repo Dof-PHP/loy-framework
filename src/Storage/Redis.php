@@ -36,7 +36,7 @@ class Redis extends Storage implements Storable, Cachable
         parent::getConnection();
 
         $db = $this->annotations->meta->DATABASE ?? null;
-        if (! $db) {
+        if (is_null($db)) {
             exception('MissingDatabaseInRedisAnnotations', uncollect($this->annotations->meta ?? []));
         }
         if (! TypeHint::isUInt($db)) {
