@@ -72,7 +72,9 @@ class ORMStorage extends Storage
         }
 
         $id = $this->__storage->add($data);
-        $entity->setId($id);
+        $data['id'] = $id;
+        $entity = RepositoryManager::map($storage, $data);
+        // $entity->setId($id);
 
         // Add entity into repository cache
         RepositoryManager::add($storage, $entity);
@@ -150,7 +152,10 @@ class ORMStorage extends Storage
             ]);
         }
 
-        $this->__storage->update($entity->getId(), $data);
+        $pk = $entity->getId();
+        $this->__storage->update($pk, $data);
+        $data['id'] = $pk;
+        $entity = RepositoryManager::map($storage, $data);
 
         // Update/Reset repository cache
         RepositoryManager::update($storage, $entity);
