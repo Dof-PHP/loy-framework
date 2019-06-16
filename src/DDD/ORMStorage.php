@@ -130,7 +130,12 @@ class ORMStorage extends Storage
                 $val = $_property['DEFAULT'] ?? null;
             }
 
-            $data[$column] = $val;
+            $type = $property['TYPE'] ?? null;
+            if (! TypeHint::support($type)) {
+                exception('UnsupportedEntityType', compact('type', 'attribute', 'entity'));
+            }
+
+            $data[$column] = TypeHint::convert($val, $type);
         }
 
         if (! $data) {
