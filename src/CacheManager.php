@@ -12,7 +12,6 @@ use Dof\Framework\Storage\Redis;
 final class CacheManager
 {
     const MODULO_DIVIDEND_LENGTH = 14;
-    const DEFAULT_DRIVER = 'memcached';
     const SUPPORT_DRIVER = [
         'memcached' => Memcached::class,
         'redis' => Redis::class,
@@ -36,17 +35,12 @@ final class CacheManager
         }
 
         if (! $driver) {
-            $driver = ConfigManager::getDomainFinalEnvByNamespace(
-                $domain,
-                'CACHE_DRIVER',
-                self::DEFAULT_DRIVER
-            );
+            $driver = ConfigManager::getDomainFinalEnvByNamespace($domain, 'CACHE_DRIVER');
         }
         if (! $driver) {
             exception('MissingCacheStorageDriver');
         }
         $driver = strtolower($driver);
-
         $cachable = self::SUPPORT_DRIVER[$driver] ?? null;
         if (! $cachable) {
             exception('UnSupportedCacheDriver', compact('driver'));

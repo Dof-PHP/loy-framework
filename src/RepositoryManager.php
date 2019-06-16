@@ -194,7 +194,7 @@ final class RepositoryManager
         $cache = CacheManager::get(
             $storage,
             $key,
-            ConfigManager::getDomainFinalEnvByNamespace('ORM_STORAGE_CACHE')
+            ConfigManager::getDomainFinalEnvByNamespace($storage, 'ORM_STORAGE_CACHE')
         );
         if (! $cache) {
             return;
@@ -219,7 +219,7 @@ final class RepositoryManager
         $cache = CacheManager::get(
             $storage,
             $key,
-            ConfigManager::getDomainFinalEnvByNamespace('ORM_STORAGE_CACHE')
+            ConfigManager::getDomainFinalEnvByNamespace($storage, 'ORM_STORAGE_CACHE')
         );
         if (! $cache) {
             return;
@@ -244,7 +244,7 @@ final class RepositoryManager
         $cache = CacheManager::get(
             $storage,
             $key,
-            ConfigManager::getDomainFinalEnvByNamespace('ORM_STORAGE_CACHE')
+            ConfigManager::getDomainFinalEnvByNamespace($storage, 'ORM_STORAGE_CACHE')
         );
         if (! $cache) {
             return null;
@@ -255,12 +255,12 @@ final class RepositoryManager
 
     public static function isORMCacheEnabled(string $storage) : bool
     {
-        $global = ConfigManager::getDomainFinalEnvByNamespace($storage, 'DISABLE_ORM_CACHE', false);
+        $global = ConfigManager::getDomainFinalEnvByNamespace($storage, 'ENABLE_ORM_CACHE', false);
         if ($global) {
-            return boolval(StorageManager::get($storage)['meta']['FORCECACHE'] ?? 0);
+            return !boolval(StorageManager::get($storage)['meta']['NOCACHE'] ?? 0);
         }
 
-        return !boolval(StorageManager::get($storage)['meta']['NOCACHE'] ?? 0);
+        return boolval(StorageManager::get($storage)['meta']['CACHE'] ?? 0);
     }
 
     public static function formatStorageCacheKey(string $storage, int $pk) : string
