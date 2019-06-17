@@ -8,11 +8,11 @@ class ActionOnly
 {
     public function wraperr()
     {
-        return ['code', 'info'];
+        return ['code', 'info', 'more'];
     }
 
     public function wrapout()
     {
-        return ['code' => 0, 'info' => 'ok'];
+        return ['code' => 0, 'info' => 'ok', 'more'];
     }
 }
