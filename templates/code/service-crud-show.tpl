@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Domain\__DOMAIN__\Service\CRUD;
 
+use Throwable;
 use Dof\Framework\DDD\Service;
 use Domain\__DOMAIN__\Repository\__ENTITY__Repository;
 
