@@ -168,7 +168,13 @@ class Console
 
     public function getOption(string $name, $default = null)
     {
-        return $this->options->get($name, $default);
+        $option = $this->options->get($name, $default);
+
+        if (is_collection($option) && ($option->count() === 0)) {
+            return null;
+        }
+
+        return $option;
     }
 
     /**
