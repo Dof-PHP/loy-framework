@@ -186,11 +186,20 @@ final class RepositoryManager
      */
     public static function remove(string $storage, $entity)
     {
+        if ((! is_int($entity)) && (! ($entity instanceof Entity))) {
+            return false;
+        }
+
         if (! self::isORMCacheEnabled($storage)) {
             return null;
         }
 
-        $key = self::formatStorageCacheKey($storage, $entity->getPk());
+        $pk = is_int($entity) ? $entity : $entity->getId();
+        if ($pk < 1) {
+            return false;
+        }
+
+        $key = self::formatStorageCacheKey($storage, $pk);
         $cache = CacheManager::get(
             $storage,
             $key,

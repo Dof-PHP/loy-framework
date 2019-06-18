@@ -89,19 +89,28 @@ class ORMStorage extends Storage
         return $entity;
     }
 
+    final public function removes(array $pks)
+    {
+        $pks = array_unique($pks);
+        foreach ($pks as $pk) {
+            if (! TypeHint::isPint($pk)) {
+                continue;
+            }
+            $pk = TypeHint::convertToPint($pk);
+            $this->remove($pk);
+        }
+    }
+
     final public function remove($entity) : ?int
     {
         if ((! is_int($entity)) && (! ($entity instanceof Entity))) {
             return false;
         }
-
-        if (is_int($entity)) {
-            if ($entity < 1) {
-                return false;
-            }
+        $pk = is_int($entity) ? $entity : $entity->getId();
+        if ($pk < 1) {
+            return false;
         }
 
-        $pk = is_int($entity) ? $entity : $entity->getId();
         $storage = static::class;
 
         try {

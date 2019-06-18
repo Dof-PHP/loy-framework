@@ -304,6 +304,17 @@ class MySQLBuilder
         return $this;
     }
 
+    /**
+     * Get id list only by given conditions
+     */
+    public function ids() : array
+    {
+        $this->select = ['id'];
+        $res = $this->get();
+
+        return $res ? array_column($res, 'id') : [];
+    }
+
     public function count() : int
     {
         $this->alias = [];
