@@ -383,7 +383,7 @@ final class Kernel
                     [$_result, Route::getInstance(), Port::getInstance(), Request::getInstance(), Response::getInstance()]
                 );
             } catch (Throwable $e) {
-                if (EXCP::is(EXCP::INPUT_FIELDS_SENTENCE_GRAMMER_ERROR)) {
+                if (EXCP::is($e, EXCP::INPUT_FIELDS_SENTENCE_GRAMMER_ERROR)) {
                     Kernel::throw(ERR::INPUT_FIELDS_SENTENCE_GRAMMER_ERROR, compact('pipe'), 400, $e, Route::get('class'));
                 }
 
