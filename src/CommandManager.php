@@ -47,11 +47,11 @@ final class CommandManager
         self::$domain = [];
         self::$default = [];
 
+        self::loadDirs([dirname(get_file_of_namespace(Command::class))], 'default');
+
         if (count($dirs) < 1) {
             return;
         }
-
-        self::loadDirs([dirname(get_file_of_namespace(Command::class))], 'default');
 
         array_map(function ($item) {
             $dir = ospath($item, self::COMMAND_DIR);
