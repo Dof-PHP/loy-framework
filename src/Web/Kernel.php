@@ -7,6 +7,7 @@ namespace Dof\Framework\Web;
 use Throwable;
 use Closure;
 use Dof\Framework\Kernel as Core;
+use Dof\Framework\EXCP;
 use Dof\Framework\Container;
 use Dof\Framework\PortManager;
 use Dof\Framework\WrapinManager;
@@ -382,6 +383,10 @@ final class Kernel
                     [$_result, Route::getInstance(), Port::getInstance(), Request::getInstance(), Response::getInstance()]
                 );
             } catch (Throwable $e) {
+                if (EXCP::is(EXCP::INPUT_FIELDS_SENTENCE_GRAMMER_ERROR)) {
+                    Kernel::throw(ERR::INPUT_FIELDS_SENTENCE_GRAMMER_ERROR, compact('pipe'), 400, $e, Route::get('class'));
+                }
+
                 Kernel::throw(ERR::PIPEOUT_THROUGH_FAILED, compact('pipe'), 500, $e, Route::get('class'));
             }
         }

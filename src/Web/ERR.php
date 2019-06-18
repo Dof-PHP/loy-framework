@@ -44,6 +44,7 @@ class ERR
     const WRAPIN_VALIDATE_FAILED = [40000002, 'WrapinValidateFailed'];
     const INVALID_ROUTE_PARAMETER = [40000003, 'InvalidRouteParameter'];
     const INVALID_AUTH_CLIENT_ID = [40000004, 'InvalidAuthClientId'];
+    const INPUT_FIELDS_SENTENCE_GRAMMER_ERROR = [40000005, 'InputFieldsSentenceGrammerError'];
     const INVALID_AUTH_CLIENT_REALM = [40000006, 'InvalidAuthClientRealm'];
     const MISSING_TOKEN_HEADER_OR_PARAMETER = [40100000, 'MissingTokenHeaderOrParameter'];
     const INVALID_BEARER_TOKEN = [40100001, 'InvalidBearerToken'];
