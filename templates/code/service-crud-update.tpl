@@ -50,7 +50,7 @@ class Update__ENTITY__ extends Service
         return $this;
     }
 
-    public function setParam1(string $param1)
+    public function setParam1(string $param1 = null)
     {
         $this->param1 = $param1;
 

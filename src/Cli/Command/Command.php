@@ -1302,4 +1302,49 @@ PHP;
 
         $console->success('Done!');
     }
+
+    /**
+     * @CMD(cmd.add)
+     * @Desc(Create a domain command class)
+     * @Option(cmd){notes=Command name to be Created}
+     * @Option(domain){notes=Domain name of command to be created}
+     * @Option(force){notes=Whether force recreate command when given command class exists}
+     */
+    public function addCMD($console)
+    {
+        $domain = $console->getOption('domain');
+        if (! $domain) {
+            $console->exception('MissingDomainName');
+        }
+        $name = $console->getOption('cmd');
+        if (! $name) {
+            $console->exception('MissingCommandName');
+        }
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $console->exception('DomainNotExists', [$domain]);
+        }
+        $class = ospath($path, Kernel::COMMAND, "{$name}.php");
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('CommandAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'command.tpl');
+        if (! is_file($template)) {
+            $console->exception('CommandClassTemplateNotExist', [$template]);
+        }
+
+        $command = file_get_contents($template);
+        $command = str_replace('__DOMAIN__', $domain, $command);
+        $command = str_replace('__NAMESPACE__', path2ns($name), $command);
+        $command = str_replace('__NAME__', basename($name), $command);
+
+        save($class, $command);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $console->line(
+            $console->render("Created Command: ", $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
+    }
 }

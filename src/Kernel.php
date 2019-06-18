@@ -21,6 +21,7 @@ final class Kernel
     const LOCATE  = __DIR__;
     const SERVICE = 'Service';
     const ASSEMBLER = 'Assembler';
+    const COMMAND = 'Command';
     const TEMPLATE = 'templates';
 
     /** @var string: Project Root Directory */
