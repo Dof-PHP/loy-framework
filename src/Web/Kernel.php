@@ -228,6 +228,9 @@ final class Kernel
 
             if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
                 $context = $fail->toArray();
+                $context['__info'] = $context['key'] ?? null;
+                $context['__more'] = $context['value'] ?? null;
+                unset($context['key'], $context['value']);
                 if ($wrapin) {
                     $context['wrapins'][] = $wrapin;
                 }

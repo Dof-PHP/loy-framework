@@ -33,6 +33,14 @@ class Response extends Facade
     {
         $code = (int) ($error[0] ?? -1);
         $info = (string) ($error[1] ?? -1);
+        if ($_info = ($context['__info'] ?? null)) {
+            $context['__info'] = $info;
+            $info = $_info;
+        }
+
+        // TODO
+        // $lang = 'zh';
+        // $info = i18n($info, $lang, $domain);
 
         $debug = $domain
             ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_DEBUG', false)
@@ -80,6 +88,10 @@ class Response extends Facade
 
         $code = (int) ($error[0] ?? -1);
         $info = (string) ($error[1] ?? -1);
+        if ($_info = ($context['__info'] ?? null)) {
+            $context['__info'] = $info;
+            $info = $_info;
+        }
 
         $debug = $domain
             ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_DEBUG', false)

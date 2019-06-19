@@ -96,25 +96,6 @@ class Validator
         return $this->validate($rule, $key, $validator);
     }
 
-    private function validateMax(string $key, $max)
-    {
-        $value = $this->data[$key] ?? null;
-
-        if (! TypeHint::isInt($max)) {
-            exception('MaxValueIsNotInteger', compact('max'));
-        }
-        $max = TypeHint::convertToInt($max);
-        if (is_int($value)) {
-            return $value <= $max;
-        }
-        if (TypeHint::isString($value)) {
-            $value = TypeHint::convertToString($value);
-            return mb_strlen($value) <= $max;
-        }
-
-        return false;
-    }
-
     private function validateLength(string $key, $length)
     {
         $value = $this->data[$key] ?? null;
@@ -123,6 +104,29 @@ class Validator
         }
 
         return mb_strlen($value) === $length;
+    }
+
+    private function validateMax(string $key, $max)
+    {
+        $value = $this->data[$key] ?? null;
+
+        if (! TypeHint::isInt($max)) {
+            exception('MaxValueIsNotInteger', compact('max'));
+        }
+        $max = TypeHint::convertToInt($max);
+        $type = $this->rules[$key]['TYPE'][1] ?? 'string';
+        if (ciin_array($type, ['int', 'pint', 'uint', 'bint'])) {
+            $this->result[$key] = $value = TypeHint::convertToInt($value);
+
+            return $value <= $max;
+        }
+        if (ci_equal($type, 'string')) {
+            $this->result[$key] = $value = TypeHint::convertToString($value);
+
+            return mb_strlen($value) <= $max;
+        }
+
+        return false;
     }
 
     private function validateMin(string $key, $min)
