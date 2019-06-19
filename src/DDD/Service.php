@@ -20,8 +20,13 @@ abstract class Service
     {
         $code = $error[0] ?? -1;
         $info = $error[1] ?? -1;
+        $text = $error[2] ?? null;
 
-        $this->__errors[$info] = [$code, $status];
+        // TODO
+        // $lang = 'zh';
+        // $text = i18n($info, static::class, $lang);
+
+        $this->__errors[$info] = [$code, $status, $text];
 
         return $this;
     }

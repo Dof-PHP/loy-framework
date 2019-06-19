@@ -432,6 +432,9 @@ final class Kernel
             if ($_error = ($errors[$message] ?? null)) {
                 $error  = [($_error[0] ?? -1), $message];
                 $status = $_error[1] ?? 400;
+                if ($info = ($_error[2] ?? null)) {
+                    $context['__info'] = $info;
+                }
             } else {
                 $context['__info'] = $message;
             }
