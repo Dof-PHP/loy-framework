@@ -496,6 +496,20 @@ class Validator
         return IS::email($value);
     }
 
+    private function validateDateFormat(string $key, string $format)
+    {
+        if (! $format) {
+            return false;
+        }
+
+        $value = $this->data[$key] ?? null;
+        if (! $value) {
+            return false;
+        }
+
+        return is_date_format($value, $format);
+    }
+
     private function addFail(string $fail, array $context = [])
     {
         if ($this->fails) {
@@ -542,7 +556,9 @@ class Validator
                 if (! $rule) {
                     continue;
                 }
-                $ext = $rarr[1] ?? '';
+                unset($rarr[0]);
+                $ext = join(':', $rarr);
+
                 $msg = $msg ?: $this->getDefaultRuleMessage($rule, $key, $ext);
 
                 if (Validator::REQUIRE_RULES[strtolower($rule)] ?? false) {

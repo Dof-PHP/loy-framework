@@ -82,11 +82,13 @@ final class ModelManager
         self::$models[$namespace]['meta'] = $ofClass['doc'] ?? [];
 
         foreach ($ofProperties as $name => $attrs) {
-            if (! ($attrs['doc']['TITLE'] ?? false)) {
-                exception('MissingDataMODELAttrTitle', ['model' => $namespace, 'attr' => $name]);
-            }
-            if (! ($attrs['doc']['TYPE'] ?? false)) {
-                exception('MissingDataModelAttrType', ['model' => $namespace, 'attr' => $name]);
+            if ($attrs['doc']['ANNOTATION'] ?? true) {
+                if (! ($attrs['doc']['TITLE'] ?? false)) {
+                    exception('MissingDataMODELAttrTitle', ['model' => $namespace, 'attr' => $name]);
+                }
+                if (! ($attrs['doc']['TYPE'] ?? false)) {
+                    exception('MissingDataModelAttrType', ['model' => $namespace, 'attr' => $name]);
+                }
             }
 
             self::$models[$namespace]['properties'][$name] = $attrs['doc'] ?? [];

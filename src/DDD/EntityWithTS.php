@@ -22,6 +22,7 @@ class EntityWithTS extends Entity
      * @Type(Uint)
      * @Notes(If no field parameters, then return timestamp as default)
      * @Default(0)
+     * @NoDiff(1)
      * @Argument(format){default=timestamp}
      */
     protected $updatedAt;

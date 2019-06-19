@@ -40,6 +40,11 @@ class ORMStorage extends Storage
         return self::annotations()['meta']['TABLE'] ?? null;
     }
 
+    final public function create(Entity &$entity) : Entity
+    {
+        return $this->add($entity);
+    }
+
     final public function add(Entity &$entity) : Entity
     {
         $storage = static::class;
@@ -86,7 +91,16 @@ class ORMStorage extends Storage
         // Add entity into repository cache
         RepositoryManager::add($storage, $entity);
 
+        if (method_exists($entity, 'onCreated')) {
+            $entity->onCreated();
+        }
+
         return $entity;
+    }
+
+    final public function deletes(array $pks)
+    {
+        $this->removes($pks);
     }
 
     final public function removes(array $pks)
@@ -101,33 +115,58 @@ class ORMStorage extends Storage
         }
     }
 
+    final public function delete($entity) : ?int
+    {
+        return $this->remove($entity);
+    }
+
     final public function remove($entity) : ?int
     {
         if ((! is_int($entity)) && (! ($entity instanceof Entity))) {
-            return false;
+            return 0;
         }
-        $pk = is_int($entity) ? $entity : $entity->getId();
-        if ($pk < 1) {
-            return false;
+        if (is_int($entity)) {
+            $entity = $this->find($entity);
+            if (! $entity) {
+                return 0;
+            }
         }
 
+        $pk = $entity->getPk();
         $storage = static::class;
 
         try {
             // Ignore when entity not exists in repository
             $res = $this->__storage->delete($pk);
-
             // Remove entity from repository cache
             RepositoryManager::remove($storage, $entity);
 
+            if ($res > 0) {
+                if (method_exists($entity, 'onRemoved')) {
+                    $entity->onRemoved();
+                } elseif (method_exists($entity, 'onDeleted')) {
+                    $entity->onDeleted();
+                }
+            }
+
             return $res;
         } catch (Throwable $e) {
-            exception('RemoveEntityFailed', compact('pk', 'storage'), $e);
+            $entity = get_class($entity);
+            exception('RemoveEntityFailed', compact('entity', 'pk', 'storage'), $e);
         }
     }
 
-    final public function save(Entity &$entity) : Entity
+    final public function save(Entity &$entity) : ?Entity
     {
+        $_pk = $entity->getPk();
+        if ((! is_int($_pk)) || ($_pk < 1)) {
+            return null;
+        }
+        $_entity = $this->find($_pk);
+        if (! $_entity) {
+            return null;
+        }
+
         $storage = static::class;
         $annotation = StorageManager::get($storage);
         $columns = $annotation['columns'] ?? [];
@@ -136,6 +175,7 @@ class ORMStorage extends Storage
             exception('NoColumnsOnStorageToUpdate', ['storage' => static::class]);
         }
 
+        // Primary key is not allowed to update
         unset($columns['id']);
 
         $data = [];
@@ -171,6 +211,10 @@ class ORMStorage extends Storage
 
         // Update/Reset repository cache
         RepositoryManager::update($storage, $entity);
+
+        if (method_exists($entity, 'onUpdated')) {
+            $entity->onUpdated($_entity);
+        }
 
         return $entity;
     }

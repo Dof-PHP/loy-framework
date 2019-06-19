@@ -96,14 +96,16 @@ final class EntityManager
         self::$entities[$namespace]['meta'] = $ofClass['doc'] ?? [];
 
         foreach ($ofProperties as $name => $attrs) {
-            if (! ($attrs['doc']['TITLE'] ?? false)) {
-                exception('MissingEntityAttrTitle', ['entity' => $namespace, 'attr' => $name]);
-            }
-            if (! ($attrs['doc']['TYPE'] ?? false)) {
-                exception('MissingEntityAttrType', ['entity' => $namespace, 'attr' => $name]);
-            }
+            if ($attrs['doc']['ANNOTATION'] ?? true) {
+                if (! ($attrs['doc']['TITLE'] ?? false)) {
+                    exception('MissingEntityAttrTitle', ['entity' => $namespace, 'attr' => $name]);
+                }
+                if (! ($attrs['doc']['TYPE'] ?? false)) {
+                    exception('MissingEntityAttrType', ['entity' => $namespace, 'attr' => $name]);
+                }
 
-            self::$entities[$namespace]['properties'][$name] = $attrs['doc'] ?? [];
+                self::$entities[$namespace]['properties'][$name] = $attrs['doc'] ?? [];
+            }
         }
     }
 

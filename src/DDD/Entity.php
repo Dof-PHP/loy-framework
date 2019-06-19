@@ -26,6 +26,10 @@ abstract class Entity extends Model
     public static function init(array $data)
     {
         $entity = static::class;
+        if (! ($data['id'] ?? null)) {
+            exception('MissingEntityIdentityWhenInitializing', compact('data', 'entity'));
+        }
+
         $instance = new $entity;
         $annotations = $this->annotations();
 
@@ -39,12 +43,7 @@ abstract class Entity extends Model
                 exception('MissingTypeInEntityProperty', compact('property', 'entity'));
             }
 
-            $setter = 'set'.ucfirst($property);
-            $instance->{$setter}(TypeHint::convert($val, $type));
-        }
-
-        if (is_null($instance->getId())) {
-            exception('MissingEntityIdentity', compact('data', 'entity'));
+            $instance->{$property} = TypeHint::convert($val, $type, true);
         }
 
         return $instance;
@@ -65,27 +64,5 @@ abstract class Entity extends Model
     final public function getId()
     {
         return $this->id;
-    }
-
-    public function set(string $attr, $val)
-    {
-        $annotation = EntityManager::get(static::class);
-        $type = $annotation['properties'][$attr]['TYPE'] ?? null;
-        if ($type) {
-            $val = TypeHint::convert($val, $type, true);
-        }
-
-        if (property_exists($this, $attr)) {
-            $setter = 'set'.ucfirst($attr);
-            if (method_exists($this, $setter)) {
-                $this->{$setter}($val);
-            } else {
-                $this->{$attr} = $val;
-            }
-        } else {
-            $this->{$attr} = $val;
-        }
-
-        return $this;
     }
 }

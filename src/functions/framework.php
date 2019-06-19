@@ -153,6 +153,19 @@ if (! function_exists('assemble')) {
         // TODO
     }
 }
+if (! function_exists('event')) {
+    function event(string $event)
+    {
+        if ((! $event) || (! class_exists($event))) {
+            exception('MissingOrEventClassNotExists', compact('event'));
+        }
+        if (! is_subclass_of($event, \Dof\Framework\Event::class)) {
+            exception('InvalidEventClass', compact('event'));
+        }
+
+        return $event::new();
+    }
+}
 if (! function_exists('annotation')) {
     function annotation(string $target, string $origin = null, bool $file = false, bool $cache = true) : array
     {

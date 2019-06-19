@@ -521,14 +521,22 @@ class MySQLBuilder
 
         list($where, $_params) = $this->buildWhere();
 
-        $columns = [];
+        $columns = $params = [];
         foreach ($data as $key => $val) {
+            // Primary key is not allowed to update
+            if (ci_equal($key, 'id')) {
+                continue;
+            }
+
             $columns[] = "`{$key}` = ?";
             $params[] = $val;
         }
 
         foreach ($_params as $param) {
             array_push($params, $param);
+        }
+        if (! $params) {
+            return 0;
         }
 
         $table = $this->table ?: '#{TABLE}';

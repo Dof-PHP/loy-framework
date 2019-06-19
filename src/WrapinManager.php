@@ -157,7 +157,8 @@ final class WrapinManager
             foreach ($argument as $annotation => $value) {
                 $_annotation = array_trim_from_string($annotation, ':');
                 $annotation = $_annotation[0] ?? $annotation;
-                $value = $_annotation[1] ?? $value;
+                unset($_annotation[0]);
+                $value = $_annotation ? join(':', $_annotation) : $value;
                 if (self::RESERVE_KEYS[$annotation] ?? false) {
                     continue;
                 }

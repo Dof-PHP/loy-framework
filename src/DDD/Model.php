@@ -13,9 +13,91 @@ use Dof\Framework\Container;
  */
 abstract class Model
 {
+    /**
+     * Compare two data model and get there differences
+     *
+     * @param Model $model1
+     * @param Model $model2
+     * @param Array|Null $nodiff: The property names of data model do not need to diff
+     * @return null|array: The diff result in order [#0, #1] or null when no differences
+     */
+    final public static function diff(Model $model1, Model $model2, array $nodiff = null) : ?array
+    {
+        if (! $nodiff) {
+            $nodiff = array_unique_merge($model1->nodiff(), $model2->nodiff());
+        }
+
+        $current = $model1->toArray();
+        $compare = $__compare = $model2->toArray();
+
+        $diff = [];
+        foreach ($current as $attr => $val) {
+            if (in_array($attr, $nodiff)) {
+                unset($__compare[$attr]);
+                continue;
+            }
+
+            if (! array_key_exists($attr, $compare)) {
+                $diff[] = $attr;
+                continue;
+            }
+
+            unset($__compare[$attr]);
+
+            $_val = $compare[$attr] ?? null;
+            if ($val !== $_val) {
+                $diff[] = $attr;
+            }
+        }
+
+        $diff = array_unique_merge($diff, array_keys($__compare));
+        if (! $diff) {
+            return null;
+        }
+
+        $result = [];
+        foreach ($diff as $key) {
+            $result[$key] = [$current[$key] ?? null, $compare[$key] ?? null];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get nodiff property names of data model/entity
+     */
+    final public function nodiff() : array
+    {
+        $attrs = $this::attrs();
+        if (! $attrs) {
+            return [];
+        }
+
+        $nodiff = [];
+        foreach ($attrs as $name => $attr) {
+            if ($attr['NODIFF'] ?? false) {
+                $nodiff[] = $name;
+            }
+        }
+
+        return $nodiff;
+    }
+
+    /**
+     * Compare given data model object to current model instance
+     *
+     * @param Model $model: The data model given to compare aginst current model instance
+     * @param Array|Null $nodiff: The property names of data model do not need to diff
+     * @return null|array: The diff result in order [#0-self, #1-other] or null when no differences
+     */
+    final public function compare(Model $model, array $nodiff = null) : ?array
+    {
+        return Model::diff($this, $model, $nodiff);
+    }
+
     final public static function new()
     {
-        return new static;
+        return Container::di(static::class);
     }
 
     public static function attrs()
@@ -49,24 +131,33 @@ abstract class Model
                 exception('MissingTypeInModelProperty', compact('property', 'model'));
             }
 
-            $setter = 'set'.ucfirst($property);
-            $instance->{$setter}(TypeHint::convert($val, $type));
+            $instance->{$property} = TypeHint::convert($val, $type, true);
         }
 
         return $instance;
     }
 
-    public function onCreated()
-    {
-    }
-
-    public function onUpdated()
-    {
-    }
-
-    public function onDeleted()
-    {
-    }
+    // public function onCreated()
+    // {
+    // }
+    // public function onUpdated($_entity)
+    // {
+    // }
+    // public function onDeleted()
+    // {
+    // }
+    // public function onRemoved()
+    // {
+    // }
+    // public function onRead()
+    // {
+    // }
+    // public function onReadOrigin()
+    // {
+    // }
+    // public function onReadCache()
+    // {
+    // }
 
     final public function get(string $attr)
     {
@@ -85,7 +176,7 @@ abstract class Model
 
     public function set(string $attr, $val)
     {
-        $annotation = ModelManager::get(static::class);
+        $annotation = $this::annotations();
         $type = $annotation['properties'][$attr]['TYPE'] ?? null;
         if ($type) {
             $val = TypeHint::convert($val, $type, true);
@@ -144,5 +235,25 @@ abstract class Model
     final public function toArray()
     {
         return $this->__toArray();
+    }
+
+    final public function __toXml()
+    {
+        return enxml($this->toArray());
+    }
+
+    final public function __toJson()
+    {
+        return enjson($this->toArray());
+    }
+
+    final public function __toString()
+    {
+        return serialize($this);
+    }
+
+    final public function toString()
+    {
+        return $this->__toString();
     }
 }

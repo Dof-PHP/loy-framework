@@ -473,7 +473,7 @@ final class Kernel
 
     public static function getContext(bool $sapi = true) : array
     {
-        $request  = Request::getContext();
+        $request  = Request::getContext($sapi);
         $response = Response::getContext();
 
         return $sapi ? ['web' => $request] : [$request, $response, Core::getContext()];

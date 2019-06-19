@@ -322,13 +322,17 @@ class Request
         return false;
     }
 
-    public function getContext() : array
+    public function getContext(bool $basic = false) : array
     {
-        $context = [
+        $context = $_basic = [
             $this->getVerb(),
             $this->getUri(),
             $this->getMime(),
         ];
+
+        if ($basic) {
+            return $_basic;
+        }
 
         $logHeaders = ConfigManager::getEnv('HTTP_REQUEST_LOG_HEADERS', false);
         $logParams = ConfigManager::getEnv('HTTP_REQUEST_LOG_PARAMS', false);

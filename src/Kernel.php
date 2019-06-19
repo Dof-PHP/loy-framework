@@ -106,7 +106,7 @@ final class Kernel
             $context = [
                 $errfile,
                 $errline,
-                Kernel::getSapiContext(),
+                Kernel::getSapiContext(true),
             ];
 
             Log::log('error', $errstr, $context);
@@ -208,10 +208,10 @@ final class Kernel
         return self::$context;
     }
 
-    public static function getSapiContext() : ?array
+    public static function getSapiContext(bool $sapi = true) : ?array
     {
-        return WebKernel::isBooted() ? WebKernel::getContext() : (
-            CliKernel::isBooted() ? CliKernel::getContext() : null
+        return WebKernel::isBooted() ? WebKernel::getContext($sapi) : (
+            CliKernel::isBooted() ? CliKernel::getContext($sapi) : null
         );
     }
 }
