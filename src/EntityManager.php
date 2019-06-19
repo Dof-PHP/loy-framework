@@ -78,7 +78,7 @@ final class EntityManager
     }
 
     /**
-     * Assemble Orms From Annotations
+     * Assemble entities From Annotations
      */
     public static function assemble(array $ofClass, array $ofProperties)
     {
@@ -86,8 +86,8 @@ final class EntityManager
         if (! $namespace) {
             return;
         }
-        if ($exists = (self::$orms[$namespace] ?? false)) {
-            exception('DuplicateOrmNamespace', ['namespace' => $namespace]);
+        if ($exists = (self::$entities[$namespace] ?? false)) {
+            exception('DuplicateEntityNamespace', ['namespace' => $namespace]);
         }
         if (! ($ofClass['doc']['TITLE'] ?? false)) {
             exception('MissingEntityTitle', ['entity' => $namespace]);

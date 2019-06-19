@@ -4,19 +4,36 @@ declare(strict_types=1);
 
 namespace Dof\Framework;
 
-use Dof\Framework\Container;
 use Dof\Framework\DDD\Model;
 
 /**
- * Event properties must be un-private
+ * Notes: Event properties must un-private
  */
 abstract class Event extends Model
 {
+    const EVENT_QUEUE = 'event';
+
     final public function publish()
     {
-        // pd($this->__toXml());
-        // pd($this->__toJson());
-        // pd($this->toString());
-        // pd($this->toArray());
+        $annotations = EventManager::get(static::class);
+        if (! $annotations) {
+            return;
+        }
+        $listeners = $annotations['meta']['LISTENER'] ?? [];
+        if (! $listeners) {
+            return;
+        }
+
+        $sync = $annotations['meta']['SYNC'] ?? '1';
+        if (confirm($sync)) {
+            foreach ($listeners as $listener) {
+                $listener::init()->setEvent($this)->handle();
+            }
+
+            return;
+        }
+
+        // Check queue config in the domain of current event class
+        // TODO
     }
 }

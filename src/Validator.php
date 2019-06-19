@@ -115,7 +115,7 @@ class Validator
         }
         $max = TypeHint::convertToInt($max);
         $type = $this->rules[$key]['TYPE'][1] ?? 'string';
-        if (ciin_array($type, ['int', 'pint', 'uint', 'bint'])) {
+        if (ciin($type, ['int', 'pint', 'uint', 'bint'])) {
             $this->result[$key] = $value = TypeHint::convertToInt($value);
 
             return $value <= $max;
@@ -139,7 +139,7 @@ class Validator
         $min = TypeHint::convertToInt($min);
 
         $type = $this->rules[$key]['TYPE'][1] ?? 'string';
-        if (ciin_array($type, ['int', 'pint', 'uint', 'bint'])) {
+        if (ciin($type, ['int', 'pint', 'uint', 'bint'])) {
             $this->result[$key] = $value = TypeHint::convertToInt($value);
 
             return $value >= $min;

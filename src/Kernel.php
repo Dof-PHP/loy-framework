@@ -21,6 +21,8 @@ final class Kernel
     const LOCATE  = __DIR__;
     const SERVICE = 'Service';
     const ASSEMBLER = 'Assembler';
+    const EVENT = 'Event';
+    const LISTENER = 'Listener';
     const COMMAND = 'Command';
     const TEMPLATE = 'templates';
 
@@ -132,6 +134,8 @@ final class Kernel
         WrapinManager::load($domains);
 
         PortManager::load($domains);
+
+        EventManager::load($domains);
 
         // ErrorManager::load($domains);
     }

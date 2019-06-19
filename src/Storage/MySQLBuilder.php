@@ -646,7 +646,7 @@ class MySQLBuilder
                 $column = "`{$column}`";
             }
 
-            if (ciin_array($operator, ['in', 'not in'])) {
+            if (ciin($operator, ['in', 'not in'])) {
                 $placeholder = '(?)';
                 if (is_array($val) || is_string($val)) {
                     $val = is_string($val) ? array_trim_from_string($val, ',') : $val;
@@ -666,7 +666,7 @@ class MySQLBuilder
                 } else {
                     $params[] = (array) $val;
                 }
-            } elseif (ciin_array($operator, ['is not null', 'is null'])) {
+            } elseif (ciin($operator, ['is not null', 'is null'])) {
                 $placeholder = '';
             // No params need when null conditions
             } elseif (ci_equal($operator, 'inraw')) {

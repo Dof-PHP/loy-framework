@@ -8,7 +8,7 @@ class IS
 {
     public static function ciin($value, array $list) : bool
     {
-        return ciin_array($value, $list);
+        return ciin($value, $list);
     }
 
     public static function namespace($value) : bool

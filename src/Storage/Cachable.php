@@ -11,4 +11,6 @@ interface Cachable
     public function set(string $key, $value, int $expiration = 0);
 
     public function del(string $key);
+
+    public function dels(array $keys);
 }

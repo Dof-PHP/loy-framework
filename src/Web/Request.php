@@ -359,7 +359,7 @@ class Request
             );
 
             foreach ($params as $key => &$val) {
-                if (ciin_array($key, $maskKeys)) {
+                if (ciin($key, $maskKeys)) {
                     $val = '*';
                 }
             }

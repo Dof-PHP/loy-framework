@@ -20,6 +20,7 @@ use Dof\Framework\RepositoryManager;
 use Dof\Framework\CommandManager;
 use Dof\Framework\WrapinManager;
 use Dof\Framework\PortManager;
+use Dof\Framework\EventManager;
 use Dof\Framework\Web\Kernel as WebKernel;
 
 class Command
@@ -60,6 +61,7 @@ class Command
 
         $cmd = $console->getParams()[0] ?? null;
         if ($cmd) {
+            $cmd = strtolower($cmd);
             $attr = CommandManager::get($cmd);
             if (! $attr) {
                 $console->exception('CommandToHelpNotExist', [$cmd]);
@@ -535,6 +537,8 @@ class Command
 
         PortManager::flush();
 
+        EventManager::flush();
+
         $console->success('Done!');
     }
 
@@ -566,6 +570,8 @@ class Command
             WrapinManager::compile($domains, true);
 
             PortManager::compile($domains, true);
+
+            EventManager::compile($domains, true);
 
             $console->success('Done!', true);
         } catch (Throwable $e) {
@@ -1051,7 +1057,7 @@ class Command
         }
 
         $type = $console->getOption('type', 'entity');
-        $isEntity = ciin_array($type, ['entity', 'orm']);
+        $isEntity = ciin($type, ['entity', 'orm']);
         $tpl = $isEntity ? 'repository-entity.tpl' : 'repository-model.tpl';
         $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', $tpl);
         if (! is_file($template)) {
@@ -1345,6 +1351,96 @@ PHP;
 
         $console->line(
             $console->render("Created Command: ", $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
+    }
+
+    /**
+     * @CMD(event.add)
+     * @Desc(Add Event in a domain)
+     * @Option(domain){notes=Domain name of event to be created}
+     * @Option(event){notes=Event name}
+     * @Option(force){notes=Whether force recreate event when given event name exists}
+     */
+    public function addEvent($console)
+    {
+        $domain = $console->getOption('domain');
+        if (! $domain) {
+            $console->exception('MissingDomainName');
+        }
+        $name = $console->getOption('event');
+        if (! $name) {
+            $console->exception('MissingEventName');
+        }
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $console->exception('DomainNotExists', [$domain]);
+        }
+        $class = ospath($path, Kernel::EVENT, "{$name}.php");
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('EventAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'event.tpl');
+        if (! is_file($template)) {
+            $console->exception('EventClassTemplateNotExist', [$template]);
+        }
+
+        $event = file_get_contents($template);
+        $event = str_replace('__DOMAIN__', $domain, $event);
+        $event = str_replace('__NAMESPACE__', path2ns($name), $event);
+        $event = str_replace('__NAME__', basename($name), $event);
+
+        save($class, $event);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $console->line(
+            $console->render("Created Event: ", $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
+    }
+
+    /**
+     * @CMD(listener.add)
+     * @Desc(Add Listener in a domain)
+     * @Option(domain){notes=Domain name of listener to be created}
+     * @Option(listener){notes=Listener name}
+     * @Option(force){notes=Whether force recreate listener when given listener name exists}
+     */
+    public function addListener($console)
+    {
+        $domain = $console->getOption('domain');
+        if (! $domain) {
+            $console->exception('MissingDomainName');
+        }
+        $name = $console->getOption('listener');
+        if (! $name) {
+            $console->exception('MissingListenerName');
+        }
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $console->exception('DomainNotExists', [$domain]);
+        }
+        $class = ospath($path, Kernel::LISTENER, "{$name}.php");
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('ListenerAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'listener.tpl');
+        if (! is_file($template)) {
+            $console->exception('ListenerClassTemplateNotExist', [$template]);
+        }
+
+        $listener = file_get_contents($template);
+        $listener = str_replace('__DOMAIN__', $domain, $listener);
+        $listener = str_replace('__NAMESPACE__', path2ns($name), $listener);
+        $listener = str_replace('__NAME__', basename($name), $listener);
+
+        save($class, $listener);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $console->line(
+            $console->render("Created Listener: ", $console::SUCCESS_COLOR)
             .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
         );
     }

@@ -303,6 +303,22 @@ final class ConfigManager
         return array_unique_merge($global, $local);
     }
 
+    public static function matchDomainFinalEnvByNamespace(string $namespace, array $keys = [], $default = null)
+    {
+        foreach ($keys as $key) {
+            if (! is_string($key)) {
+                continue;
+            }
+
+            $val = self::getDomainFinalEnvByNamespace($namespace, $key);
+            if (! is_null($val)) {
+                return $val;
+            }
+        }
+
+        return $default;
+    }
+
     /**
      * Match a env config item by a list of keys with order
      *
@@ -312,7 +328,7 @@ final class ConfigManager
     public static function matchEnv(array $keys = [], $default = null)
     {
         foreach ($keys as $key) {
-            if (is_string($key)) {
+            if (! is_string($key)) {
                 continue;
             }
 

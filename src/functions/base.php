@@ -644,8 +644,8 @@ if (! function_exists('ci_equal')) {
         return strtolower($b) === strtolower($a);
     }
 }
-if (! function_exists('ciin_array')) {
-    function ciin_array($value, array $list) : bool
+if (! function_exists('ciin')) {
+    function ciin($value, array $list) : bool
     {
         if (! is_scalar($value)) {
             return false;
@@ -1307,5 +1307,17 @@ if (! function_exists('path2ns')) {
         }
 
         return '\\'.$namespace;
+    }
+}
+if (! function_exists('confirm')) {
+    function confirm($value) : bool
+    {
+        if (! is_scalar($value)) {
+            return false;
+        }
+
+        $value = strval($value);
+
+        return ciin($value, ['1', 'true', 'yes', 'y']);
     }
 }

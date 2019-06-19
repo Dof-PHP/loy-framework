@@ -118,7 +118,7 @@ class MySQLSchema
                     exception('MissingTypeOnColumn', compact('column'));
                 }
                 $length = $property['LENGTH'] ?? null;
-                if (! ciin_array($type, ['text', 'blob'])) {
+                if (! ciin($type, ['text', 'blob'])) {
                     if (is_null($length)) {
                         exception('MissingLengthOnColumn', compact('column', 'type'));
                     }
@@ -172,7 +172,7 @@ class MySQLSchema
                 exception('MissingTypeInColumnAnnotations', compact('table', 'column'));
             }
             $unsignedInCode = (($attrs['UNSIGNED'] ?? null) == 1) ? 'unsigned' : '';
-            if (ciin_array($typeInCode, ['text', 'blob'])) {
+            if (ciin($typeInCode, ['text', 'blob'])) {
                 $typeInCode = trim("{$typeInCode} {$unsignedInCode}");
             } else {
                 if (! $lengthInCode) {
@@ -492,7 +492,7 @@ class MySQLSchema
                 exception('MissingTypeOnColumn', compact('column'));
             }
             $len = $attr['LENGTH'] ?? null;
-            if (! ciin_array($type, ['text', 'blob'])) {
+            if (! ciin($type, ['text', 'blob'])) {
                 if (is_null($len)) {
                     exception('MissingLengthOnColumn', compact('column', 'type'));
                 }

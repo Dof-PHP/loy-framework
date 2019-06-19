@@ -87,6 +87,13 @@ class Redis extends Storage implements Storable, Cachable
         return $result === false ? null : unserialize($result);
     }
 
+    public function dels(array $keys)
+    {
+        $start = microtime(true);
+        $this->getConnection()->del($keys);
+        $this->appendCMD($start, 'dels', $keys);
+    }
+
     public function del(string $key)
     {
         $start = microtime(true);

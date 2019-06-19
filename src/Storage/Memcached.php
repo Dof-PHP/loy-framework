@@ -56,6 +56,15 @@ class Memcached extends Storage implements Storable, Cachable
         $this->appendCMD($start, 'del', $key);
     }
 
+    public function dels(array $keys)
+    {
+        $start = microtime(true);
+
+        $this->getConnection()->deleteMulti($keys, 0);
+
+        $this->appendCMD($start, 'deleteMulti', $keys, 0);
+    }
+
     public function set(string $key, $value, int $expiration = 0)
     {
         $start = microtime(true);
