@@ -506,6 +506,9 @@ class Validator
         if (! $value) {
             return false;
         }
+        if (! is_string($value)) {
+            return false;
+        }
 
         return is_date_format($value, $format);
     }

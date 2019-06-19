@@ -292,13 +292,14 @@ class Command
     /**
      * @CMD(web.stop)
      * @Desc(Stop/Halt web application)
+     * @Option(force){notes=Whether force stop web application even if it's stopped already}
+     * @Option(message){notes=The application shutdown message text displays to visitors}
      */
     public function stopWeb($console)
     {
         $lock = ospath(Kernel::getRoot(), WebKernel::HALT_FLAG);
         if (is_file($lock)) {
-            $force = strtolower((string) $console->getOption('force', '0'));
-            if (($force === '1') || ('true' === $force)) {
+            if ($console->hasOption('force')) {
                 if (false === unlink($lock)) {
                     $console->fail('ERROR! Force shutdown failed.', true);
                 }
