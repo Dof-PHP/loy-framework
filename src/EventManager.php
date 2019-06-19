@@ -8,7 +8,7 @@ use Dof\Framework\Facade\Annotation;
 
 final class EventManager
 {
-    const ENTITY_DIR = 'Event';
+    const EVENT_DIR = 'Event';
 
     private static $dirs = [];
     private static $events = [];
@@ -24,7 +24,7 @@ final class EventManager
         self::compile($dirs);
 
         if (ConfigManager::matchEnv(['ENABLE_EVENT_CACHE', 'ENABLE_MANAGER_CACHE'], false)) {
-            array2code([self::$dirs, self::$entities], $cache);
+            array2code([self::$dirs, self::$events], $cache);
         }
     }
 
@@ -52,7 +52,7 @@ final class EventManager
         }
 
         array_map(function ($item) {
-            $dir = ospath($item, self::ENTITY_DIR);
+            $dir = ospath($item, self::EVENT_DIR);
             if (is_dir($dir)) {
                 self::$dirs[] = $dir;
             }
