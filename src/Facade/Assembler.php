@@ -86,12 +86,16 @@ class Assembler
                 $_result = $result[$name] ?? null;
             }
 
+            $_fields = $ref;
             $_assembler = null;
             if ($assembler) {
                 $_assembler = $assembler->assemblers()[$name] ?? null;
+                if ($_assembler && ($_assembler === get_class($assembler))) {
+                    $_fields = $fields;
+                }
             }
 
-            $data[$name] = Assembler::assemble($_result, $ref, $_assembler);
+            $data[$name] = Assembler::assemble($_result, $_fields, $_assembler);
         }
 
         return $data;
