@@ -23,7 +23,7 @@ final class ConfigManager
         if (! is_dir($root)) {
             exception('InvalidProjectRoot', compact('root'));
         }
-        $cache = Kernel::formatCacheFile(__CLASS__, 'default');
+        $cache = Kernel::formatCompileFile(__CLASS__, 'default');
         if (is_file($cache)) {
             self::$default = load_php($cache);
             return;
@@ -46,7 +46,7 @@ final class ConfigManager
         self::$default = self::loadDir(ospath($root, self::DEFAULT_DIR));
 
         if ($cache) {
-            array2code(self::$default, Kernel::formatCacheFile(__CLASS__, 'default'));
+            array2code(self::$default, Kernel::formatCompileFile(__CLASS__, 'default'));
         }
     }
 
@@ -57,7 +57,7 @@ final class ConfigManager
      */
     public static function load(array $dirs)
     {
-        $cache = Kernel::formatCacheFile(__CLASS__, 'domains');
+        $cache = Kernel::formatCompileFile(__CLASS__, 'domains');
         if (file_exists($cache)) {
             self::$domains = load_php($cache);
             return;
@@ -82,7 +82,7 @@ final class ConfigManager
         }
 
         if ($cache) {
-            array2code(self::$domains, Kernel::formatCacheFile(__CLASS__, 'domains'));
+            array2code(self::$domains, Kernel::formatCompileFile(__CLASS__, 'domains'));
         }
     }
 
@@ -142,11 +142,11 @@ final class ConfigManager
 
     public static function flush()
     {
-        $default = Kernel::formatCacheFile(__CLASS__, 'default');
+        $default = Kernel::formatCompileFile(__CLASS__, 'default');
         if (is_file($default)) {
             unlink($default);
         }
-        $domains = Kernel::formatCacheFile(__CLASS__, 'domains');
+        $domains = Kernel::formatCompileFile(__CLASS__, 'domains');
         if (is_file($domains)) {
             unlink($domains);
         }
@@ -358,7 +358,12 @@ final class ConfigManager
 
     public static function getFramework(string $key = null, $default = null)
     {
-        $val = array_get_by_chain_key(self::$default['framework'] ?? [], $key);
+        $framework = self::$default['framework'] ?? [];
+        if (is_null($key)) {
+            return $framework;
+        }
+
+        $val = array_get_by_chain_key($framework, $key);
         
         return is_null($val) ? $default : $val;
     }
@@ -371,7 +376,12 @@ final class ConfigManager
      */
     public static function getDomain(string $key = null, $default = null)
     {
-        $val = array_get_by_chain_key(self::$default['domain'] ?? [], $key);
+        $domain = self::$default['domain'] ?? [];
+        if (is_null($key)) {
+            return $domain;
+        }
+
+        $val = array_get_by_chain_key($domain, $key);
         
         return is_null($val) ? $default : $val;
     }

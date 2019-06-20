@@ -654,12 +654,34 @@ class MySQLBuilder
         return $this->sql ? $this->generate($sql, $params) : $this->origin->exec($sql, $params);
     }
 
+    public function increment(string $column, int $step = 1)
+    {
+        list($where, $params) = $this->buildWhere();
+
+        $table = $this->table ?: '#{TABLE}';
+        $sql = 'UPDATE %s SET `%s` = (`%s` + %d) %s';
+        $sql = sprintf($sql, $table, $column, $column, $step, $where);
+
+        return $this->sql ? $this->generate($sql, $params) : $this->origin->exec($sql, $params);
+    }
+
+    public function decrement(string $column, int $step = 1)
+    {
+        list($where, $params) = $this->buildWhere();
+
+        $table = $this->table ?: '#{TABLE}';
+        $sql = 'UPDATE %s SET `%s` = (`%s` - %d) %s';
+        $sql = sprintf($sql, $table, $column, $column, $step, $where);
+
+        return $this->sql ? $this->generate($sql, $params) : $this->origin->exec($sql, $params);
+    }
+
     /**
      * Update multiple columns at once
      *
      * @param array $data: The assoc array to be updated
      */
-    public function update(array $data) : int
+    public function update(array $data)
     {
         if (! $data) {
             return 0;
@@ -673,9 +695,16 @@ class MySQLBuilder
             if (ci_equal($key, 'id')) {
                 continue;
             }
-
-            $columns[] = "`{$key}` = ?";
-            $params[] = $val;
+            if (is_closure($val)) {
+                $val = $val();
+                if (! is_string($val)) {
+                    exception('InvalidUpdateClousureReturnValue', compact('val'));
+                }
+                $columns[] = "`{$key}` = {$val}";
+            } else {
+                $columns[] = "`{$key}` = ?";
+                $params[] = $val;
+            }
         }
 
         foreach ($_params as $param) {

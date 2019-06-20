@@ -45,7 +45,7 @@ final class DomainManager
      */
     public static function load(string $root)
     {
-        $cache = Kernel::formatCacheFile(__CLASS__);
+        $cache = Kernel::formatCompileFile(__CLASS__);
         if (is_file($cache)) {
             list(self::$dirs, self::$keys, self::$metas, self::$files, self::$namespaces) = load_php($cache);
             return;
@@ -60,7 +60,7 @@ final class DomainManager
 
     public static function flush()
     {
-        $cache = Kernel::formatCacheFile(__CLASS__);
+        $cache = Kernel::formatCompileFile(__CLASS__);
         if (is_file($cache)) {
             unlink($cache);
         }
@@ -95,7 +95,7 @@ final class DomainManager
                 self::$metas,
                 self::$files,
                 self::$namespaces
-            ], Kernel::formatCacheFile(__CLASS__));
+            ], Kernel::formatCompileFile(__CLASS__));
         }
     }
     

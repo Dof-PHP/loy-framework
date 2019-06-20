@@ -7,6 +7,9 @@ namespace Dof\Framework\Cli\Command;
 use Throwable;
 use Dof\Framework\Kernel;
 use Dof\Framework\GWT;
+use Dof\Framework\Event;
+use Dof\Framework\Listener;
+use Dof\Framework\QueueManager;
 use Dof\Framework\Doc\Generator as DocGen;
 use Dof\Framework\DDD\Storage;
 use Dof\Framework\DDD\ORMStorage;
@@ -514,7 +517,7 @@ class Command
     }
 
     /**
-     * @CMD(clear.compile)
+     * @CMD(compile.clear)
      * @Desc(Clear all classes compile cache)
      */
     public function clearCompile($console)
@@ -577,45 +580,6 @@ class Command
         } catch (Throwable $e) {
             $console->exception('CompileFailed', [], $e);
         }
-    }
-
-    /**
-     * @CMD(compile.port)
-     * @Desc(Compiles Port classes and it's annotations)
-     */
-    public function compliePort($console)
-    {
-        ConfigManager::compileDefault(Kernel::getRoot(), true);
-
-        DomainManager::compile(Kernel::getRoot(), true);
-
-        ConfigManager::compileDomains(DomainManager::getMetas(), true);
-
-        $domains = DomainManager::getDirs();
-
-        PortManager::compile($domains, true);
-
-        $console->exit();
-    }
-
-    /**
-     * @CMD(compile.port.clear)
-     * @Desc(Clear Port compile result)
-     */
-    public function clearPortComplie($console)
-    {
-        PortManager::flush();
-
-        $console->exit();
-    }
-
-    /**
-     * @CMD(compile.domain)
-     * @Desc(Compiles classes and annotations of domains)
-     * @Option(domain){notes=Domain key}
-     */
-    public function complieDomain($console)
-    {
     }
 
     /**
@@ -763,19 +727,49 @@ class Command
     }
 
     /**
-     * @CMD(config.get.framework)
-     * @Desc(Get framework configs)
+     * @CMD(config.get.global)
+     * @Desc(Get global configs acorss domains)
+     * @Argv(1){notes=The config key}
      */
-    public function getFrameworkConfig()
+    public function getGlobalConfig($console)
     {
+        $key = $console->getParams()[0] ?? null;
+
+        $console->success(json_pretty(ConfigManager::getDefault($key)));
     }
 
     /**
-     * CMD(config.get.domain)
+     * @CMD(config.get.framework)
+     * @Desc(Get global framework configs)
+     * @Argv(1){notes=The config key}
+     */
+    public function getFrameworkConfig($console)
+    {
+        $key = $console->getParams()[0] ?? null;
+
+        $console->success(json_pretty(ConfigManager::getFramework($key)));
+    }
+
+    /**
+     * @CMD(config.get.domain)
      * @Desc(Get domain's configs)
+     * @Option(domain){notes=The domain name}
+     * @Argv(1){notes=The config key}
      */
     public function getDomainConfig($console)
     {
+        $domain = $console->getOption('domain');
+        if (! $domain) {
+            $console->success(json_pretty(ConfigManager::getDomains()), true);
+        }
+
+        if (! DomainManager::getByKey($domain)) {
+            $console->exception('DomainNotExists', compact($domain));
+        }
+
+        $key = $console->getParams()[0] ?? null;
+
+        $console->success(json_pretty(ConfigManager::getDomainByKey($domain, $key)));
     }
 
     /**
@@ -1443,5 +1437,95 @@ PHP;
             $console->render("Created Listener: ", $console::SUCCESS_COLOR)
             .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
         );
+    }
+
+    /**
+     * @CMD(event.queues)
+     * @Desc(Get queues list of an event class in current environment for deployment)
+     * @Argv(1){notes=The event class path}
+     */
+    public function getEventQueues($console)
+    {
+        $event = $console->first();
+        if (! $event) {
+            $console->exception('MissingEventClass');
+        }
+
+        if (! is_file($event)) {
+            $console->exception('EventNotExists', compact('event'));
+        }
+
+        $_event = get_namespace_of_file($event, true);
+        if (! $_event) {
+            $console->exception('InvalidEventClass', compact('event', '_event'));
+        }
+        if (! is_subclass_of($_event, Event::class)) {
+            $console->exception('InvalidEventClass', compact('event', '_event'));
+        }
+        
+        $queue = (new $_event)->formatQueueName($_event);
+        $domain = DomainManager::getKeyByNamespace($_event);
+        $queue = "--domain={$domain} --queue={$queue}";
+        $async = ConfigManager::getDomainEnvByNamespace($_event, Event::EVENT_ASYNC, []);
+        if ((! $async) || (! array_key_exists($_event, $async))) {
+            $console->success($queue, true);
+        }
+
+        $partition = $async[$_event] ?? 0;
+        if (! is_int($partition)) {
+            $console->exception('InvalidAsyncEventPartitionInteger', compact('partition'));
+        }
+        if ($partition < 1) {
+            $console->success($queue, true);
+        }
+
+        for ($i = 0; $i < $partition; $i++) {
+            $console->success(join('_', [$queue, $i]));
+        }
+    }
+
+    /**
+     * @CMD(listener.queues)
+     * @Desc(Get queues list of a listener class in current environment)
+     * @Argv(1){notes=The listener class path}
+     */
+    public function getListenerQueues($console)
+    {
+        $listener = $console->first();
+        if (! $listener) {
+            $console->exception('MissingListenerClass');
+        }
+
+        if (! is_file($listener)) {
+            $console->exception('ListenerNotExists', compact('listener'));
+        }
+
+        $_listener = get_namespace_of_file($listener, true);
+        if (! $_listener) {
+            $console->exception('InvalidListenerClass', compact('listener', '_listener'));
+        }
+        if (! is_subclass_of($_listener, Listener::class)) {
+            $console->exception('InvalidListenerClass', compact('listener', '_listener'));
+        }
+        
+        $queue = (new $_listener)->formatQueueName($_listener);
+        $domain = DomainManager::getKeyByNamespace($_listener);
+        $queue = "--domain={$domain} --queue={$queue}";
+        $async = ConfigManager::getDomainEnvByNamespace($_listener, Listener::LISTENER_ASYNC, []);
+        if ((! $async) || (! array_key_exists($_listener, $async))) {
+            $console->success($queue, true);
+        }
+
+        $partition = $async[$_listener] ?? 0;
+        if (! is_int($partition)) {
+            $console->exception('InvalidAsyncListenerPartitionInteger', compact('partition'));
+        }
+        if ($partition < 1) {
+            $console->success($queue, true);
+        }
+
+        for ($i = 0; $i < $partition; $i++) {
+            $console->success(join('_', [$queue, $i]));
+        }
     }
 }

@@ -23,6 +23,8 @@ abstract class Event extends Model implements Job
 
     const DEFAULT_QUEUE = 'default';
     const EVENT_QUEUE = 'event';
+    const EVENT_QUEUE_DRIVER = 'EVENT_QUEUE_DRIVER';
+    const EVENT_ASYNC = 'ASYNC_EVENT';
 
     final public function publish()
     {
@@ -32,7 +34,7 @@ abstract class Event extends Model implements Job
         }
 
         $event = static::class;
-        $async = ConfigManager::getDomainEnvByNamespace($event, 'ASYNC_EVENT', []);
+        $async = ConfigManager::getDomainEnvByNamespace($event, self::EVENT_ASYNC, []);
         if ((! $async) || (! array_key_exists($event, $async))) {
             $this->broadcast($listeners);
             return;
@@ -44,9 +46,9 @@ abstract class Event extends Model implements Job
             return;
         }
 
-        self::$__partition = $partition;
+        $this->__partition = $partition;
 
-        $driver = ConfigManager::getDomainFinalEnvByNamespace($event, 'EVENT_QUEUE_DRIVER');
+        $driver = ConfigManager::getDomainFinalEnvByNamespace($event, self::EVENT_QUEUE_DRIVER);
 
         $this->enqueue($event, $driver);
     }
@@ -73,18 +75,22 @@ abstract class Event extends Model implements Job
         }
     }
 
-    final public function formatQueueName() : string
+    final public function formatQueueName(string $event) : string
     {
-        $domain = DomainManager::getKeyByNamespace(static::class);
-        $class = objectname($this);
+        if (ConfigManager::getDomainFinalEnvByNamespace($event, 'DISABLE_QUEUE_FORMATTING', false)) {
+            return self::DEFAULT_QUEUE;
+        }
+
+        $domain = DomainManager::getKeyByNamespace($event);
+        $class = classname($event);
         if ($domain && $class) {
             $key = join('_', [$domain, $class]);
         } else {
             $key = self::DEFAULT_QUEUE;
         }
 
-        if (self::$__partition > 0) {
-            $key = join('_', [$key, $this->__partition(self::$__partition)]);
+        if ($this->__partition > 0) {
+            $key = join('_', [$key, $this->__partition($this->__partition)]);
         }
 
         return strtolower(join(':', [self::EVENT_QUEUE, $key]));

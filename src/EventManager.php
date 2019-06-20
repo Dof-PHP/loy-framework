@@ -15,7 +15,7 @@ final class EventManager
 
     public static function load(array $dirs)
     {
-        $cache = Kernel::formatCacheFile(__CLASS__);
+        $cache = Kernel::formatCompileFile(__CLASS__);
         if (is_file($cache)) {
             list(self::$dirs, self::$events) = load_php($cache);
             return;
@@ -35,7 +35,7 @@ final class EventManager
 
     public static function flush()
     {
-        $cache = Kernel::formatCacheFile(__CLASS__);
+        $cache = Kernel::formatCompileFile(__CLASS__);
         if (is_file($cache)) {
             unlink($cache);
         }
@@ -67,7 +67,7 @@ final class EventManager
         }, __CLASS__);
 
         if ($cache) {
-            array2code([self::$dirs, self::$events], Kernel::formatCacheFile(__CLASS__));
+            array2code([self::$dirs, self::$events], Kernel::formatCompileFile(__CLASS__));
         }
     }
 

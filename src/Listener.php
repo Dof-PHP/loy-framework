@@ -14,6 +14,8 @@ abstract class Listener implements Job
 
     const DEFAULT_QUEUE = 'default';
     const LISTENER_QUEUE = 'listener';
+    const LISTENER_QUEUE_DRIVER = 'LISTENER_QUEUE_DRIVER';
+    const LISTENER_ASYNC = 'ASYNC_LISTENER';
 
     protected $event;
 
@@ -21,13 +23,13 @@ abstract class Listener implements Job
     {
         $listener = static::class;
 
-        $async = ConfigManager::getDomainEnvByNamespace($listener, 'ASYNC_LISTENER', []);
+        $async = ConfigManager::getDomainEnvByNamespace($listener, self::ASYNC_LISTENER, []);
         if ((! $async) || (! array_key_exists($listener, $async))) {
             $this->execute();
             return;
         }
 
-        $driver = ConfigManager::getDomainFinalEnvByNamespace($listener, 'LISTENER_QUEUE_DRIVER');
+        $driver = ConfigManager::getDomainFinalEnvByNamespace($listener, self::LISTENER_QUEUE_DRIVER);
 
         $partition = $async[$listener] ?? 0;
         if (! is_int($partition)) {
@@ -35,7 +37,7 @@ abstract class Listener implements Job
             return;
         }
 
-        self::$__partition = $partition;
+        $this->__partition = $partition;
 
         $this->enqueue($listener, $driver);
     }
@@ -61,16 +63,20 @@ abstract class Listener implements Job
 
     final public function formatQueueName(string $listener) : string
     {
-        $domain = DomainManager::getKeyByNamespace(static::class);
-        $class = objectname($this);
+        if (ConfigManager::getDomainFinalEnvByNamespace($listener, 'DISABLE_QUEUE_FORMATTING', false)) {
+            return self::DEFAULT_QUEUE;
+        }
+
+        $domain = DomainManager::getKeyByNamespace($listener);
+        $class = classname($listener);
         if ($domain && $class) {
             $key = join('_', [$domain, $class]);
         } else {
             $key = self::DEFAULT_QUEUE;
         }
 
-        if (self::$__partition > 0) {
-            $key = join('_', [$key, $this->__partition(self::$__partition)]);
+        if ($this->__partition > 0) {
+            $key = join('_', [$key, $this->__partition($this->__partition)]);
         }
 
         return strtolower(join(':', [self::LISTENER_QUEUE, $key]));

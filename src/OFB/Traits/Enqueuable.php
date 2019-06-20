@@ -10,7 +10,7 @@ use Dof\Framework\QueueManager;
 trait Enqueuable
 {
     /** @var uint: Async queue parition number, also size of queue workers */
-    protected static $__partition = 0;
+    protected $__partition = 0;
 
     public function enqueue(string $namespace, string $driver = null)
     {
@@ -68,8 +68,8 @@ trait Enqueuable
 
         $queue = strtolower(join(':', $ns));
 
-        if (self::$__partition > 0) {
-            $queue = join('_', [$queue, $this->__partition(self::$__partition)]);
+        if ($this->__partition > 0) {
+            $queue = join('_', [$queue, $this->__partition($this->__partition)]);
         }
 
         return $queue;
@@ -92,5 +92,12 @@ trait Enqueuable
         }
 
         return $partition % $__partition;
+    }
+
+    public function __setPartition(int $__partition)
+    {
+        $this->__partition = $__partition;
+
+        return $this;
     }
 }

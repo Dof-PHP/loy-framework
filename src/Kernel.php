@@ -16,15 +16,14 @@ use Dof\Framework\Cli\Kernel as CliKernel;
 final class Kernel
 {
     const RUNTIME = 'var';
-    const CACHE   = 'cache';
-    const LOGGING = 'log';
     const LOCATE  = __DIR__;
+    const TEMPLATE = 'templates';
+
     const SERVICE = 'Service';
     const ASSEMBLER = 'Assembler';
     const EVENT = 'Event';
     const LISTENER = 'Listener';
     const COMMAND = 'Command';
-    const TEMPLATE = 'templates';
 
     /** @var string: Project Root Directory */
     private static $root;
@@ -174,20 +173,19 @@ final class Kernel
         return self::$error;
     }
 
-    public static function formatCacheFile(...$params) : string
+    public static function formatCompileFile(...$params) : string
     {
         $dir = ospath(
             self::$root,
             self::RUNTIME,
-            self::CACHE,
-            'framework'
+            'compile'
         );
 
         if (! is_dir($dir)) {
             mkdir($dir, 0775, true);
         }
 
-        return ospath($dir, join('.', [md5(join('.', $params)), self::CACHE]));
+        return ospath($dir, join('.', [md5(join('.', $params)), 'compile']));
     }
 
     public static function appendContext(string $key, array $context = null, string $_key = null)

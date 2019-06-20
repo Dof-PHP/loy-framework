@@ -21,7 +21,7 @@ final class EntityManager
      */
     public static function load(array $dirs)
     {
-        $cache = Kernel::formatCacheFile(__CLASS__);
+        $cache = Kernel::formatCompileFile(__CLASS__);
         if (is_file($cache)) {
             list(self::$dirs, self::$entities) = load_php($cache);
             return;
@@ -36,7 +36,7 @@ final class EntityManager
 
     public static function flush()
     {
-        $cache = Kernel::formatCacheFile(__CLASS__);
+        $cache = Kernel::formatCompileFile(__CLASS__);
         if (is_file($cache)) {
             unlink($cache);
         }
@@ -73,7 +73,7 @@ final class EntityManager
         }, __CLASS__);
 
         if ($cache) {
-            array2code([self::$dirs, self::$entities], Kernel::formatCacheFile(__CLASS__));
+            array2code([self::$dirs, self::$entities], Kernel::formatCompileFile(__CLASS__));
         }
     }
 

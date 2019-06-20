@@ -15,7 +15,7 @@ final class ModelManager
 
     public static function load(array $dirs)
     {
-        $cache = Kernel::formatCacheFile(__CLASS__);
+        $cache = Kernel::formatCompileFile(__CLASS__);
         if (is_file($cache)) {
             list(self::$dirs, self::$models) = load_php($cache);
             return;
@@ -30,7 +30,7 @@ final class ModelManager
 
     public static function flush()
     {
-        $cache = Kernel::formatCacheFile(__CLASS__);
+        $cache = Kernel::formatCompileFile(__CLASS__);
         if (is_file($cache)) {
             unlink($cache);
         }
@@ -62,7 +62,7 @@ final class ModelManager
         }, __CLASS__);
 
         if ($cache) {
-            array2code([self::$dirs, self::$models], Kernel::formatCacheFile(__CLASS__));
+            array2code([self::$dirs, self::$models], Kernel::formatCompileFile(__CLASS__));
         }
     }
 

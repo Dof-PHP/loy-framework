@@ -25,7 +25,7 @@ final class WrapinManager
 
     public static function load(array $dirs)
     {
-        $cache = Kernel::formatCacheFile(__CLASS__);
+        $cache = Kernel::formatCompileFile(__CLASS__);
         if (is_file($cache)) {
             list(self::$dirs, self::$wrapins) = load_php($cache);
             return;
@@ -40,7 +40,7 @@ final class WrapinManager
 
     public static function flush()
     {
-        $cache = Kernel::formatCacheFile(__CLASS__);
+        $cache = Kernel::formatCompileFile(__CLASS__);
         if (is_file($cache)) {
             unlink($cache);
         }
@@ -72,7 +72,7 @@ final class WrapinManager
         }, __CLASS__);
 
         if ($cache) {
-            array2code([self::$dirs, self::$wrapins], Kernel::formatCacheFile(__CLASS__));
+            array2code([self::$dirs, self::$wrapins], Kernel::formatCompileFile(__CLASS__));
         }
     }
 

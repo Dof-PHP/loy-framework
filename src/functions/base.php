@@ -658,6 +658,21 @@ if (! function_exists('ciin')) {
         }, $list));
     }
 }
+if (! function_exists('classname')) {
+    function classname($class) : ?string
+    {
+        if (! is_string($class)) {
+            return null;
+        }
+        if (! class_exists($class)) {
+            return null;
+        }
+
+        $ns = array_trim_from_string($class, '\\');
+
+        return $ns[count($ns) - 1] ?? null;
+    }
+}
 if (! function_exists('objectname')) {
     function objectname($object) : ?string
     {

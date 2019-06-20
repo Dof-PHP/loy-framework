@@ -126,7 +126,7 @@ final class PortManager
 
     public static function load(array $dirs)
     {
-        $cache = Kernel::formatCacheFile(__CLASS__);
+        $cache = Kernel::formatCompileFile(__CLASS__);
         if (is_file($cache)) {
             list(self::$dirs, self::$ports, self::$routes, self::$aliases, self::$docs) = load_php($cache);
             return;
@@ -147,7 +147,7 @@ final class PortManager
 
     public static function flush()
     {
-        $cache = Kernel::formatCacheFile(__CLASS__);
+        $cache = Kernel::formatCompileFile(__CLASS__);
         if (is_file($cache)) {
             unlink($cache);
         }
@@ -193,7 +193,7 @@ final class PortManager
                 self::$routes,
                 self::$aliases,
                 self::$docs
-            ], Kernel::formatCacheFile(__CLASS__));
+            ], Kernel::formatCompileFile(__CLASS__));
         }
     }
 

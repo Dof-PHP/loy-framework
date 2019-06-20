@@ -13,9 +13,10 @@ final class QueueManager
 {
     use PartitionString;
 
-    const QUEUE_NORMAL = '__DOF_QUEUE';
+    const QUEUE_NORMAL = '__DOF_QUEUE_NORMAL';
     const QUEUE_LOCKED = '__DOF_QUEUE_LOCKED';
     const QUEUE_FAILED = '__DOF_QUEUE_FAILED';
+    const QUEUE_TIMEOUT = '__DOF_QUEUE_TIMEOUT';
 
     const SUPPORT_DRIVERS = [
         'redis' => Redis::class,
