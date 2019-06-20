@@ -7,10 +7,6 @@ namespace Dof\Framework\Storage;
 use Closure;
 use Dof\Framework\Paginator;
 
-/**
- * Notes:
- * - `OR` must defined after `WHERE`
- */
 class MySQLBuilder
 {
     private $origin;
@@ -27,11 +23,18 @@ class MySQLBuilder
     private $whereRaw = [];
     private $rawWhere = [];
     private $or = [];
+    private $ors = [];
     private $orRaw = [];
     private $rawOr = [];
     private $having = [];
+    private $havings = [];
     private $havingRaw = [];
     private $rawHaving = [];
+    private $existsHaving = [];
+    private $orHaving = [];
+    private $orRawHaving = [];
+    private $orsHaving = [];
+    private $rawOrHaving = [];
 
     private $order = [];
     private $group = [];
@@ -53,12 +56,19 @@ class MySQLBuilder
         $this->whereRaw = [];
         $this->rawWhere = [];
         $this->or = [];
+        $this->ors = [];
         $this->orRaw = [];
         $this->rawOr = [];
         $this->order = [];
         $this->having = [];
+        $this->havings = [];
         $this->havingRaw = [];
         $this->rawHaving = [];
+        $this->existsHaving = [];
+        $this->orHaving = [];
+        $this->orRawHaving = [];
+        $this->orsHaving = [];
+        $this->rawOrHaving = [];
         $this->group = [];
         $this->offset = null;
         $this->limit = null;
@@ -202,9 +212,30 @@ class MySQLBuilder
         return $this;
     }
 
+    public function existsHaving(Closure $query)
+    {
+        $this->existsHaving[] = $query;
+
+        return $this;
+    }
+
     public function exists(Closure $query)
     {
         $this->exists[] = $query;
+
+        return $this;
+    }
+
+    public function orsHaving(Closure $query)
+    {
+        $this->orsHaving[] = $query;
+
+        return $this;
+    }
+
+    public function ors(Closure $query)
+    {
+        $this->ors[] = $query;
 
         return $this;
     }
@@ -219,6 +250,20 @@ class MySQLBuilder
     public function where(string $column, $value, string $operator = '=')
     {
         $this->where[] = [$column, $operator, $value];
+
+        return $this;
+    }
+
+    public function whereRaw(string $raw, $value, string $operator = '=')
+    {
+        $this->whereRaw[] = [$raw, $operator, $value];
+
+        return $this;
+    }
+
+    public function rawOrHaving(string $or)
+    {
+        $this->rawOrHaving[] = $or;
 
         return $this;
     }
@@ -244,9 +289,23 @@ class MySQLBuilder
         return $this;
     }
 
+    public function orHaving(string $column, $value, string $operator = '=')
+    {
+        $this->orHaving[] = [$column, $operator, $value];
+
+        return $this;
+    }
+
     public function or(string $column, $value, string $operator = '=')
     {
         $this->or[] = [$column, $operator, $value];
+
+        return $this;
+    }
+
+    public function orRawHaving(string $raw, $value, string $operator = '=')
+    {
+        $this->orRawHaving[] = [$raw, $operator, $value];
 
         return $this;
     }
@@ -308,28 +367,35 @@ class MySQLBuilder
 
     public function group(...$fields)
     {
-        $this->group = $fields;
+        $this->group = array_unique_merge($this->group, $fields);
 
         return $this;
     }
 
-    public function having()
+    public function havings(Closure $query)
     {
-        // TODO
+        $this->havings[] = $query;
 
         return $this;
     }
 
-    public function havingRaw()
+    public function having(string $column, $value, string $operator = '=')
     {
-        // TODO
+        $this->having[] = [$column, $operator, $value];
 
         return $this;
     }
 
-    public function rawHaving()
+    public function havingRaw(string $raw, $value, string $operator = '=')
     {
-        // TODO
+        $this->havingRaw[] = [$raw, $operator, $value];
+
+        return $this;
+    }
+
+    public function rawHaving(string $having)
+    {
+        $this->rawHaving[] = $having;
 
         return $this;
     }
@@ -520,6 +586,24 @@ class MySQLBuilder
             }
         }
 
+        list($where, $params) = $this->buildWhere();
+
+        $group = '';
+        if ($this->group) {
+            $group .= ' GROUP BY ';
+            foreach ($this->group as $group) {
+                $group .= " `{$group}` ";
+                if (false !== next($this->group)) {
+                    $group .= ',';
+                }
+            }
+        }
+
+        list($having, $_params) = $this->buildHaving();
+        foreach ($_params as $_param) {
+            array_push($params, $_param);
+        }
+
         $order = '';
         if ($this->order) {
             $order = 'ORDER BY ';
@@ -540,16 +624,14 @@ class MySQLBuilder
             }
         }
 
-        list($where, $params) = $this->buildWhere();
-
         $table = $this->table ?: '#{TABLE}';
         if ($this->db) {
             $table = "`{$this->db}`.{$table}";
         }
 
-        $sql = 'SELECT %s FROM %s %s %s %s';
+        $sql = 'SELECT %s FROM %s %s %s %s %s %s';
 
-        return sprintf($sql, $selects, $table, $where, $order, $limit);
+        return sprintf($sql, $selects, $table, $where, $group, $having, $order, $limit);
     }
 
     /**
@@ -698,12 +780,149 @@ class MySQLBuilder
         return $this->sql ? $this->generate($sql, $params) : $this->origin->exec($sql, $params);
     }
 
+    private function checkHavingKeyword(string $having, string $exists)
+    {
+        $having = trim($having);
+
+        return ($having ? ci_equal(mb_strcut($having, 0, 7), 'having ') : false)
+            ? $exists : ' HAVING ';
+    }
+
     private function checkWhereKeyword(string $where, string $exists)
     {
         $where = trim($where);
 
-        return ($where ? ci_equal(mb_strcut($where, 0, 5), 'where') : false)
+        return ($where ? ci_equal(mb_strcut($where, 0, 6), 'where ') : false)
             ? $exists : ' WHERE ';
+    }
+
+    private function ltrimAndOr(string &$expr, string $type) : string
+    {
+        $expr = trim($expr);
+        if (! $expr) {
+            return '';
+        }
+
+        if (ci_equal(mb_strcut($expr, 0, 4), 'and ')) {
+            $expr = mb_substr($expr, 3);
+        } elseif (ci_equal(mb_strcut($expr, 0, 3), 'or ')) {
+            $expr = mb_substr($expr, 2);
+        }
+
+        return $type;
+    }
+
+    private function buildHaving(bool $asGroup = false) : array
+    {
+        $having = '';
+        $params = [];
+
+        if ($this->having) {
+            $having .= $asGroup ? $this->ltrimAndOr($having, ' AND ') : ' HAVING ';
+            foreach ($this->having as list($column, $operator, $val)) {
+                $having .= $this->__buildWhere($column, $operator, $val, $params, false);
+                if (false !== next($this->having)) {
+                    $having .= ' AND ';
+                }
+            }
+        }
+        if ($this->havingRaw) {
+            $having .= $asGroup ? $this->ltrimAndOr($having, ' AND ') : $this->checkHavingKeyword($having, ' AND ');
+            foreach ($this->havingRaw as list($expression, $operator, $val)) {
+                $having .= $this->__buildWhere($expression, $operator, $val, $params, true);
+                if (false !== next($this->havingRaw)) {
+                    $having .= ' AND ';
+                }
+            }
+        }
+        if ($this->havings) {
+            $having .= $asGroup ? $this->ltrimAndOr($having, ' AND ') : $this->checkHavingKeyword($having, ' AND ');
+            foreach ($this->havings as $query) {
+                $builder = new self;
+                $query($builder);
+                list($_having, $_params) = $builder->buildHaving(true);
+
+                $having .= "({$_having})";
+                foreach ($_params as $param) {
+                    array_push($params, $param);
+                }
+                if (false !== next($this->havings)) {
+                    $having .= ' AND ';
+                }
+            }
+        }
+        if ($this->existsHaving) {
+            $having .= $asGroup ? $this->ltrimAndOr($having, ' AND ') : $this->checkHavingKeyword($having, ' AND ');
+            foreach ($this->exists as $query) {
+                $builder = new self;
+                $_params = [];
+                $query($builder);
+                $sql = $builder->buildSql($_params);
+                $having .= " EXISTS ({$sql})";
+                foreach ($_params as $param) {
+                    array_push($params, $param);
+                }
+                if (false !== next($this->exists)) {
+                    $having .= ' AND ';
+                }
+            }
+        }
+        if ($this->rawHaving) {
+            $having .= $asGroup ? $this->ltrimAndOr($having, ' AND ') : $this->checkHavingKeyword($having, ' AND ');
+
+            foreach ($this->rawHaving as $rawHaving) {
+                $having .= "({$rawHaving})";
+                if (false !== next($this->rawHaving)) {
+                    $having .= ' AND ';
+                }
+            }
+        }
+        if ($this->orHaving) {
+            $having .= $asGroup ? $this->ltrimAndOr($having, ' OR ') : $this->checkHavingKeyword($having, ' OR ');
+            foreach ($this->orHaving as list($column, $operator, $val)) {
+                $having .= $this->__buildWhere($column, $operator, $val, $params, false);
+                if (false !== next($this->orHaving)) {
+                    $having .= ' OR ';
+                }
+            }
+        }
+        if ($this->orRawHaving) {
+            $having .= $asGroup ? $this->ltrimAndOr($having, ' OR ') : $this->checkHavingKeyword($having, ' OR ');
+            foreach ($this->orRawHaving as list($expression, $operator, $val)) {
+                $having .= $this->__buildWhere($expression, $operator, $val, $params, true);
+                if (false !== next($this->orRawHaving)) {
+                    $having .= ' OR ';
+                }
+            }
+        }
+        if ($this->orsHaving) {
+            $having .= $asGroup ? $this->ltrimAndOr($having, ' OR ') : $this->checkHavingKeyword($having, ' OR ');
+            foreach ($this->orsHaving as $query) {
+                $builder = new self;
+                $query($builder);
+                list($_having, $_params) = $builder->buildHaving(true);
+
+                $having .= "({$_having})";
+                foreach ($_params as $param) {
+                    array_push($params, $param);
+                }
+                if (false !== next($htis->orsHaving)) {
+                    $having .= ' OR ';
+                }
+            }
+        }
+        if ($this->rawOrHaving) {
+            $having .= $asGroup ? $this->ltrimAndOr($having, ' OR ') : $this->checkHavingKeyword($having, ' OR ');
+
+            foreach ($this->rawOrHaving as $rawOr) {
+                $having .= "({$rawOr})";
+                if (false !== next($this->rawOrHaving)) {
+                    $having .= ' OR ';
+                }
+            }
+        }
+
+        return [$having, $params];
     }
 
     /**
@@ -717,7 +936,7 @@ class MySQLBuilder
         $params = [];
 
         if ($this->where) {
-            $where .= $asGroup ? '' : ' WHERE ';
+            $where .= $asGroup ? $this->ltrimAndOr($where, ' AND ') : ' WHERE ';
             foreach ($this->where as list($column, $operator, $val)) {
                 $where .= $this->__buildWhere($column, $operator, $val, $params, false);
                 if (false !== next($this->where)) {
@@ -726,6 +945,7 @@ class MySQLBuilder
             }
         }
         if ($this->whereRaw) {
+            $where .= $asGroup ? $this->ltrimAndOr($where, ' AND ') : $this->checkWhereKeyword($where, ' AND ');
             foreach ($this->whereRaw as list($expression, $operator, $val)) {
                 $where .= $this->__buildWhere($expression, $operator, $val, $params, true);
                 if (false !== next($this->whereRaw)) {
@@ -734,7 +954,7 @@ class MySQLBuilder
             }
         }
         if ($this->wheres) {
-            $where .= $asGroup ? '' : $this->checkWhereKeyword($where, ' AND ');
+            $where .= $asGroup ? $this->ltrimAndOr($where, ' AND ') : $this->checkWhereKeyword($where, ' AND ');
             foreach ($this->wheres as $query) {
                 $builder = new self;
                 $query($builder);
@@ -744,10 +964,13 @@ class MySQLBuilder
                 foreach ($_params as $param) {
                     array_push($params, $param);
                 }
+                if (false !== next($this->wheres)) {
+                    $where .= ' AND ';
+                }
             }
         }
         if ($this->exists) {
-            $where .= $asGroup ? ' AND ' : $this->checkWhereKeyword($where, ' AND ');
+            $where .= $asGroup ? $this->ltrimAndOr($where, ' AND ') : $this->checkWhereKeyword($where, ' AND ');
             foreach ($this->exists as $query) {
                 $builder = new self;
                 $_params = [];
@@ -757,10 +980,13 @@ class MySQLBuilder
                 foreach ($_params as $param) {
                     array_push($params, $param);
                 }
+                if (false !== next($this->exists)) {
+                    $where .= ' AND ';
+                }
             }
         }
         if ($this->rawWhere) {
-            $where .= $asGroup ? ' AND ' : $this->checkWhereKeyword($where, ' AND ');
+            $where .= $asGroup ? $this->ltrimAndOr($where, ' AND ') : $this->checkWhereKeyword($where, ' AND ');
 
             foreach ($this->rawWhere as $rawWhere) {
                 $where .= "({$rawWhere})";
@@ -770,7 +996,7 @@ class MySQLBuilder
             }
         }
         if ($this->or) {
-            $where .= $asGroup ? ' OR ' : $this->checkWhereKeyword($where, ' OR ');
+            $where .= $asGroup ? $this->ltrimAndOr($where, ' OR ') : $this->checkWhereKeyword($where, ' OR ');
             foreach ($this->or as list($column, $operator, $val)) {
                 $where .= $this->__buildWhere($column, $operator, $val, $params, false);
                 if (false !== next($this->or)) {
@@ -779,7 +1005,7 @@ class MySQLBuilder
             }
         }
         if ($this->orRaw) {
-            $where .= $asGroup ? ' OR ' : $this->checkWhereKeyword($where, ' OR ');
+            $where .= $asGroup ? $this->ltrimAndOr($where, ' OR ') : $this->checkWhereKeyword($where, ' OR ');
             foreach ($this->orRaw as list($expression, $operator, $val)) {
                 $where .= $this->__buildWhere($expression, $operator, $val, $params, true);
                 if (false !== next($this->orRaw)) {
@@ -787,8 +1013,24 @@ class MySQLBuilder
                 }
             }
         }
+        if ($this->ors) {
+            $where .= $asGroup ? $this->ltrimAndOr($where, ' OR ') : $this->checkWhereKeyword($where, ' OR ');
+            foreach ($this->ors as $query) {
+                $builder = new self;
+                $query($builder);
+                list($_where, $_params) = $builder->buildWhere(true);
+
+                $where .= "({$_where})";
+                foreach ($_params as $param) {
+                    array_push($params, $param);
+                }
+                if (false !== next($this->ors)) {
+                    $where .= ' OR ';
+                }
+            }
+        }
         if ($this->rawOr) {
-            $where .= $asGroup ? ' OR ' : $this->checkWhereKeyword($where, ' OR ');
+            $where .= $asGroup ? $this->ltrimAndOr($where, ' OR ') : $this->checkWhereKeyword($where, ' OR ');
 
             foreach ($this->rawOr as $rawOr) {
                 $where .= "({$rawOr})";
