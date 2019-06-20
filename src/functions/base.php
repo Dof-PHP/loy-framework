@@ -754,6 +754,7 @@ if (! function_exists('array_get_by_chain_key')) {
         if (array_key_exists($key, $haystack)) {
             return $haystack[$key] ?? $default;
         }
+
         $chain  = $_chain = array_trim_from_string($key, $explode);
         $query  = null;
         $tmparr = $haystack;
@@ -762,7 +763,7 @@ if (! function_exists('array_get_by_chain_key')) {
             if ($query) {
                 unset($_chain[$idx]);
                 $key = join($explode, $_chain);
-                return array_get_by_chain_key($query, $key, $explode, $default);
+                return array_get_by_chain_key($query, $key, $explode);
             }
         }
 

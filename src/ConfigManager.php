@@ -169,7 +169,9 @@ final class ConfigManager
             return $config;
         }
 
-        return array_get_by_chain_key($config, $key, '.') ?: $default;
+        $val = array_get_by_chain_key($config, $key, '.');
+
+        return is_null($val) ? $default : $val;
     }
 
     public static function getDomainByFile(string $file, string $key = null, $default = null)
@@ -184,17 +186,23 @@ final class ConfigManager
 
     public static function getDomainFinalByNamespace(string $ns, string $key = null, $default = null)
     {
-        return self::getDomainByNamespace($ns, $key, null) ?: self::getDefault($key, $default);
+        $val = self::getDomainByNamespace($ns, $key, null);
+       
+        return is_null($val) ? self::getDefault($key, $default) : $val;
     }
 
     public static function getDomainFinalByFile(string $file, string $key = null, $default = null)
     {
-        return self::getDomainByFile($file, $key, null) ?: self::getDefault($key, $default);
+        $val = self::getDomainByFile($file, $key, null);
+        
+        return is_null($val) ? self::getDefault($key, $default) : $val;
     }
 
     public static function getDomainFinalByKey(string $domain, string $key = null, $default = null)
     {
-        return self::getDomainByKey($domain, $key, null) ?: self::getDefault($key, $default);
+        $val = self::getDomainByKey($domain, $key, null);
+            
+        return is_null($val) ? self::getDefault($key, $default) : $val;
     }
 
     public static function getDomainEnvByNamespace(string $ns, string $key = null, $default = null)
@@ -343,12 +351,16 @@ final class ConfigManager
 
     public static function getEnv(string $key = null, $default = null)
     {
-        return array_get_by_chain_key(self::$default['env'] ?? [], $key) ?: $default;
+        $val = array_get_by_chain_key(self::$default['env'] ?? [], $key);
+            
+        return is_null($val) ? $default : $val;
     }
 
     public static function getFramework(string $key = null, $default = null)
     {
-        return array_get_by_chain_key(self::$default['framework'] ?? [], $key) ?: $default;
+        $val = array_get_by_chain_key(self::$default['framework'] ?? [], $key);
+        
+        return is_null($val) ? $default : $val;
     }
 
     /**
@@ -359,7 +371,9 @@ final class ConfigManager
      */
     public static function getDomain(string $key = null, $default = null)
     {
-        return array_get_by_chain_key(self::$default['domain'] ?? [], $key) ?: $default;
+        $val = array_get_by_chain_key(self::$default['domain'] ?? [], $key);
+        
+        return is_null($val) ? $default : $val;
     }
 
     public static function getDomains()
@@ -369,6 +383,12 @@ final class ConfigManager
 
     public static function getDefault(string $key = null, $default = null)
     {
-        return $key ? (array_get_by_chain_key(self::$default, $key) ?: $default) : self::$default;
+        if (is_null($key)) {
+            return self::$default;
+        }
+
+        $val = array_get_by_chain_key(self::$default, $key);
+
+        return is_null($val) ? $default : $val;
     }
 }

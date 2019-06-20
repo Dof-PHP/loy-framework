@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework;
 
+use Dof\Framework\Facade\Log;
 use Dof\Framework\Queue\Job;
 use Dof\Framework\OFB\Traits\Enqueuable;
 
@@ -15,18 +16,26 @@ abstract class Listener implements Job
     const LISTENER_QUEUE = 'listener';
 
     protected $event;
-    protected $sync = true;
 
     public function handle()
     {
-        if ($this->sync) {
+        $listener = static::class;
+
+        $async = ConfigManager::getDomainEnvByNamespace($listener, 'ASYNC_LISTENER', []);
+        if ((! $async) || (! array_key_exists($listener, $async))) {
             $this->execute();
             return;
         }
 
-        $listener = static::class;
-
         $driver = ConfigManager::getDomainFinalEnvByNamespace($listener, 'LISTENER_QUEUE_DRIVER');
+
+        $partition = $async[$listener] ?? 0;
+        if (! is_int($partition)) {
+            Log::log('listener-error', 'InvalidAsyncListenerPartitionInteger', compact('partition'));
+            return;
+        }
+
+        self::$__partition = $partition;
 
         $this->enqueue($listener, $driver);
     }
@@ -50,7 +59,7 @@ abstract class Listener implements Job
         return $this;
     }
 
-    public function formatQueueName(string $listener) : string
+    final public function formatQueueName(string $listener) : string
     {
         $domain = DomainManager::getKeyByNamespace(static::class);
         $class = objectname($this);
@@ -58,6 +67,10 @@ abstract class Listener implements Job
             $key = join('_', [$domain, $class]);
         } else {
             $key = self::DEFAULT_QUEUE;
+        }
+
+        if (self::$__partition > 0) {
+            $key = join('_', [$key, $this->__partition(self::$__partition)]);
         }
 
         return strtolower(join(':', [self::LISTENER_QUEUE, $key]));

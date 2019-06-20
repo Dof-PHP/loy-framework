@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework;
 
 use Dof\Framework\DDD\Model;
+use Dof\Framework\Facade\Log;
 use Dof\Framework\Queue\Job;
 use Dof\Framework\OFB\Traits\Enqueuable;
 
@@ -25,19 +26,25 @@ abstract class Event extends Model implements Job
 
     final public function publish()
     {
-        $meta = self::meta();
-
-        $listeners = $meta['LISTENER'] ?? [];
+        $listeners = self::listeners();
         if (! $listeners) {
             return;
         }
 
         $event = static::class;
-
-        if (confirm($meta['SYNC'] ?? '1')) {
+        $async = ConfigManager::getDomainEnvByNamespace($event, 'ASYNC_EVENT', []);
+        if ((! $async) || (! array_key_exists($event, $async))) {
             $this->broadcast($listeners);
             return;
         }
+
+        $partition = $async[$event] ?? 0;
+        if (! is_int($partition)) {
+            Log::log('event-error', 'InvalidAsyncEventPartitionInteger', compact('partition'));
+            return;
+        }
+
+        self::$__partition = $partition;
 
         $driver = ConfigManager::getDomainFinalEnvByNamespace($event, 'EVENT_QUEUE_DRIVER');
 
@@ -66,7 +73,7 @@ abstract class Event extends Model implements Job
         }
     }
 
-    public function formatQueueName() : string
+    final public function formatQueueName() : string
     {
         $domain = DomainManager::getKeyByNamespace(static::class);
         $class = objectname($this);
@@ -74,6 +81,10 @@ abstract class Event extends Model implements Job
             $key = join('_', [$domain, $class]);
         } else {
             $key = self::DEFAULT_QUEUE;
+        }
+
+        if (self::$__partition > 0) {
+            $key = join('_', [$key, $this->__partition(self::$__partition)]);
         }
 
         return strtolower(join(':', [self::EVENT_QUEUE, $key]));
