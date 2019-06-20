@@ -395,7 +395,13 @@ class MySQLBuilder
             : "'{$val}'";    // TODO&FIXME
         });
 
-        return $params ? preg_replace($placeholders, $params, $sql) : $sql;
+        $idx = 0;
+        return $params ? preg_replace_callback('/\?/', function ($matches) use ($params, &$idx) {
+            $val = $params[$idx++] ?? null;
+            if (! is_null($val)) {
+                return $val;
+            }
+        }, $sql) : $sql;
     }
 
     public function sql(bool $sql)

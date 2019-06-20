@@ -15,7 +15,8 @@ abstract class Event extends Model
 
     final public function publish()
     {
-        $annotations = EventManager::get(static::class);
+        $event = static::class;
+        $annotations = EventManager::get($event);
         if (! $annotations) {
             return;
         }
@@ -34,6 +35,8 @@ abstract class Event extends Model
         }
 
         // Check queue config in the domain of current event class
+        $driver = EventManager::checkQueueSetting($event);
+        // $queue = QueueManager::get($event);
         // TODO
     }
 }

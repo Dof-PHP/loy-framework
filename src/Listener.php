@@ -10,7 +10,7 @@ abstract class Listener
 
     protected $event;
 
-    final public function init()
+    final public static function init()
     {
         return Container::di(static::class);
     }
