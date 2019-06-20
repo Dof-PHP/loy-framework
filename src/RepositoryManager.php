@@ -279,7 +279,7 @@ final class RepositoryManager
         $ns = array_trim_from_string($storage, '\\');
         $name = $ns[count($ns) - 1] ?? 'unknown';
 
-        return strtolower(join(':', ['__ORM_CACHE__', $domain, $driver, $name, $pk]));
+        return join(':', [CacheManager::CACHE_PREFIX, strtolower(join('_', [$domain, $driver, $name, $pk]))]);
     }
 
     /**

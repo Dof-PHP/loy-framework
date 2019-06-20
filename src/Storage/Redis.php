@@ -6,11 +6,13 @@ namespace Dof\Framework\Storage;
 
 use Dof\Framework\Collection;
 use Dof\Framework\TypeHint;
+use Dof\Framework\Queue\Job;
+use Dof\Framework\Queue\Queuable;
 
 /**
  * API docs: <https://github.com/phpredis/phpredis/blob/develop/README.markdown>
  */
-class Redis extends Storage implements Storable, Cachable
+class Redis extends Storage implements Storable, Cachable, Queuable
 {
     /** @var array: Commands executed in the lifetime of this instance */
     private $cmds = [];
@@ -52,17 +54,6 @@ class Redis extends Storage implements Storable, Cachable
         return $this->connection;
     }
 
-    private function appendCMD(float $start, string $cmd, ...$params)
-    {
-        $this->cmds[] = [
-            microtime(true) - $start,
-            $cmd,
-            fixed_string(join(' ', $params), 255)
-        ];
-
-        return $this;
-    }
-
     public function getCacheValueTypeKey(string $key) : string
     {
         return "__CACHE_RAW_TYPE__:{$key}";
@@ -70,18 +61,8 @@ class Redis extends Storage implements Storable, Cachable
 
     public function get(string $key)
     {
-        $connection = $this->getConnection();
-
-        // $start = microtime(true);
-        // $_key = $this->getCacheValueTypeKey($key);
-        // $type = $connection->get($_key);
-        // $this->appendCMD($start, 'get', $_key);
-        // if (false === $type) {
-        // $type = 'string';
-        // }
-
         $start = microtime(true);
-        $result = $connection->get($key);
+        $result = $this->getConnection()->get($key);
         $this->appendCMD($start, 'get', $key);
 
         return $result === false ? null : unserialize($result);
@@ -103,35 +84,48 @@ class Redis extends Storage implements Storable, Cachable
 
     public function set(string $key, $value, int $expiration = 0)
     {
-        // $_key = $this->getCacheValueTypeKey($key);
-        $_value = $this->stringify($value);
+        $_value = serialize($value);
 
         $start = microtime(true);
         if ($expiration > 0) {
             $this->getConnection()->setEx($key, $expiration, $_value);
-            $this->appendCMD($start, 'set', $key, $expiration, fixed_string($_value, 255));
+            $this->appendCMD($start, 'set', $key, $expiration, $_value);
         } else {
             $this->getConnection()->set($key, $_value);
-            $this->appendCMD($start, 'set', $key, fixed_string($_value, 255));
+            $this->appendCMD($start, 'set', $key, $_value);
         }
     }
 
-    public function typehint(string $result, string $type)
+    public function enqueue(string $queue, Job $job)
     {
-        $type = strtolower($type);
+        $_job = serialize($job);
 
-        switch ($type) {
-            case 'object':
-                return unserialize($result);
-            // TODO
-            case 'string':
-            default:
-                return $result;
-        }
+        $start = microtime(true);
+
+        $this->getConnection()->rPush($queue, $_job);
+
+        $this->appendCMD($start, 'rPush', $queue, $_job);
     }
 
-    public function stringify($result) : string
+    public function dequeue(string $queue) :? Job
     {
-        return serialize($result);
+        $start = microtime(true);
+
+        $job = $this->getConnection()->rPop($queue);
+
+        $this->appendCMD($start, 'rPop', $queue);
+
+        return $job ? unserialize($job) : null;
+    }
+
+    private function appendCMD(float $start, string $cmd, ...$params)
+    {
+        $this->cmds[] = [
+            microtime(true) - $start,
+            $cmd,
+            fixed_string(join(' ', $params), 255)
+        ];
+
+        return $this;
     }
 }

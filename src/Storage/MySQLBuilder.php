@@ -7,6 +7,10 @@ namespace Dof\Framework\Storage;
 use Closure;
 use Dof\Framework\Paginator;
 
+/**
+ * Notes:
+ * - `OR` must defined after `WHERE`
+ */
 class MySQLBuilder
 {
     private $origin;
@@ -21,10 +25,16 @@ class MySQLBuilder
     private $where = [];
     private $wheres = [];
     private $whereRaw = [];
+    private $rawWhere = [];
     private $or = [];
     private $orRaw = [];
+    private $rawOr = [];
+    private $having = [];
+    private $havingRaw = [];
+    private $rawHaving = [];
 
     private $order = [];
+    private $group = [];
     private $offset;
     private $limit;
 
@@ -41,9 +51,15 @@ class MySQLBuilder
         $this->exists = [];
         $this->wheres = [];
         $this->whereRaw = [];
+        $this->rawWhere = [];
         $this->or = [];
         $this->orRaw = [];
+        $this->rawOr = [];
         $this->order = [];
+        $this->having = [];
+        $this->havingRaw = [];
+        $this->rawHaving = [];
+        $this->group = [];
         $this->offset = null;
         $this->limit = null;
 
@@ -207,9 +223,23 @@ class MySQLBuilder
         return $this;
     }
 
-    public function whereRaw(string $raw, $value, string $operator = '=')
+    public function rawOr(string $or)
     {
-        $this->whereRaw[] = [$raw, $operator, $value];
+        $this->rawOr[] = $or;
+
+        return $this;
+    }
+
+    public function rawWhere(string $where)
+    {
+        $this->rawWhere[] = $where;
+
+        return $this;
+    }
+
+    public function compare(string $column1, string $column2, string $operator = '=')
+    {
+        $this->whereRaw[] = [$column1, $operator, collect(['key' => 'column', 'value' => $column2])];
 
         return $this;
     }
@@ -272,6 +302,34 @@ class MySQLBuilder
     public function desc(string $column)
     {
         $this->order[$column] = 'DESC';
+
+        return $this;
+    }
+
+    public function group(...$fields)
+    {
+        $this->group = $fields;
+
+        return $this;
+    }
+
+    public function having()
+    {
+        // TODO
+
+        return $this;
+    }
+
+    public function havingRaw()
+    {
+        // TODO
+
+        return $this;
+    }
+
+    public function rawHaving()
+    {
+        // TODO
 
         return $this;
     }
@@ -640,73 +698,43 @@ class MySQLBuilder
         return $this->sql ? $this->generate($sql, $params) : $this->origin->exec($sql, $params);
     }
 
+    private function checkWhereKeyword(string $where, string $exists)
+    {
+        $where = trim($where);
+
+        return ($where ? ci_equal(mb_strcut($where, 0, 5), 'where') : false)
+            ? $exists : ' WHERE ';
+    }
+
+    /**
+     * Build where condition part of sql
+     *
+     * @param bool $asGroup: Whether build where conditions only rather than the whole sql
+     */
     private function buildWhere(bool $asGroup = false) : array
     {
         $where = '';
         $params = [];
 
-        $buildWhere = function (string $column, string $operator, $val, &$params, bool $expression = false) : string {
-            $operator = trim($operator);
-            $placeholder = '?';
-            if (! $expression) {
-                $column = "`{$column}`";
-            }
-
-            if (ciin($operator, ['in', 'not in'])) {
-                $placeholder = '(?)';
-                if (is_array($val) || is_string($val)) {
-                    $val = is_string($val) ? array_trim_from_string($val, ',') : $val;
-                    $placeholder = '('.join(',', array_fill(0, count($val), '?')).')';
-                    foreach ($val as $v) {
-                        array_push($params, $v);
-                    }
-                } elseif (is_closure($val)) {
-                    $builder = new self;
-                    $_params = [];
-                    $val($builder);
-                    $sql = $builder->buildSql($_params);
-                    $placeholder = "({$sql})";
-                    foreach ($_params as $param) {
-                        array_push($params, $param);
-                    }
-                } else {
-                    $params[] = (array) $val;
-                }
-            } elseif (ciin($operator, ['is not null', 'is null'])) {
-                $placeholder = '';
-            // No params need when null conditions
-            } elseif (ci_equal($operator, 'inraw')) {
-                $column = "`{$column}`";
-                $operator = 'IN';
-                $placeholder = "({$val})";
-            } else {
-                $params[] = $val;
-            }
-
-            return "{$column} {$operator} {$placeholder}";
-        };
-
-        if ($this->where || $this->whereRaw) {
+        if ($this->where) {
             $where .= $asGroup ? '' : ' WHERE ';
             foreach ($this->where as list($column, $operator, $val)) {
-                $where .= $buildWhere($column, $operator, $val, $params, false);
+                $where .= $this->__buildWhere($column, $operator, $val, $params, false);
                 if (false !== next($this->where)) {
                     $where .= ' AND ';
                 }
             }
-            if ($this->where && $this->whereRaw) {
-                $where .= ' AND ';
-            }
-
+        }
+        if ($this->whereRaw) {
             foreach ($this->whereRaw as list($expression, $operator, $val)) {
-                $where .= $buildWhere($expression, $operator, $val, $params, true);
+                $where .= $this->__buildWhere($expression, $operator, $val, $params, true);
                 if (false !== next($this->whereRaw)) {
                     $where .= ' AND ';
                 }
             }
         }
         if ($this->wheres) {
-            $where .= $asGroup ? '' : (($this->where || $this->whereRaw) ? ' AND ' : ' WHERE ');
+            $where .= $asGroup ? '' : $this->checkWhereKeyword($where, ' AND ');
             foreach ($this->wheres as $query) {
                 $builder = new self;
                 $query($builder);
@@ -719,7 +747,7 @@ class MySQLBuilder
             }
         }
         if ($this->exists) {
-            $where .= $asGroup ? ' AND ' : (($this->where || $this->whereRaw) ? ' AND ' : ' WHERE ');
+            $where .= $asGroup ? ' AND ' : $this->checkWhereKeyword($where, ' AND ');
             foreach ($this->exists as $query) {
                 $builder = new self;
                 $_params = [];
@@ -731,31 +759,104 @@ class MySQLBuilder
                 }
             }
         }
+        if ($this->rawWhere) {
+            $where .= $asGroup ? ' AND ' : $this->checkWhereKeyword($where, ' AND ');
 
-        if ($this->or || $this->orRaw) {
-            if ($this->where || $this->whereRaw) {
-                $where .= ' OR ';
-            } else {
-                $where .= $asGroup ? ' AND ' : ' WHERE ';
+            foreach ($this->rawWhere as $rawWhere) {
+                $where .= "({$rawWhere})";
+                if (false !== next($this->rawWhere)) {
+                    $where .= ' AND ';
+                }
             }
-
+        }
+        if ($this->or) {
+            $where .= $asGroup ? ' OR ' : $this->checkWhereKeyword($where, ' OR ');
             foreach ($this->or as list($column, $operator, $val)) {
-                $where .= $buildWhere($column, $operator, $val, $params, false);
+                $where .= $this->__buildWhere($column, $operator, $val, $params, false);
                 if (false !== next($this->or)) {
                     $where .= ' OR ';
                 }
             }
-            if ($this->orRaw) {
-                $where .= ' OR ';
-            }
+        }
+        if ($this->orRaw) {
+            $where .= $asGroup ? ' OR ' : $this->checkWhereKeyword($where, ' OR ');
             foreach ($this->orRaw as list($expression, $operator, $val)) {
-                $where .= $buildWhere($expression, $operator, $val, $params, true);
+                $where .= $this->__buildWhere($expression, $operator, $val, $params, true);
                 if (false !== next($this->orRaw)) {
+                    $where .= ' OR ';
+                }
+            }
+        }
+        if ($this->rawOr) {
+            $where .= $asGroup ? ' OR ' : $this->checkWhereKeyword($where, ' OR ');
+
+            foreach ($this->rawOr as $rawOr) {
+                $where .= "({$rawOr})";
+                if (false !== next($this->rawOr)) {
                     $where .= ' OR ';
                 }
             }
         }
 
         return [$where, $params];
+    }
+
+    private function __buildWhere(
+        string $column,
+        string $operator,
+        $val,
+        &$params,
+        bool $expression = false
+    ) : string {
+        $operator = trim($operator);
+        $placeholder = '?';
+        if (! $expression) {
+            $column = "`{$column}`";
+        }
+
+        if (ciin($operator, ['in', 'not in'])) {
+            $placeholder = '(?)';
+            if (is_array($val) || is_string($val)) {
+                $val = is_string($val) ? array_trim_from_string($val, ',') : $val;
+                $placeholder = '('.join(',', array_fill(0, count($val), '?')).')';
+                foreach ($val as $v) {
+                    array_push($params, $v);
+                }
+            } elseif (is_closure($val)) {
+                $builder = new self;
+                $_params = [];
+                $val($builder);
+                $sql = $builder->buildSql($_params);
+                $placeholder = "({$sql})";
+                foreach ($_params as $param) {
+                    array_push($params, $param);
+                }
+            } else {
+                $params[] = (array) $val;
+            }
+        } elseif (ciin($operator, ['is not null', 'is null'])) {
+            $placeholder = '';
+        // No params need when null conditions
+        } elseif (ci_equal($operator, 'inraw')) {
+            $column = "`{$column}`";
+            $operator = 'IN';
+            $placeholder = "({$val})";
+        } elseif (is_collection($val)) {
+            $column = "`{$column}`";
+            $type = $val->key ?? null;
+            if ($type) {
+                switch (strtolower($type)) {
+                    case 'column':
+                    default:
+                        $_column = $val->value;
+                        $placeholder = "`{$_column}`";
+                        break;
+                }
+            }
+        } else {
+            $params[] = $val;
+        }
+
+        return "{$column} {$operator} {$placeholder}";
     }
 }

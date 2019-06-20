@@ -84,30 +84,11 @@ final class EventManager
             exception('MissingEventTitle', ['event' => $namespace]);
         }
 
-        $meta = $ofClass['doc'] ?? [];
-        self::$events[$namespace]['meta'] = $meta;
-        if (! confirm($meta['SYNC'] ?? '0')) {
-            self::checkQueueSetting($namespace);
-        }
+        self::$events[$namespace]['meta'] = $ofClass['doc'] ?? [];
 
         foreach ($ofProperties as $name => $attrs) {
             self::$events[$namespace]['properties'][$name] = $attrs['doc'] ?? [];
         }
-    }
-
-    public static function checkQueueSetting(string $namespace) : string
-    {
-        $driver = ConfigManager::matchDomainFinalEnvByNamespace($namespace, [
-            'EVENT_QUEUE_DRIVER', 'QUEUE_DRIVER'
-        ]);
-        if (! $driver) {
-            exception('MissingDomainQueueDriverForAsyncEvent', compact('namespace'));
-        }
-        if (! ciin($driver, QueueManager::SUPPORT_DRIVERS)) {
-            exception('UnSupportedQueueDriver', compact('namespace', 'driver'));
-        }
-
-        return $driver;
     }
 
     public static function __annotationMultipleListener() : bool

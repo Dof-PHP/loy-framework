@@ -6,13 +6,18 @@ namespace Dof\Framework;
 
 use Dof\Framework\Kernel;
 use Dof\Framework\Storage\Connection;
+use Dof\Framework\Storage\Cachable;
 use Dof\Framework\Storage\Memcached;
 use Dof\Framework\Storage\Redis;
+use Dof\Framework\OFB\Traits\PartitionString;
 
 final class CacheManager
 {
-    const MODULO_DIVIDEND_LENGTH = 14;
-    const SUPPORT_DRIVER = [
+    const CACHE_PREFIX = '__DOF_CACHE';
+
+    use PartitionString;
+
+    const SUPPORT_DRIVERS = [
         'memcached' => Memcached::class,
         'redis' => Redis::class,
     ];
@@ -23,30 +28,32 @@ final class CacheManager
     /**
     * Get a cache driver instance of a domain, based on domain configurations
     *
-    * @param string $domain: Namespace of domain class
+    * @param string $namespace: Namespace of domain class
     * @param string $key: Cache key used to select a node for caching
     * @param string $driver: Cache driver name
+    * @return Cachable|null
     */
-    public static function get(string $domain, string $key, string $driver = null)
+    public static function get(string $namespace, string $key, string $driver = null) : ?Cachable
     {
-        $instance = self::$namespaces[$domain] ?? null;
+        $instance = self::$namespaces[$namespace] ?? null;
         if ($instance) {
             return $instance;
         }
 
         if (! $driver) {
-            $driver = ConfigManager::getDomainFinalEnvByNamespace($domain, 'CACHE_DRIVER');
+            $driver = ConfigManager::getDomainFinalEnvByNamespace($namespace, 'CACHE_DRIVER');
         }
         if (! $driver) {
-            exception('MissingCacheStorageDriver');
-        }
-        $driver = strtolower($driver);
-        $cachable = self::SUPPORT_DRIVER[$driver] ?? null;
-        if (! $cachable) {
-            exception('UnSupportedCacheDriver', compact('driver'));
+            exception('MissingDomainCacheStorageDriver', compact('namespace'));
         }
 
-        $config = ConfigManager::getDomainFinalByNamespace($domain, $driver);
+        $driver = strtolower($driver);
+        $cachable = self::SUPPORT_DRIVERS[$driver] ?? null;
+        if (! $cachable) {
+            exception('UnSupportedCacheDriver', compact('driver', 'namespace'));
+        }
+
+        $config = ConfigManager::getDomainFinalByNamespace($namespace, $driver);
         if (! $config) {
             return null;
         }
@@ -75,31 +82,31 @@ final class CacheManager
         });
 
         if (method_exists($instance, '__logging')) {
-            Kernel::register('before-shutdown', function () use ($instance, $driver, $domain) {
+            Kernel::register('before-shutdown', function () use ($instance, $driver, $namespace) {
                 try {
-                    Kernel::appendContext("cache.{$driver}", $instance->__logging(), $domain);
+                    Kernel::appendContext("cache.{$driver}", $instance->__logging(), $namespace);
                 } catch (Throwable $e) {
                     Log::log('exception', 'GetCacheStorageLoggingContextFailed', [
-                            'namespace' => $domain,
+                            'namespace' => $namespace,
                             'message' => $e->getMessage(),
                         ]);
                 }
             });
         }
         if (method_exists($instance, '__cleanup')) {
-            Kernel::register('shutdown', function () use ($instance, $domain) {
+            Kernel::register('shutdown', function () use ($instance, $namespace) {
                 try {
                     $instance->__cleanup();
                 } catch (Throwable $e) {
                     Log::log('exception', 'CleanUpCacheStorageFailed', [
-                            'namespace' => $domain,
+                            'namespace' => $namespace,
                             'message' => $e->getMessage(),
                         ]);
                 }
             });
         }
 
-        return self::$namespaces[$domain] = $instance;
+        return self::$namespaces[$namespace] = $instance;
     }
 
     public static function buildAnnotationsByDriver(string $driver, string $key, array $config = [])
@@ -157,17 +164,5 @@ final class CacheManager
     public static function selectNodeFromPool(array $pool, string $key)
     {
         return self::selectNodeFromOnly(array_keys($pool), $key, $pool);
-    }
-
-    public static function hash(string $key) : int
-    {
-        return hexdec(substr(md5($key), 0, self::MODULO_DIVIDEND_LENGTH));
-    }
-
-    public static function select(array &$nodes, string $key) : int
-    {
-        sort($nodes);
-
-        return (self::hash($key) % count($nodes));
     }
 }

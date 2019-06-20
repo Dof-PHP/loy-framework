@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Domain\__DOMAIN__\Listener__NAMESPACE__;
 
 use Dof\Framework\Listener;
-// use Domain\__DOMAIN__\Repository\__NAME__Repository;
+// use Domain\__DOMAIN__\Repository\SomeRepository;
 // use Domain\__DOMAIN__\Service\__NAME__;
 
 /**
@@ -13,17 +13,10 @@ use Dof\Framework\Listener;
  */
 class __NAME__ extends Listener
 {
-    // private $repository;
-    // private $service;
-
-//    public function __construct(SomeRepository $repository, __NAME__ $service)
-//    {
-//        $this->repository = $repository;
-//        $this->service = $service;
-//    }
-
     public function handle()
     {
+        // $repository = $this->di(SomeRepository::class);
+        // $service = __NAME__::init();
         // TODO: $this->event
     }
 }
