@@ -17,6 +17,9 @@ final class QueueManager
     const QUEUE_LOCKED = '__DOF_QUEUE_LOCKED';
     const QUEUE_FAILED = '__DOF_QUEUE_FAILED';
     const QUEUE_TIMEOUT = '__DOF_QUEUE_TIMEOUT';
+    const QUEUE_RESTART = '__DOF_QUEUE_RESTART';
+
+    const QUEUE_DRIVER = 'QUEUE_DRIVER';
 
     const SUPPORT_DRIVERS = [
         'redis' => Redis::class,
@@ -41,7 +44,7 @@ final class QueueManager
         }
 
         if (! $driver) {
-            $driver = ConfigManager::getDomainFinalEnvByNamespace($namespace, 'QUEUE_DRIVER');
+            $driver = ConfigManager::getDomainFinalEnvByNamespace($namespace, self::QUEUE_DRIVER);
         }
         if (! $driver) {
             exception('MissingDomainQueueDriver', compact('namespace'));
@@ -119,5 +122,10 @@ final class QueueManager
             default:
                 return [];
         }
+    }
+
+    public static function formatQueueName(string $queue, string $prefix = self::QUEUE_NORMAL) : string
+    {
+        return join(':', [$prefix, $queue]);
     }
 }

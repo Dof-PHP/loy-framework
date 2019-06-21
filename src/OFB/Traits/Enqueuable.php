@@ -35,7 +35,7 @@ trait Enqueuable
             return;
         }
 
-        $queue = join(':', [QueueManager::QUEUE_NORMAL, $queue]);
+        $queue = QueueManager::formatQueueName($queue);
 
         try {
             $queuable->enqueue($queue, $this);

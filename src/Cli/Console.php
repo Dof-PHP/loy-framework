@@ -166,15 +166,19 @@ class Console
         return $this;
     }
 
-    public function getOption(string $name, $default = null)
+    public function getOption(string $option, $default = null, bool $exception = false)
     {
-        $option = $this->options->get($name, $default);
+        $_option = $this->options->get($option, $default);
 
-        if (is_collection($option) && ($option->count() === 0)) {
-            return null;
+        if (is_collection($_option) && ($_option->count() === 0)) {
+            $_option = null;
         }
 
-        return $option;
+        if (is_null($_option) && $exception) {
+            $this->exception('MissingOption', compact('option'));
+        }
+        
+        return $_option;
     }
 
     /**

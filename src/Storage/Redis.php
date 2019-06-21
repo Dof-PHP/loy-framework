@@ -118,6 +118,39 @@ class Redis extends Storage implements Storable, Cachable, Queuable
         return $job ? unserialize($job) : null;
     }
 
+    public function setRestart(string $queue) : bool
+    {
+        $start = microtime(true);
+
+        $res = $this->getConnection()->set($queue, $start);
+
+        $this->appendCMD($start, 'set', $queue, $start);
+
+        return $res === true;
+    }
+
+    public function restart(string $queue)
+    {
+        $start = microtime(true);
+
+        $res = $this->getConnection()->del($queue);
+
+        $this->appendCMD($start, 'del', $queue);
+
+        return $res;
+    }
+
+    public function needRestart(string $queue) : bool
+    {
+        $start = microtime(true);
+
+        $res = $this->getConnection()->get($queue);
+
+        $this->appendCMD($start, 'get', $queue);
+
+        return false !== $res;
+    }
+
     private function appendCMD(float $start, string $cmd, ...$params)
     {
         $this->cmds[] = [

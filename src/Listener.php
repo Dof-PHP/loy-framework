@@ -23,7 +23,7 @@ abstract class Listener implements Job
     {
         $listener = static::class;
 
-        $async = ConfigManager::getDomainEnvByNamespace($listener, self::ASYNC_LISTENER, []);
+        $async = ConfigManager::getDomainEnvByNamespace($listener, self::LISTENER_ASYNC, []);
         if ((! $async) || (! array_key_exists($listener, $async))) {
             $this->execute();
             return;

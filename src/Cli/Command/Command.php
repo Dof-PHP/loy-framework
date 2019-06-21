@@ -10,6 +10,7 @@ use Dof\Framework\GWT;
 use Dof\Framework\Event;
 use Dof\Framework\Listener;
 use Dof\Framework\QueueManager;
+use Dof\Framework\Queue\Dispatcher as QueueDispatcher;
 use Dof\Framework\Doc\Generator as DocGen;
 use Dof\Framework\DDD\Storage;
 use Dof\Framework\DDD\ORMStorage;
@@ -1450,11 +1451,9 @@ PHP;
         if (! $event) {
             $console->exception('MissingEventClass');
         }
-
         if (! is_file($event)) {
             $console->exception('EventNotExists', compact('event'));
         }
-
         $_event = get_namespace_of_file($event, true);
         if (! $_event) {
             $console->exception('InvalidEventClass', compact('event', '_event'));
@@ -1462,25 +1461,30 @@ PHP;
         if (! is_subclass_of($_event, Event::class)) {
             $console->exception('InvalidEventClass', compact('event', '_event'));
         }
-        
-        $queue = (new $_event)->formatQueueName($_event);
+        $queue = (new $_event)->formatQueueName($_event, QueueManager::QUEUE_NORMAL);
         $domain = DomainManager::getKeyByNamespace($_event);
-        $queue = "--domain={$domain} --queue={$queue}";
+        $driver = ConfigManager::getDomainFinalEnvByNamespace(
+            $_event,
+            EVENT::EVENT_QUEUE_DRIVER,
+            ConfigManager::getDomainFinalEnvByNamespace($_event, QueueManager::QUEUE_DRIVER)
+        );
+        $_queue = "--domain={$domain} --driver={$driver} --queue={$queue}";
+        if ($queue === Event::DEFAULT_QUEUE) {
+            $console->success($_queue, true);
+        }
         $async = ConfigManager::getDomainEnvByNamespace($_event, Event::EVENT_ASYNC, []);
         if ((! $async) || (! array_key_exists($_event, $async))) {
-            $console->success($queue, true);
+            $console->success($_queue, true);
         }
-
         $partition = $async[$_event] ?? 0;
         if (! is_int($partition)) {
             $console->exception('InvalidAsyncEventPartitionInteger', compact('partition'));
         }
         if ($partition < 1) {
-            $console->success($queue, true);
+            $console->success($_queue, true);
         }
-
         for ($i = 0; $i < $partition; $i++) {
-            $console->success(join('_', [$queue, $i]));
+            $console->success(join('_', [$_queue, $i]));
         }
     }
 
@@ -1495,11 +1499,9 @@ PHP;
         if (! $listener) {
             $console->exception('MissingListenerClass');
         }
-
         if (! is_file($listener)) {
             $console->exception('ListenerNotExists', compact('listener'));
         }
-
         $_listener = get_namespace_of_file($listener, true);
         if (! $_listener) {
             $console->exception('InvalidListenerClass', compact('listener', '_listener'));
@@ -1507,25 +1509,136 @@ PHP;
         if (! is_subclass_of($_listener, Listener::class)) {
             $console->exception('InvalidListenerClass', compact('listener', '_listener'));
         }
-        
         $queue = (new $_listener)->formatQueueName($_listener);
         $domain = DomainManager::getKeyByNamespace($_listener);
-        $queue = "--domain={$domain} --queue={$queue}";
+        $driver = ConfigManager::getDomainFinalEnvByNamespace(
+            $_listener,
+            Listener::LISTENER_QUEUE_DRIVER,
+            ConfigManager::getDomainFinalEnvByNamespace($_listener, QueueManager::QUEUE_DRIVER)
+        );
+        $_queue = "--domain={$domain} --driver={$driver} --queue={$queue}";
+        if ($queue === Listener::DEFAULT_QUEUE) {
+            $console->success($_queue, true);
+        }
         $async = ConfigManager::getDomainEnvByNamespace($_listener, Listener::LISTENER_ASYNC, []);
         if ((! $async) || (! array_key_exists($_listener, $async))) {
-            $console->success($queue, true);
+            $console->success($_queue, true);
         }
-
         $partition = $async[$_listener] ?? 0;
         if (! is_int($partition)) {
             $console->exception('InvalidAsyncListenerPartitionInteger', compact('partition'));
         }
         if ($partition < 1) {
-            $console->success($queue, true);
+            $console->success($_queue, true);
+        }
+        for ($i = 0; $i < $partition; $i++) {
+            $console->success(join('_', [$_queue, $i]));
+        }
+    }
+
+    /**
+     * @CMD(queue.run)
+     * @Desc(Start a queue worker on a queue name of a domain)
+     * @Option(domain){notes=Domain name where the origin of queue name}
+     * @Option(driver){notes=Queue driver stores queue jobs}
+     * @Option(queue){notes=Queue name to listen}
+     * @Option(once){notes=Pop the last job of the queue and exit after that job finished}
+     * @Option(quiet){notes=Do not print any output to console}
+     * @Option(debug){notes=Queue dispatcher self as job worker}
+     * @Option(daemon){notes=Run queue workers as daemon, required restart if code updated&default=true}
+     * @Option(interval){notes=Seconds to waiting to re-check jobs if no jobs in current queue}
+     * @Option(timeout){notes=Max seconds allowed for each job worker to execute}
+     * @Option(try-times){notes=Max re-execute times when job failed}
+     * @Option(try-delay){notes=Seconds of time to wait for re-executing after job failed}
+     */
+    public function queueRun($console)
+    {
+        $domain = $console->getOption('domain', null, true);
+        $ns = array_flip(DomainManager::getNamespaces())[$domain] ?? $ns;
+        if (! $ns) {
+            $console->exception('InvalidDomainKey', compact('domain'));
         }
 
-        for ($i = 0; $i < $partition; $i++) {
-            $console->success(join('_', [$queue, $i]));
+        $driver = $console->getOption('driver', null);
+        $queue = $console->getOption('queue', null, true);
+
+        // Get a queuable instance first
+        $queuable = QueueManager::get($ns, $queue, $driver);
+        if (! $queuable) {
+            $console->exception('NoQueuableFoundInGivenDomainDriverAndName', compact(
+                'domain',
+                'driver',
+                'queue'
+            ));
         }
+
+        if ($console->hasOption('once')) {
+            $job = $queuable->dequeue(QueueManager::formatQueueName($queue, QueueManager::QUEUE_NORMAL));
+            if (! $job) {
+                $console->info('NoJobOnCurrentQueue');
+                $console->info(json_pretty(compact('domain', 'queue', 'driver')), true);
+            }
+
+            try {
+                $job->execute();
+            } catch (Throwable $e) {
+                $console->exception('JobExceptionFoundWhenOncing', compact('queue'), $e);
+            }
+
+            return $console->success('Done!', true);
+        }
+
+        $interval = (int) $console->getOption('interval', 3);
+        $timeout = (int) $console->getOption('timeout', 0);
+        $tryTimes = (int) $console->getOption('try-times', 0);
+        $tryDelay = (int) $console->getOption('try-delay', -1);
+
+        // Start a queue scheduler and looping jobs for workers on that queue
+        (new QueueDispatcher)
+            ->setQueuable($queuable)
+            ->setConsole($console)
+            ->setQueue($queue)
+            ->setQuiet($console->hasOption('quiet'))
+            ->setDebug($console->hasOption('debug'))
+            ->setDaemon($console->hasOption('daemon'))
+            ->setInterval($interval)
+            ->setTimeout($timeout)
+            ->setTryTimes($tryTimes)
+            ->setTryDelay($tryDelay)
+            ->looping();
+    }
+
+    /**
+     * @CMD(queue.restart)
+     * @Desc(Re-start a queue worker on a queue name of a domain)
+     * @Option(domain){notes=Domain name where the origin of queue name}
+     * @Option(driver){notes=Queue driver stores queue jobs}
+     * @Option(queue){notes=Queue name to restart}
+     */
+    public function queueRestart($console)
+    {
+        $domain = $console->getOption('domain', null, true);
+        $ns = array_flip(DomainManager::getNamespaces())[$domain] ?? $ns;
+        if (! $ns) {
+            $console->exception('InvalidDomainKey', compact('domain'));
+        }
+
+        $driver = $console->getOption('driver', null);
+        $queue = $console->getOption('queue', null, true);
+
+        // Get a queuable instance first
+        $queuable = QueueManager::get($ns, $queue, $driver);
+        if (! $queuable) {
+            $console->exception('NoQueuableFoundInGivenDomainDriverAndName', compact(
+                'domain',
+                'driver',
+                'queue'
+            ));
+        }
+
+        $_queue = QueueManager::formatQueueName($queue, QueueManager::QUEUE_RESTART);
+
+        $queuable->setRestart($_queue)
+            ? $console->success('Done!') : $console->fail('Failed');
     }
 }

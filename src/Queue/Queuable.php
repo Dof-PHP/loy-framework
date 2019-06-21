@@ -8,5 +8,11 @@ interface Queuable
 {
     public function enqueue(string $queue, Job $job);
 
-    public function dequeue(string $queue);
+    public function dequeue(string $queue) :? Job;
+
+    public function restart(string $queue);
+
+    public function setRestart(string $queue) : bool;
+
+    public function needRestart(string $queue) : bool;
 }
