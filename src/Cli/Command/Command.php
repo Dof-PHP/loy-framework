@@ -434,7 +434,7 @@ class Command
      */
     public function buildDocsModel($console)
     {
-        $save  = $console->getOption('save', 'tmp/dof-docs-data-model');
+        $save  = $console->getOption('save', ospath(Kernel::RUNTIME, DocGen::DOC_MODEL));
         $isabs = $console->getOption('absolute', 0);
         if (! $isabs) {
             $save = ospath(Kernel::getRoot(), $save);
@@ -454,7 +454,7 @@ class Command
      */
     public function buildDocsWrapin($console)
     {
-        $save  = $console->getOption('save', 'tmp/dof-docs-wrapin');
+        $save  = $console->getOption('save', ospath(Kernel::RUNTIME, DocGen::DOC_WRAPIN));
         $isabs = $console->getOption('absolute', 0);
         if (! $isabs) {
             $save = ospath(Kernel::getRoot(), $save);
@@ -474,7 +474,7 @@ class Command
      */
     public function buildDocsHttp($console)
     {
-        $save  = $console->getOption('save', 'tmp/dof-docs-http');
+        $save  = $console->getOption('save', ospath(Kernel::RUNTIME, DocGen::DOC_HTTP));
         $isabs = $console->getOption('absolute', 0);
         if (! $isabs) {
             $save = ospath(Kernel::getRoot(), $save);
@@ -494,7 +494,7 @@ class Command
      */
     public function buildDocsAll($console)
     {
-        $save  = $console->getOption('save', 'tmp/dof-docs-all');
+        $save  = $console->getOption('save', ospath(Kernel::RUNTIME, DocGen::DOC_ALL));
         $isabs = $console->getOption('absolute', 0);
         if (! $isabs) {
             $save = ospath(Kernel::getRoot(), $save);

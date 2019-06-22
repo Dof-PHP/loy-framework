@@ -14,6 +14,11 @@ use Dof\Framework\Doc\UI\GitBook;
 
 final class Generator
 {
+    const DOC_MODEL = 'docs-data-model';
+    const DOC_WRAPIN = 'docs-http-wrapin';
+    const DOC_HTTP = 'docs-http-port';
+    const DOC_ALL = 'docs-all';
+
     const SUPPORT_UI = [
         'gitbook' => GitBook::class,
     ];
