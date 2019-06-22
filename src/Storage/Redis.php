@@ -111,9 +111,9 @@ class Redis extends Storage implements Storable, Cachable, Queuable
     {
         $start = microtime(true);
 
-        $job = $this->getConnection()->rPop($queue);
+        $job = $this->getConnection()->lPop($queue);
 
-        $this->appendCMD($start, 'rPop', $queue);
+        $this->appendCMD($start, 'lPop', $queue);
 
         return $job ? unserialize($job) : null;
     }

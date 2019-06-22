@@ -15,6 +15,7 @@ final class QueueManager
 
     const QUEUE_NORMAL = '__DOF_QUEUE_NORMAL';
     const QUEUE_LOCKED = '__DOF_QUEUE_LOCKED';
+    const QUEUE_DELAY = '__DOF_QUEUE_DELAY';
     const QUEUE_FAILED = '__DOF_QUEUE_FAILED';
     const QUEUE_TIMEOUT = '__DOF_QUEUE_TIMEOUT';
     const QUEUE_RESTART = '__DOF_QUEUE_RESTART';

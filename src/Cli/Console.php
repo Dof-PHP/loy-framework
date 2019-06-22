@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework\Cli;
 
 use Throwable;
+use Closure;
 use Dof\Framework\Collection;
 
 class Console
@@ -67,6 +68,39 @@ class Console
     public function title(string $text)
     {
         $this->line($this->render($text, self::TITLE_COLOR));
+    }
+
+    public function progress(iterable $tasks, Closure $do)
+    {
+        $current = 1;
+        $total = count($tasks);
+        $output = [];
+
+        $this->info(sprintf("[%s] %s", microftime('T Y-m-d H:i:s'), "Progress Tasks: {$total}"));
+        sleep(1);
+
+        foreach ($tasks as $key => $task) {
+            $percent = ($current / $total) * 100;
+            $_percent = intval($percent);
+
+            $done = $this->render(str_repeat('*', $_percent), self::SUCCESS_COLOR);
+            $left = $this->render(str_repeat('·', (100 - $_percent)), self::INFO_COLOR);
+            printf("\r(%2d/%2d) [%-100s] (%01.2f%%)", $current, $total, $done.$left, $percent);
+
+            $output[] = get_buffer_string(function () use ($do, $key, $task) {
+                $do($key, $task);
+            });
+
+            ++$current;
+        }
+
+        $this->line();
+
+        foreach ($output as $item) {
+            $this->output($item);
+        }
+
+        $this->info(sprintf("[%s] %s", microftime('T Y-m-d H:i:s'), 'Progress Finished.'));
     }
 
     public function info(string $text, bool $exit = false)

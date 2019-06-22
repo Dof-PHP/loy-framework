@@ -1538,11 +1538,11 @@ PHP;
 
     /**
      * @CMD(queue.run)
-     * @Desc(Start a queue worker on a queue name of a domain)
+     * @Desc(Start a queue worker on a queue in a domain)
      * @Option(domain){notes=Domain name where the origin of queue name}
      * @Option(driver){notes=Queue driver stores queue jobs}
      * @Option(queue){notes=Queue name to listen}
-     * @Option(once){notes=Pop the last job of the queue and exit after that job finished}
+     * @Option(once){notes=Pop the first job of the queue and exit after that job finished}
      * @Option(quiet){notes=Do not print any output to console}
      * @Option(debug){notes=Queue dispatcher self as job worker}
      * @Option(daemon){notes=Run queue workers as daemon, required restart if code updated&default=true}

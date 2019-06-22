@@ -19,8 +19,8 @@ class Dispatcher
     private $quiet = true;
     private $debug = false;    // Do not fork process as job worker
 
-    /** @var bool: Run queue command in background as daemon process */
-    private $daemon = true;    // TODO
+    /** @var bool: Run queue command in background as daemon process (TODO) */
+    private $daemon = false;    // Need supervisor to restart if dispatcher process exit abnormally
 
     private $console;
     private $queuable;
@@ -71,21 +71,23 @@ class Dispatcher
                     continue;
                 }
 
-                // Child process
                 if ($worker === 0) {
+                    // Child process
                     $result = Worker::process($job, function ($e) {
                         $this->logging('JobExecuteException', parse_throwable($e));
                     });
                     exit(0);    // Exit normally as child process
                 }
 
-                // Parent process, waiting for child process
                 if ($worker > 0) {
+                    // Parent process, waiting for child process
                     // Wait until the child process finishes before continuing
-                    $stauts = null;
-                    pcntl_wait($status);
+                    $status = null;
+                    pcntl_waitpid($worker, $status);
 
                     if (pcntl_wifexited($status) !== true) {
+                        // Checks if  status code of child process represents a normal exit
+
                         $this->logging('JobFailedAbnormally', compact('status'));
                         // job failed
                         if (method_exists($job, 'onFailed')) {
@@ -96,6 +98,9 @@ class Dispatcher
                             }
                         }
                     } elseif (($code = pcntl_wexitstatus($status)) !== 0) {
+                        // Check the return code of a terminated child
+                        // pcntl_wexitstatus() is only useful if pcntl_wifexited() returned TRUE
+
                         $this->logging('JobFailedExitUnexpectedStatusCode', compact('code'));
                         if (method_exists($job, 'onFailed')) {
                             try {
@@ -105,6 +110,8 @@ class Dispatcher
                             }
                         }
                     }
+
+                    posix_kill($worker, SIGKILL);
 
                     $this->logging('ProcessedSuccessfully', ['job' => get_class($job)]);
                 }
