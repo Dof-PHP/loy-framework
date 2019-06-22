@@ -222,7 +222,8 @@ final class Kernel
         // 1. Check wrapin setting on route annotation first
         // 2. Check arguments annotations from route method and port properties
         try {
-            $params = Route::get('params.kv')->toArray();
+            $params = Route::get('params.kv');
+            $params = $params->count() > 0 ? $params->toArray() : null;
             $validator = $wrapin
                 ? WrapinManager::apply($wrapin, $params)
                 : WrapinManager::execute($arguments, Route::get('class'), $params);

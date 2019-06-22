@@ -148,7 +148,10 @@ final class WrapinManager
             $_key = null;    // The field name first find a non-null value in key list
             $keys = array_keys(($argument['COMPATIBLE'] ?? []));
             array_unshift($keys, $key);
-            $val  = self::match($keys, $_key, $params);
+            $val = self::match($keys, $_key, $params);
+            if (is_null($val)) {
+                $val = Request::match($keys, $_key);
+            }
             if (! is_null($val)) {
                 $data[$key] = $val;
             }
@@ -232,10 +235,10 @@ final class WrapinManager
         return $validator;
     }
 
-    public static function match(array $keys, string $_key = null, $data = null)
+    public static function match(array $keys, string &$_key = null, $data = null)
     {
         if (is_null($data)) {
-            return Request::match($keys, $_key);
+            return null;
         }
 
         foreach ($keys as $key) {

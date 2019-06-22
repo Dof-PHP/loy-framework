@@ -203,6 +203,13 @@ class MySQLBuilder
         return $this;
     }
 
+    public function between(string $column, $start, $end)
+    {
+        $this->where[] = [$column, 'BETWEEN', [$start, $end]];
+
+        return $this;
+    }
+
     public function gt(string $column, $value, bool $equal = true)
     {
         $operator = $equal ? '>=' : '>';
@@ -1112,6 +1119,12 @@ class MySQLBuilder
             $column = "`{$column}`";
             $operator = 'IN';
             $placeholder = "({$val})";
+        } elseif (ciin($operator, ['between', 'not between'])) {
+            list($start, $end) = $val;
+
+            $operator = strtoupper($operator);
+
+            return "({$column} {$operator} {$start} AND {$end})";
         } elseif (is_collection($val)) {
             $column = "`{$column}`";
             $type = $val->key ?? null;
