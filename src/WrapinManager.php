@@ -14,6 +14,7 @@ final class WrapinManager
     const RESERVE_KEYS = [
         'COMPATIBLE' => 1,
         'LOCATION' => 1,
+        'INROUTE' => 1,
         // 'WRAPIN'  => 1,
         '__ext__' => 1,
         'TITLE' => 1,

@@ -57,7 +57,7 @@ class __NAME__
      * @Title(Delete Resource __NAME__)
      * @Route({id})
      * @Verb(delete)
-     * @Argument(id){need:0&location=URL Path}
+     * @Argument(id){inroute}
      * @HeaderStatus(204){Deleted Success}
      * @Assembler(_)
      */
@@ -74,7 +74,7 @@ class __NAME__
      * @Title(Update Resource __NAME__)
      * @Route({id})
      * @Verb(put)
-     * @Argument(id){need:0&location=URL Path}
+     * @Argument(id){inroute}
      * @Argument(param1)
      */
     public function update(int $id, Update__NAME__ $service)
@@ -89,9 +89,9 @@ class __NAME__
 
     /**
      * @Title(Show Resource __NAME__ Detail)
-     * @Argument(id){need:0&location=URL Path}
      * @Route({id})
      * @Verb(get)
+     * @Argument(id){inroute}
      */
     public function show(int $id, Show__NAME__ $service)
     {

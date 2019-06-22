@@ -467,7 +467,10 @@ final class PortManager
                 'title' => $_doc['TITLE'] ?? null,
                 'notes' => $_doc['NOTES'] ?? null,
                 'default' => $_doc['DEFAULT'] ?? null,
-                'location' => self::formatDocParameterLocation($mimein, ($_doc['LOCATION'] ?? null)),
+                'location' => self::formatDocParameterLocation(
+                    $mimein,
+                    ($_doc['LOCATION'] ?? (array_key_exists('INROUTE', $_doc) ? 'route' : null))
+                ),
                 'compatibles' => $_doc['COMPATIBLE'] ?? [],
             ];
 
@@ -564,6 +567,10 @@ final class PortManager
     public static function formatDocParameterLocation(string $mimein = null, string $location = null) : array
     {
         if ($location) {
+            if (ci_equal($location, 'route')) {
+                return ['URL Path'];
+            }
+
             return [$location];
         }
 

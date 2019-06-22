@@ -222,9 +222,10 @@ final class Kernel
         // 1. Check wrapin setting on route annotation first
         // 2. Check arguments annotations from route method and port properties
         try {
+            $params = Route::get('params.kv')->toArray();
             $validator = $wrapin
-                ? WrapinManager::apply($wrapin)
-                : WrapinManager::execute($arguments, Route::get('class'));
+                ? WrapinManager::apply($wrapin, $params)
+                : WrapinManager::execute($arguments, Route::get('class'), $params);
 
             if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
                 $context = $fail->toArray();

@@ -280,7 +280,7 @@ class Request
     {
         return $this->getOrSet('uri', function () {
             $uri = $this->getUriRaw();
-            $uri = join('/', array_filter(explode('/', $uri)));
+            $uri = join('/', array_trim_from_string($uri, '/'));
 
             return $uri ?: '/';
         });
