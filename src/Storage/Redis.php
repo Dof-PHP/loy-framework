@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Storage;
 
+use Closure;
 use Dof\Framework\Collection;
 use Dof\Framework\TypeHint;
 use Dof\Framework\Queue\Job;
@@ -16,6 +17,8 @@ class Redis extends Storage implements Storable, Cachable, Queuable
 {
     /** @var array: Commands executed in the lifetime of this instance */
     private $cmds = [];
+
+    private $needdb = true;
     
     public function __call(string $method, array $params = [])
     {
@@ -37,19 +40,21 @@ class Redis extends Storage implements Storable, Cachable, Queuable
     {
         parent::getConnection();
 
-        $db = $this->annotations->meta->DATABASE ?? null;
-        if (is_null($db)) {
-            exception('MissingDatabaseInRedisAnnotations', uncollect($this->annotations->meta ?? []));
-        }
-        if (! TypeHint::isUInt($db)) {
-            exception('InvalidRedisDatabaseInAnnotations', [$db]);
-        }
+        if ($this->needdb) {
+            $db = $this->annotations->meta->DATABASE ?? null;
+            if (is_null($db)) {
+                exception('MissingDatabaseInRedisAnnotations', uncollect($this->annotations->meta ?? []));
+            }
+            if (! TypeHint::isUInt($db)) {
+                exception('InvalidRedisDatabaseInAnnotations', [$db]);
+            }
 
-        $db = TypeHint::convertToUint($db);
+            $db = TypeHint::convertToUint($db);
 
-        $start = microtime(true);
-        $this->connection->select($db);
-        $this->appendCMD($start, 'select', $db);
+            $start = microtime(true);
+            $this->connection->select($db);
+            $this->appendCMD($start, 'select', $db);
+        }
 
         return $this->connection;
     }
@@ -149,6 +154,21 @@ class Redis extends Storage implements Storable, Cachable, Queuable
         $this->appendCMD($start, 'get', $queue);
 
         return false !== $res;
+    }
+
+    public function multi(Closure $multi)
+    {
+        $start = microtime(true);
+        $res = $this->getConnection()->multi();
+        $this->appendCMD($start, 'multi');
+
+        $needdb = $this->needdb;
+        $this->needdb = false;
+        $multi($this);
+        $this->exec();
+        $this->needdb = $needdb;
+
+        return $this;
     }
 
     private function appendCMD(float $start, string $cmd, ...$params)

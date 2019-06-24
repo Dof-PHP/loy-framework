@@ -422,11 +422,26 @@ class Validator
         return (! is_null($value)) && ($value !== '');
     }
 
+    private function validateCiins(string $key, ...$list)
+    {
+        $value = $this->data[$key] ?? null;
+
+        if (is_null($value)) {
+            return false;
+        }
+
+        if (! is_array($value)) {
+            return false;
+        }
+
+        return ciins($value, $list);
+    }
+
     private function validateCiin(string $key, ...$list)
     {
         $value = $this->data[$key] ?? null;
 
-        return IS::ciin($value, $list);
+        return ciin($value, $list);
     }
 
     private function validateIn(string $key, ...$list)

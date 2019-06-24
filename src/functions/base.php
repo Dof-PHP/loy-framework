@@ -645,7 +645,7 @@ if (! function_exists('ci_equal')) {
     }
 }
 if (! function_exists('ciin')) {
-    function ciin($value, array $list) : bool
+    function ciin($value, array $list, bool $convert = true) : bool
     {
         if (! is_scalar($value)) {
             return false;
@@ -653,9 +653,29 @@ if (! function_exists('ciin')) {
 
         $value = strtolower((string) $value);
 
-        return in_array($value, array_map(function ($item) {
+        if ($convert) {
+            $list = array_map(function ($item) {
+                return strtolower((string) $item);
+            }, $list);
+        }
+
+        return in_array($value, $list);
+    }
+}
+if (! function_exists('ciins')) {
+    function ciins(array $value, array $list) : bool
+    {
+        $list = array_map(function ($item) {
             return strtolower((string) $item);
-        }, $list));
+        }, $list);
+
+        foreach ($value as $val) {
+            if (! ciin($val, $list, false)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 if (! function_exists('classname')) {

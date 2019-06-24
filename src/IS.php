@@ -6,6 +6,11 @@ namespace Dof\Framework;
 
 class IS
 {
+    public static function ciins(array $value, array $list) : bool
+    {
+        return ciins($value, $list);
+    }
+
     public static function ciin($value, array $list) : bool
     {
         return ciin($value, $list);
