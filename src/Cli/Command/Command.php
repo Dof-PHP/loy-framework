@@ -9,6 +9,7 @@ use Dof\Framework\Kernel;
 use Dof\Framework\GWT;
 use Dof\Framework\Event;
 use Dof\Framework\Listener;
+use Dof\Framework\Reflector;
 use Dof\Framework\QueueManager;
 use Dof\Framework\Queue\Dispatcher as QueueDispatcher;
 use Dof\Framework\Doc\Generator as DocGen;
@@ -102,6 +103,10 @@ class Command
             $console->line();
             $console->info('* Class: '.$class);
             $console->info('* Method: '.$method);
+
+            $reflector = Reflector::getClassMethod($class, $method);
+            $console->info('* File: '.($reflector['file'] ?? get_file_of_namespace($class)));
+            $console->info('* Line: '.($reflector['line'] ?? -1));
         } else {
             $console->line($console->render('Usage: php dof {COMMAND} [--options ...] [[--] parameters ...]', 'YELLOW'));
         }
@@ -824,13 +829,25 @@ class Command
     }
 
     /**
-     * @CMD(dm.add)
+     * @CMD(model.add)
      * @Desc(Add an data model class in a domain)
      * @Option(domain){notes=Domain name of model to be created}
      * @Option(model){notes=Name of data model to be created}
      * @Option(force){notes=Whether force recreate model when given model name exists}
      */
     public function addModel($console)
+    {
+        return $this->addDM($console);
+    }
+
+    /**
+     * @CMD(dm.add)
+     * @Desc(Add an data model class in a domain)
+     * @Option(domain){notes=Domain name of model to be created}
+     * @Option(model){notes=Name of data model to be created}
+     * @Option(force){notes=Whether force recreate model when given model name exists}
+     */
+    public function addDM($console)
     {
         $domain = $console->getOption('domain');
         if (! $domain) {

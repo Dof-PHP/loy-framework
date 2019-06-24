@@ -50,6 +50,8 @@ final class Reflector
             'declar'  => $namespace,
             'reflect' => $method->getDeclaringClass()->name,
             'doc' => $method->getDocComment(),
+            'file' => $method->getFileName(),
+            'line' => $method->getStartLine(),
             'modifiers' => Reflection::getModifierNames($method->getModifiers()),
         ];
 

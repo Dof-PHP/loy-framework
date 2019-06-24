@@ -34,7 +34,7 @@ class Console
      *
      * See: <http://blog.lenss.nl/2012/05/adding-colors-to-php-cli-script-output>
      */
-    private $colors = [
+    const COLORS = [
         'BLACK'  => '0;30',
         'BLUE'   => '0;34',
         'GREEN'  => '0;32',
@@ -70,37 +70,57 @@ class Console
         $this->line($this->render($text, self::TITLE_COLOR));
     }
 
-    public function progress(iterable $tasks, Closure $do)
+    public function progress(iterable $tasks, Closure $do, bool $outputProgress = false)
     {
         $current = 1;
         $total = count($tasks);
         $output = [];
 
-        $this->info(sprintf("[%s] %s", microftime('T Y-m-d H:i:s'), "Progress Tasks: {$total}"));
-        sleep(1);
+        $title = get_buffer_string(function () use ($total) {
+            $this->info(sprintf("[%s] %s", microftime('T Y-m-d H:i:s'), "Progress Tasks: {$total}"));
+        });
 
+        if (! $outputProgress) {
+            $this->output($title);
+        }
+
+        $_output = '';
         foreach ($tasks as $key => $task) {
             $percent = ($current / $total) * 100;
             $_percent = intval($percent);
 
             $done = $this->render(str_repeat('*', $_percent), self::SUCCESS_COLOR);
             $left = $this->render(str_repeat('·', (100 - $_percent)), self::INFO_COLOR);
-            printf("\r(%2d/%2d) [%-100s] (%01.2f%%)", $current, $total, $done.$left, $percent);
 
-            $output[] = get_buffer_string(function () use ($do, $key, $task) {
+            $__output = get_buffer_string(function () use ($do, $key, $task) {
                 $do($key, $task);
             });
+
+            if ($outputProgress) {
+                $_output .= $__output;
+                $this->clear($title);
+                $this->output($_output);
+                $this->line();
+            }
+
+            printf("\r(%d/%d) [%-100s] (%01.2f%%)", $current, $total, $done.$left, $percent);
 
             ++$current;
         }
 
         $this->line();
 
-        foreach ($output as $item) {
-            $this->output($item);
-        }
-
         $this->info(sprintf("[%s] %s", microftime('T Y-m-d H:i:s'), 'Progress Finished.'));
+    }
+
+    public function clear(string $output = null)
+    {
+        // See: <https://stackoverflow.com/questions/37774983/clearing-the-screen-by-printing-a-character>
+        printf("\033c");
+
+        if (! is_null($output)) {
+            $this->output($output);
+        }
     }
 
     public function info(string $text, bool $exit = false)
@@ -150,11 +170,11 @@ class Console
 
     public function render(string $text, string $color, bool $output = false) : ?string
     {
-        if (! isset($this->colors[$color])) {
+        if (! isset(self::COLORS[$color])) {
             $this->exception('ConsoleColorNotFound', compact('color'));
         }
 
-        $_color = $this->colors[$color];
+        $_color = self::COLORS[$color];
 
         $text = "\033[{$_color}m{$text}\033[0m";
         if ($output) {

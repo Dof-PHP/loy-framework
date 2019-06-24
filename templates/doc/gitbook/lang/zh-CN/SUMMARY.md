@@ -9,6 +9,11 @@
 * [接口错误码列表](errors.md)
 <?php endif ?>
 
+<?php foreach ($appendixes['global'] ?? [] as $appendix) : ?>
+<?php extract($appendix); ?>
+* [<?= $title ?>](<?= $href ?>)
+<?php endforeach ?>
+
 ----
 <?php endif ?>
 
@@ -19,7 +24,7 @@
 
 ## 附录
 
-<?php foreach ($appendixes as $appendix) : ?>
+<?php foreach ($appendixes['domain'] ?? [] as $appendix) : ?>
 <?php extract($appendix); ?>
 * [<?= $domain ?> - <?= $title ?>](<?= $href ?>)
 <?php endforeach ?>

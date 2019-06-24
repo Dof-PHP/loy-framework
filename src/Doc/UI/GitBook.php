@@ -282,13 +282,13 @@ class GitBook
             }
             $this->render($this->docError, $error, ['errors' => $this->errorData]);
             
-            $appendixes = $domain['appendixes'] ?? [];
-            if ($appendixes) {
-                $_appendixes = ospath($ver, '_appendixes');
-                if (! is_dir($_appendixes)) {
-                    mkdir($_appendixes, 0775, true);
-                }
-                foreach ($appendixes as &$appendix) {
+            $appendixesDomain = $domain['appendixes']['domain'] ?? [];
+            $_appendixes = ospath($ver, '_appendixes');
+            if (! is_dir($_appendixes)) {
+                mkdir($_appendixes, 0775, true);
+            }
+            if ($appendixesDomain) {
+                foreach ($appendixesDomain as &$appendix) {
                     if (! ($path = ($appendix['path'] ?? false))) {
                         exception('MissingAppendixDocFile');
                     }
@@ -308,9 +308,31 @@ class GitBook
                     $appendix['href'] = join(DIRECTORY_SEPARATOR, ['_appendixes', $key, $href]);
                 }
             }
+
+            $appendixesGlobal = $domain['appendixes']['global'] ?? [];
+            foreach ($appendixesGlobal as &$appendix) {
+                if (! ($path = ($appendix['path'] ?? false))) {
+                    exception('MissingAppendixDocFile');
+                }
+                if (! is_file($path)) {
+                    exception('AppendixDocFileNotExist', compact('path'));
+                }
+                if (! ($key = ($appendix['key'] ?? false))) {
+                    exception('MissingAppendixDocDomainKey');
+                }
+                $_key = ospath($_appendixes, $key);
+                if (! is_dir($_key)) {
+                    mkdir($_key, 0775, true);
+                }
+                $href = basename($path);
+                copy($path, ospath($_key, $href));
+
+                $appendix['href'] = join(DIRECTORY_SEPARATOR, ['_appendixes', $key, $href]);
+            }
+
             $this->render($this->summary, $summary, [
                 'tree' => $this->menuTree,
-                'appendixes' => $appendixes,
+                'appendixes' => ['domain' => $appendixesDomain, 'global' => $appendixesGlobal],
                 'errors' => true,
             ]);
 

@@ -9,6 +9,7 @@ use Dof\Framework\Facade\Annotation;
 final class ModelManager
 {
     const MODEL_DIR = 'Model';
+    // const REGEX = '#@([a-zA-z\d]+)\(([\s\S]*)\)(\{([\s\S]*)\})?#';
 
     private static $dirs = [];
     private static $models = [];
@@ -54,6 +55,7 @@ final class ModelManager
         }, $dirs);
 
         // Exceptions may thrown but let invoker to catch for different scenarios
+        // Annotation::setRegex(self::REGEX)->parseClassDirs(self::$dirs, function ($annotations) {
         Annotation::parseClassDirs(self::$dirs, function ($annotations) {
             if ($annotations) {
                 list($ofClass, $ofProperties, ) = $annotations;
