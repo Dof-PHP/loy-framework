@@ -226,8 +226,9 @@ final class IFRSN
                 continue;
             }
             $kvs = explode(':', $param);
+
             $cnt = count($kvs);
-            // If field  has only one pure value parameter
+            // If field has only one pure value parameter
             // return that parameter as value of the field key
             if ($cnt === 1) {
                 return $param;

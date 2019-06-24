@@ -12,6 +12,11 @@ cd ..
 
 GIT_DIR='__site/.git'
 if [ -d "$GIT_DIR" ]; then
+    cd __site
+    git add -A
+    git reset --hard HEAD 2>&1 > /dev/null
+    git pull origin master 2>&1 > /dev/null
+    cd ..
     mv $GIT_DIR git-tmp 2>&1 > /dev/null
 fi
 rm -rf __site 2>&1 > /dev/null
