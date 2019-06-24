@@ -71,19 +71,11 @@ class Dispatcher
                     continue;
                 }
 
-                if ($worker === 0) {
-                    // Child process
-                    $result = Worker::process($job, function ($e) {
-                        $this->logging('JobExecuteException', parse_throwable($e));
-                    });
-                    exit(0);    // Exit normally as child process
-                }
-
                 if ($worker > 0) {
                     // Parent process, waiting for child process
                     // Wait until the child process finishes before continuing
-                    $status = null;
-                    pcntl_waitpid($worker, $status);
+                    $status = $_status = null;
+                    pcntl_waitpid($worker, $status, WNOHANG);
 
                     if (pcntl_wifexited($status) !== true) {
                         // Checks if  status code of child process represents a normal exit
@@ -109,11 +101,18 @@ class Dispatcher
                                 $this->logging('JobOnFailedCallbackFailedWithBadCode', parse_throwable($e));
                             }
                         }
+                    } else {
+                        $this->logging('ProcessedSuccessfully', ['job' => get_class($job)]);
                     }
 
                     posix_kill($worker, SIGKILL);
-
-                    $this->logging('ProcessedSuccessfully', ['job' => get_class($job)]);
+                    pcntl_waitpid($worker, $_status);    // Avoid defunct process of parant
+                } elseif ($worker === 0) {
+                    // Child process
+                    $result = Worker::process($job, function ($e) {
+                        $this->logging('JobExecuteException', parse_throwable($e));
+                    });
+                    exit(0);    // Exit normally as child process
                 }
 
                 unset($worker);
