@@ -33,15 +33,18 @@ class Validator
     {
         foreach ($this->rules as $key => $rules) {
             // check if we need validate current parameters aginst rules first
-            $_rules = array_keys($rules);
             $val = $this->data[$key] ?? null;
             $noneed = is_null($val) || ('' === $val) || (is_array($val) && empty($val));
             $need = !$noneed;
             if ($noneed) {
-                foreach ($_rules as $_rule) {
+                foreach ($rules as $_rule => $_ext) {
+                    // Typehint to defined type
+                    if (ci_equal($_rule, 'TYPE') && ($type = $_ext[1] ?? null)) {
+                        $this->result[$key] = TypeHint::convert($val, $type, true);
+                    }
                     if (Validator::REQUIRE_RULES[strtolower($_rule)] ?? false) {
                         $need = true;
-                        break;
+                        // break;
                     }
                 }
             }
