@@ -324,6 +324,125 @@ class MySQLBuilder
         return $this;
     }
 
+    public function year(string $column, bool $ts = true)
+    {
+        $start = strtotime('last year January 1st');
+        $end = strtotime('this year January 1st') - 1;
+
+        if (! $ts) {
+            $start = date('Y-m-d 00:00:00', $start);
+            $end = date('Y-m-d 23:59:59', $end);
+        }
+
+        return $this->between($column, $start, $end);
+    }
+
+    public function month(string $column, bool $ts = true)
+    {
+        $start = date('Y-m-d 00:00:00', strtotime('first day of last month'));
+        $end = date('Y-m-d 23:59:59', strtotime('last day of last month'));
+
+        if ($ts) {
+            $start = strtotime($start);
+            $end = strtotime($end);
+        }
+
+        return $this->between($column, $start, $end);
+    }
+
+    public function week(string $column, bool $ts = true)
+    {
+        $start = date('Y-m-d 00:00:00', strtotime('this week'));
+        $end = date('Y-m-d 23:59:59', strtotime('last day of this week'));
+
+        if ($ts) {
+            $start = strtotime($start);
+            $end = strtotime($end);
+        }
+
+        return $this->between($column, $start, $end);
+    }
+
+    public function yesterday(string $column, bool $ts = true)
+    {
+        $yesterday = date('Y-m-d', strtotime('yesterday'));
+        $start = $yesterday.' 00:00:00';
+        $end = $yesterday.' 23:59:59';
+
+        if ($ts) {
+            $start = strtotime($start);
+            $end = strtotime($end);
+        }
+
+        return $this->between($column, $start, $end);
+    }
+
+    public function today(string $column, bool $ts = true)
+    {
+        $today = date('Y-m-d', strtotime('today'));
+        $start = $today.' 00:00:00';
+        $end = $today.' 23:59:59';
+
+        if ($ts) {
+            $start = strtotime($start);
+            $end = strtotime($end);
+        }
+
+        return $this->between($column, $start, $end);
+    }
+
+    public function timestamp(string $column, string $format, string $operator = '=')
+    {
+        $format = strtolower(trim($format));
+
+        switch ($format) {
+            // TODO
+            default:
+                $ts = strtotime($format);
+                break;
+        }
+
+        if (false === $ts) {
+            exception('BadTimestampStringFormat', compact('format', 'column', 'operator'));
+        }
+
+        if (ciin($operator, ['between', 'not between'])) {
+            $_ts = time();
+            $ts = $ts > $_ts ? [$_ts, $ts] : [$ts, $_ts];
+        }
+
+        $this->where[] = [$column, $operator, $ts];
+
+        return $this;
+    }
+
+    public function date(string $column, string $format, string $operator = '=')
+    {
+        $format = strtolower(trim($format));
+
+        switch ($format) {
+            // TODO
+            default:
+                $ts = strtotime($format);
+                break;
+        }
+
+        if (false === $ts) {
+            exception('BadTimestampStringFormat', compact('format', 'column', 'operator'));
+        }
+
+        if (ciin($operator, ['between', 'not between'])) {
+            $_ts = time();
+            $ts = $ts > $_ts
+                ? [date('Y-m-d H:i:s', $_ts), date('Y-m-d H:i:s', $ts)]
+                : [date('Y-m-d H:i:s', $ts), date('Y-m-d H:i:s', $_ts)];
+        }
+
+        $this->where[] = [$column, $operator, $ts];
+
+        return $this;
+    }
+
     /**
      * Alias a timestamp column with custom date format
      *
@@ -331,7 +450,7 @@ class MySQLBuilder
      * @param string $alias: Alias used to name the expression
      * @param string $format: Format used to convert timestamp to date string
      */
-    public function date(string $column, string $alias = null, string $format = null)
+    public function ts2date(string $column, string $alias = null, string $format = null)
     {
         $_format = $format ? ','.$this->origin->quote($format) : '';
 
@@ -1123,8 +1242,10 @@ class MySQLBuilder
             list($start, $end) = $val;
 
             $operator = strtoupper($operator);
+            $params[] = $start;
+            $params[] = $end;
 
-            return "({$column} {$operator} {$start} AND {$end})";
+            return "({$column} {$operator} ? AND ?)";
         } elseif (is_collection($val)) {
             $column = "`{$column}`";
             $type = $val->key ?? null;
