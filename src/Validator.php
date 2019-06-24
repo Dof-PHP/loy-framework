@@ -42,10 +42,14 @@ class Validator
                     // Typehint to defined type
                     if ($exists && ci_equal($_rule, 'TYPE') && ($type = ($_ext[1] ?? null))) {
                         if (! TypeHint::support($type)) {
-                            exception('UnSupportedTypeHint', compact('type'));
+                            exception('UnSupportedTypeHint', compact('key', 'val', 'type'));
                         }
 
-                        $this->result[$key] = TypeHint::convert($val, $type, true);
+                        try {
+                            $this->result[$key] = TypeHint::convert($val, $type, true);
+                        } catch (Throwable $e) {
+                            exception('TypeHintEmptyValueFailed', compact('tpye', 'key', 'val'), $e);
+                        }
                     }
                     if (self::REQUIRE_RULES[strtolower($_rule)] ?? false) {
                         $need = true;
