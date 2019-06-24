@@ -8,7 +8,7 @@ final class Curl
 {
     private $url = null;
     private $ch  = null;
-    private $notInCB   = false;
+    private $notInCB = false;
     private $urlencode = true;
     private $sendAsJson = false;
     private $sendAsXml  = false;
@@ -177,7 +177,7 @@ final class Curl
                 $query  = parse_url($this->url, PHP_URL_QUERY);
                 $params = is_array($this->params) ? http_build_query($this->params) : $this->params;
                 $params = $query ? '&'.$params : '?'.$params;
-                $params = $this->urlencode ? urlencode($params) : $params;
+                $params = $this->urlencode ? $params : urldecode($params);
                 $this->url .= $params;
             } else {
                 if (is_array($this->params)) {
@@ -212,7 +212,7 @@ final class Curl
         }
 
         if ($this->headers) {
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $this->encodeHeadersKV($this->headers));
+            curl_setopt($this->ch, CURLOPT_HTTPHEADER, $this->encodeHeadersKV($this->headers));
         }
         curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($this->ch, CURLOPT_HEADERFUNCTION, [$this, 'responseHeaderHandler']);
@@ -323,7 +323,7 @@ final class Curl
     {
         $res = [];
         foreach ($headers as $key => $value) {
-            $value = is_array() ? join(';', $value) : $value;
+            $value = is_array($value) ? join(';', $value) : $value;
             $res[] = "{$key}: {$value}";
         }
         return $res;
