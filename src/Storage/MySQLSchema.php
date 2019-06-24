@@ -41,6 +41,10 @@ class MySQLSchema
         if (! $table) {
             exception('TableNameNotSetOfStorage', [$this->storage]);
         }
+        $prefix = $meta['PREFIX'] ?? null;
+        if ($prefix) {
+            $table = "{$prefix}{$table}";
+        }
 
         return [$database, $table];
     }
