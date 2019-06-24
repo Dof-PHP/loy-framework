@@ -238,7 +238,7 @@ class MySQLSchema
                 $modify = "ALTER TABLE `{$db}`.`{$table}` MODIFY `{$column}` {$typeInCode} {$notnull} {$autoinc} {$default} {$comment};";
                 if ($this->dump) {
                     $this->sqls[] = $modify;
-                } else {
+                } elseif ($this->force) {
                     $this->mysql()->rawExec($modify);
                 }
             }
