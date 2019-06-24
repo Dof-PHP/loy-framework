@@ -16,4 +16,7 @@ class __NAME__ extends Assembler
 
     protected $assemblers = [
     ];
+
+    protected $recursive = [
+    ];
 }
