@@ -270,7 +270,7 @@ final class TypeHint
         return $val == $_val;
     }
 
-    public static function support(string $type = null) : bool
+    public static function support(string &$type = null) : bool
     {
         if (! $type) {
             return false;

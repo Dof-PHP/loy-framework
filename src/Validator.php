@@ -37,12 +37,17 @@ class Validator
             $noneed = is_null($val) || ('' === $val) || (is_array($val) && empty($val));
             $need = !$noneed;
             if ($noneed) {
+                $exists = array_key_exists($key, $this->data);
                 foreach ($rules as $_rule => $_ext) {
                     // Typehint to defined type
-                    if (ci_equal($_rule, 'TYPE') && ($type = $_ext[1] ?? null)) {
+                    if ($exists && ci_equal($_rule, 'TYPE') && ($type = ($_ext[1] ?? null))) {
+                        if (! TypeHint::support($type)) {
+                            exception('UnSupportedTypeHint', compact('type'));
+                        }
+
                         $this->result[$key] = TypeHint::convert($val, $type, true);
                     }
-                    if (Validator::REQUIRE_RULES[strtolower($_rule)] ?? false) {
+                    if (self::REQUIRE_RULES[strtolower($_rule)] ?? false) {
                         $need = true;
                         // break;
                     }
