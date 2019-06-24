@@ -19,7 +19,7 @@
 
 <?= $tree ?>
 
-<?php if ($appendixes ?? false) : ?>
+<?php if ($appendixes['domain'] ?? false) : ?>
 ----
 
 ## 附录
