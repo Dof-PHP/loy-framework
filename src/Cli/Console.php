@@ -6,6 +6,7 @@ namespace Dof\Framework\Cli;
 
 use Throwable;
 use Closure;
+use Dof\Framework\Container;
 use Dof\Framework\Collection;
 
 class Console
@@ -52,6 +53,11 @@ class Console
         'LIGHT_RED'    => '1;31',
         'LIGHT_PURPLE' => '1;35',
     ];
+
+    public function di(string $namespace)
+    {
+        return Container::di($namespace);
+    }
 
     public function line($line = null, int $cnt = 1)
     {
