@@ -23,7 +23,7 @@ abstract class Model
      */
     final public static function diff(Model $model1, Model $model2, array $nodiff = null) : ?array
     {
-        if (! $nodiff) {
+        if (is_null($nodiff)) {
             $nodiff = array_unique_merge($model1->nodiff(), $model2->nodiff());
         }
 

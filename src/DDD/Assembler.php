@@ -20,6 +20,12 @@ class Assembler
     protected $compatibles = [];
 
     /**
+     * Reference field recursive or not config rules
+     */
+    protected $recursive = [
+    ];
+
+    /**
      * Assemblers will be used when current assember has reference field
      *
      * @var array
@@ -109,18 +115,23 @@ class Assembler
         return $this->origin;
     }
 
-    final public function compatibles(): array
+    final public function compatibles(string $field = null)
     {
-        return $this->compatibles;
+        return $field ? ($this->compatibles[$field] ?? null) : $this->compatibles;
     }
 
-    final public function converters(): array
+    final public function converters(string $field = null)
     {
-        return $this->converters;
+        return $field ? ($this->converters[$field] ?? null) : $this->converters;
     }
 
-    final public function assemblers(): array
+    final public function recursive(string $field = null)
     {
-        return $this->assemblers;
+        return $field ? ($this->recursive[$field] ?? null) : $this->recursive;
+    }
+
+    final public function assemblers(string $field = null)
+    {
+        return $field ? ($this->assemblers[$field] ?? null) : $this->assemblers;
     }
 }

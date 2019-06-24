@@ -6,6 +6,8 @@ namespace Dof\Framework\Facade;
 
 use Dof\Framework\DDD\Assembler as AssembleObject;
 use Dof\Framework\DDD\Service;
+use Dof\Framework\DDD\Entity;
+use Dof\Framework\DDD\Model;
 use Dof\Framework\Container;
 use Dof\Framework\Paginator;
 
@@ -92,8 +94,13 @@ class Assembler
             $_fields = $ref;
             $_assembler = null;
             if ($assembler) {
-                $_assembler = $assembler->assemblers()[$name] ?? null;
-                if ($_assembler && ($_assembler === get_class($assembler))) {
+                $_assembler = $assembler->assemblers($name);
+                if (true
+                    && $_assembler
+                    && ($_assembler === get_class($assembler))
+                    && ($assembler->recursive($name))
+                    && self::diff($_result, $assembler->getOrigin())
+                ) {
                     $_fields = $fields;
                 }
             }
@@ -102,6 +109,30 @@ class Assembler
         }
 
         return $data;
+    }
+
+    /**
+     * Diff assemble origin
+     */
+    public static function diff($origin1, $origin2) : bool
+    {
+        if ((! is_object($origin1)) || (! is_object($origin2))) {
+            return true;
+        }
+        if (get_class($origin1) !== get_class($origin2)) {
+            return true;
+        }
+
+        if (($origin1 instanceof Entity) && ($origin2 instanceof Entity)) {
+            return $origin1->getPk() !== $origin2->getPk();
+        }
+
+        if (($origin1 instanceof Model) && ($origin2 instanceof Model)) {
+            // Diff All Properties of origins
+            return Model::diff($origin1, $origin2, []) ? true : false;
+        }
+
+        return $origin1 != $origin2;
     }
 
     public static function matchValue(string $key, $result)
