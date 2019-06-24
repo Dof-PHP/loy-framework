@@ -25,11 +25,6 @@ abstract class Storage implements Repository
         return new static;
     }
 
-    final public static function init()
-    {
-        return new static;
-    }
-
     final public function storage()
     {
         return $this->__storage;

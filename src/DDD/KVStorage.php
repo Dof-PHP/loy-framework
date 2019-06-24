@@ -24,6 +24,6 @@ class KVStorage extends Storage
             exception('MissingKeyOfKVStorage', ['kv-storage' => static::class]);
         }
 
-        return sprintf($key, ...$params);
+        return $params ? sprintf($key, ...$params) : $key;
     }
 }
