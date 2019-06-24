@@ -935,6 +935,47 @@ class Command
     }
 
     /**
+     * @CMD(pipe.add)
+     * @Desc(Add a pipe class in a domain)
+     * @Option(domain){notes=Domain name of pipe to be created}
+     * @Option(pipe){notes=Name of pipe to be created}
+     * @Option(force){notes=Whether force recreate pipe when given pipe name exists}
+     */
+    public function addPipe($console)
+    {
+        $domain = $console->getOption('domain', null, true);
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $console->exception('DomainNotExists', [$domain]);
+        }
+        $name = $console->getOption('pipe', null, true);
+
+        $class = ospath($path, PortManager::PIPE_DIR, "{$name}.php");
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('PipeAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'pipe.tpl');
+        if (! is_file($template)) {
+            $console->exception('PipeClassTemplateNotExist', [$template]);
+        }
+
+        $pipe = file_get_contents($template);
+        $pipe = str_replace('__DOMAIN__', $domain, $pipe);
+        $pipe = str_replace('__NAMESPACE__', path2ns($name), $pipe);
+        $pipe = str_replace('__NAME__', basename($name), $pipe);
+
+        save($class, $pipe);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $console->line(
+            $console->render('Created Pipe: ', $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
+    }
+
+    /**
      * @CMD(storage.add.orm)
      * @Desc(Add an orm storage class in a domain)
      * @Option(domain){notes=Domain name of orm storage to be created}
