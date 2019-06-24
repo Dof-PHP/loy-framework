@@ -6,7 +6,6 @@ namespace Dof\Framework\DDD;
 
 use Dof\Framework\StorageManager;
 use Dof\Framework\RepositoryManager;
-use Dof\Framework\Paginator;
 use Dof\Framework\Collection;
 use Dof\Framework\TypeHint;
 

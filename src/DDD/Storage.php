@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dof\Framework\DDD;
 
 use Throwable;
+use Dof\Framework\Paginator;
 use Dof\Framework\StorageManager;
 use Dof\Framework\RepositoryManager;
 
@@ -79,7 +80,7 @@ abstract class Storage implements Repository
             return $result;
         }
 
-        if (! is_array($result)) {
+        if (! is_index_array($result)) {
             exception('UnConvertableStorageOrigin', compact('result', 'storage'));
         }
 
