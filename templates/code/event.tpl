@@ -8,7 +8,6 @@ use Dof\Framework\Event;
 
 /**
  * @Title(Event Name)
- * @Sync(1)
  * @_Listener(Domain\__DOMAIN__\Listener\ActionOn__NAME__)
  */
 class __NAME__ extends Event

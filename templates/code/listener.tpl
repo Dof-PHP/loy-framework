@@ -13,7 +13,7 @@ use Dof\Framework\Listener;
  */
 class __NAME__ extends Listener
 {
-    public function handle()
+    public function execute()
     {
         // $repository = $this->di(SomeRepository::class);
         // $service = __NAME__::init();
