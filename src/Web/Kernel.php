@@ -240,7 +240,7 @@ final class Kernel
                 Response::error(400, ERR::WRAPIN_VALIDATE_FAILED, $context, Route::get('class'));
             }
 
-            Port::getInstance()->argument = collect($validator->getResult());
+            Port::getInstance()->argument = collect($validator->getResult(), null, false);
         } catch (Throwable $e) {
             Kernel::throw(ERR::REQEUST_PARAMETER_VALIDATION_ERROR, compact('wrapin'), 500, $e, Route::get('class'));
         }
