@@ -126,6 +126,13 @@ class MySQLBuilder
         return $this;
     }
 
+    public function orin(string $column, $value)
+    {
+        $this->or[] = [$column, 'IN', $value];
+
+        return $this;
+    }
+
     public function in(string $column, $value)
     {
         $this->where[] = [$column, 'IN', $value];
