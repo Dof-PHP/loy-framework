@@ -14,6 +14,8 @@ abstract class Service
     /** @var array: A config map for custom exception */
     protected $__errors = [];
 
+    private $__singleton__ = [];
+
     abstract public function execute();
 
     final public function error(array $error, int $status = null)
@@ -60,6 +62,21 @@ abstract class Service
         $context['__errors'] = $this->__errors;
 
         exception(self::EXCEPTION_NAME, compact('message', 'context'));
+    }
+
+    final public function single(string $namespace)
+    {
+        $single = $this->__singleton__[$namespace] ?? null;
+        if ($single) {
+            return $single;
+        }
+
+        return $this->__singleton__[$namespace] = Container::di($namespace);
+    }
+
+    final public function di(string $namespace, bool $single = true)
+    {
+        return $single ? $this->single($namespace) : Container::di($namespace);
     }
 
     final public static function new()

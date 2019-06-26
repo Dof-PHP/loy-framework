@@ -501,7 +501,7 @@ if (! function_exists('array_stringify_main')) {
     }
 }
 if (! function_exists('array2code')) {
-    function array2code(array $data, string $path)
+    function array2code(array $data, string $path, bool $strip = true)
     {
         $code = array_stringify($data);
         $code = <<<ARR
@@ -510,6 +510,9 @@ if (! function_exists('array2code')) {
 return {$code};\n
 ARR;
         file_put_contents($path, $code);
+        if ($strip) {
+            file_put_contents($path, php_strip_whitespace($path));
+        }
     }
 }
 if (! function_exists('array_append_dynamic')) {

@@ -35,6 +35,7 @@ class __NAME__
      */
     public function action(Action__NAME__ $service)
     {
+        // extract(pargvs());
         // $service->error(ERR::_, 500);
 
         return $service
