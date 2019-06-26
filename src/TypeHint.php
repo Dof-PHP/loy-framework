@@ -44,6 +44,14 @@ final class TypeHint
             return (array) $val->toArray();
         }
 
+        if (is_array($val)) {
+            return $val;
+        }
+
+        if (is_string($val) && ($val === '')) {
+            return [];
+        }
+
         return (array) $val;
     }
 
