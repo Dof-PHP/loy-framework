@@ -39,7 +39,7 @@ class __NAME__
     /**
      * @Title(Create Resource __NAME__)
      * @Route(/)
-     * @Verb(post)
+     * @Verb(POST)
      * @Argument(param1)
      * @HeaderStatus(201){Created Success}
      */
@@ -56,7 +56,7 @@ class __NAME__
     /**
      * @Title(Delete Resource __NAME__)
      * @Route({id})
-     * @Verb(delete)
+     * @Verb(DELETE)
      * @Argument(id){inroute}
      * @HeaderStatus(204){Deleted Success}
      * @Assembler(_)
@@ -73,7 +73,7 @@ class __NAME__
     /**
      * @Title(Update Resource __NAME__)
      * @Route({id})
-     * @Verb(put)
+     * @Verb(PUT)
      * @Argument(id){inroute}
      * @Argument(param1)
      */
@@ -90,7 +90,7 @@ class __NAME__
     /**
      * @Title(Show Resource __NAME__ Detail)
      * @Route({id})
-     * @Verb(get)
+     * @Verb(GET)
      * @Argument(id){inroute}
      */
     public function show(int $id, Show__NAME__ $service)
@@ -101,7 +101,7 @@ class __NAME__
     /**
      * @Title(List Resource __NAME__ with Pagination)
      * @Route(/)
-     * @Verb(get)
+     * @Verb(GET)
      * @PipeIn(Paginate)
      * @WrapOut(Dof\Framework\OFB\Wrapper\Pagination)
      */

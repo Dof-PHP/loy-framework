@@ -30,7 +30,7 @@ class __NAME__
      * @Title(Port Title)
      * @SubTitle(Port SubTitle)
      * @Route(/)
-     * @Verb(post)
+     * @Verb(POST)
      * @Argument(param1)
      */
     public function action(Action__NAME__ $service)

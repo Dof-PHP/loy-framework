@@ -267,10 +267,9 @@ class Validator
             return false;
         }
 
-        $val = array_unique(array_filter($val));
-        $_val = array_filter($val, function ($val) {
+        $_val = array_unique(array_filter($val, function ($val) {
             return TypeHint::isPint($val);
-        });
+        }));
         if (count($_val) !== count($val)) {
             return false;
         }

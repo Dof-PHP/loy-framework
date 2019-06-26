@@ -317,6 +317,13 @@ class MySQLBuilder
         return $this;
     }
 
+    public function orInRaw(string $raw, $value)
+    {
+        $this->orRaw[] = [$raw, 'INRAW', $value];
+
+        return $this;
+    }
+
     public function orRaw(string $raw, $value, string $operator = '=')
     {
         $this->orRaw[] = [$raw, $operator, $value];
