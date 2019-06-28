@@ -7,7 +7,6 @@ namespace Dof\Framework\Storage;
 use PDO;
 use Throwable;
 use Closure;
-use Dof\Framework\Collection;
 use Dof\Framework\TypeHint;
 
 class MySQL extends Storage implements Storable
@@ -308,7 +307,7 @@ class MySQL extends Storage implements Storable
         try {
             $connection->beginTransaction();
 
-            $transaction();
+            $transaction($this);
 
             $connection->commit();
         } catch (Throwable $e) {

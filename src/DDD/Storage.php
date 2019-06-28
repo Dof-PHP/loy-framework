@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\DDD;
 
+use Closure;
 use Throwable;
 use Dof\Framework\Paginator;
 use Dof\Framework\StorageManager;
@@ -25,6 +26,11 @@ abstract class Storage implements Repository
     final public static function new()
     {
         return new static;
+    }
+
+    final public function transaction(Closure $transaction)
+    {
+        $this->__storage->transaction($transaction);
     }
 
     final public function storage()

@@ -156,6 +156,11 @@ class Redis extends Storage implements Storable, Cachable, Queuable
         return false !== $res;
     }
 
+    public function transaction(Closure $transaction)
+    {
+        return $this->multi($transaction);
+    }
+
     public function multi(Closure $multi)
     {
         $start = microtime(true);
