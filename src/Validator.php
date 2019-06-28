@@ -267,16 +267,10 @@ class Validator
             return false;
         }
 
-        $_val = array_unique(array_filter($val, function ($val) {
-            return TypeHint::isPint($val);
-        }));
+        $_val = id_array($val);
         if (count($_val) !== count($val)) {
             return false;
         }
-
-        array_walk($val, function (&$id) {
-            $id = intval($id);
-        });
 
         // Avoid emtpy array be collected
         $this->result[$key] = ($val === []) ? null : $val;
@@ -291,19 +285,10 @@ class Validator
             return false;
         }
 
-        $val = array_unique(array_filter(array_trim_from_string($val, ',')));
-
-        $_val = array_filter($val, function ($val) {
-            return TypeHint::isPint($val);
-        });
-
+        $_val = id_list($val);
         if (count($_val) !== count($val)) {
             return false;
         }
-
-        array_walk($val, function (&$id) {
-            $id = intval($id);
-        });
 
         // Avoid emtpy array be collected
         $this->result[$key] = ($val === []) ? null : $val;

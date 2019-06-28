@@ -473,3 +473,37 @@ if (! function_exists('parse_service_exception')) {
         return [$message, $context];
     }
 }
+if (! function_exists('id_array')) {
+    function id_array(array $array = null) : array
+    {
+        if (! $array) {
+            return [];
+        }
+
+        $ids = array_unique(array_filter($array, function ($val) {
+            return \Dof\Framework\TypeHint::isPint($val);
+        }));
+
+        array_walk($ids, function (&$id) {
+            $id = intval($id);
+        });
+
+        return $ids;
+    }
+}
+if (! function_exists('id_list')) {
+    function id_list(string $list)
+    {
+        $ids = array_unique(array_filter(array_trim_from_string($list, ',')));
+
+        array_filter($ids, function ($id) {
+            return TypeHint::isPint($id);
+        });
+
+        array_walk($ids, function (&$id) {
+            $id = intval($id);
+        });
+
+        return $ids;
+    }
+}

@@ -6,6 +6,7 @@ namespace Dof\Framework\Storage;
 
 use PDO;
 use Throwable;
+use Closure;
 use Dof\Framework\Collection;
 use Dof\Framework\TypeHint;
 
@@ -297,6 +298,21 @@ class MySQL extends Storage implements Storable
             case 'string':
             default:
                 return PDO::PARAM_STR;
+        }
+    }
+
+    public function transaction(Closure $transaction)
+    {
+        $connection = $this->getConnection();
+
+        try {
+            $connection->beginTransaction();
+
+            $transaction();
+
+            $connection->commit();
+        } catch (Throwable $e) {
+            $connection->rollBack();
         }
     }
 
