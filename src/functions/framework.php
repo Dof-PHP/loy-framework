@@ -480,9 +480,9 @@ if (! function_exists('id_array')) {
             return [];
         }
 
-        $ids = array_unique(array_filter($array, function ($val) {
+        $ids = array_filter($array, function ($val) {
             return \Dof\Framework\TypeHint::isPint($val);
-        }));
+        });
 
         array_walk($ids, function (&$id) {
             $id = intval($id);
@@ -494,7 +494,7 @@ if (! function_exists('id_array')) {
 if (! function_exists('id_list')) {
     function id_list(string $list)
     {
-        $ids = array_unique(array_filter(array_trim_from_string($list, ',')));
+        $ids = array_filter(array_trim_from_string($list, ','));
 
         array_filter($ids, function ($id) {
             return TypeHint::isPint($id);

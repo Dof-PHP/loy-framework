@@ -273,7 +273,7 @@ class Validator
         }
 
         // Avoid emtpy array be collected
-        $this->result[$key] = ($val === []) ? null : $val;
+        $this->result[$key] = ($val === []) ? null : array_unique($val);
 
         return true;
     }
@@ -291,7 +291,7 @@ class Validator
         }
 
         // Avoid emtpy array be collected
-        $this->result[$key] = ($val === []) ? null : $val;
+        $this->result[$key] = ($val === []) ? null : array_unique($val);
 
         return true;
     }
