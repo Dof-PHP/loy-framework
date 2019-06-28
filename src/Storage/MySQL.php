@@ -305,11 +305,15 @@ class MySQL extends Storage implements Storable
         $connection = $this->getConnection();
 
         try {
-            $connection->beginTransaction();
+            $this->appendSQLAfterExecute(function () use ($connection) {
+                $connection->beginTransaction();
+            });
 
             $transaction($this);
 
-            $connection->commit();
+            $this->appendSQLAfterExecute(function () use ($connection) {
+                $connection->commit();
+            });
         } catch (Throwable $e) {
             $connection->rollBack();
         }
@@ -342,6 +346,15 @@ class MySQL extends Storage implements Storable
     public function showTableLocks()
     {
         return $this->get('SHOW OPEN TABLES WHERE IN_USE >= 1');
+    }
+
+    private function appendSQLAfterExecute(Closure $execute, string $sql, array $params = null)
+    {
+        $start = microtime(true);
+
+        $execute();
+
+        return $this->appendSQL($sql, $start, $params);
     }
 
     private function appendSQL(string $sql, $start, array $params = null)
