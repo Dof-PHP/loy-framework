@@ -534,19 +534,21 @@ final class PortManager
         }
 
         self::$docs[$_version]['main'][$domainKey] = $docs;
-        $appendixes = [];
-        $appendixesGlobal = ConfigManager::getDomain('docs.appendixes', []);
-        if ($appendixesGlobal) {
-            $appendixes['global'] = self::formatDocAppendixes(
-                $appendixesGlobal,
-                '__global__',
-                '',
-                Kernel::getRoot()
-            );
+        $appendixes = self::$docs[$_version]['appendixes'] ?? [];
+        if (! ($appendixes['global'] ?? false)) {
+            $appendixesGlobal = ConfigManager::getDomain('docs.appendixes', []);
+            if ($appendixesGlobal) {
+                $appendixes['global'] = self::formatDocAppendixes(
+                    $appendixesGlobal,
+                    '__global__',
+                    '',
+                    Kernel::getRoot()
+                );
+            }
         }
         $appendixesDomain = ConfigManager::getDomainDomainByNamespace($class, 'docs.appendixes', []);
         if ($appendixesDomain) {
-            $appendixes['domain'] = self::formatDocAppendixes(
+            $appendixes['domain'][$domainKey] = self::formatDocAppendixes(
                 $appendixesDomain,
                 $domainKey,
                 $domainTitle,

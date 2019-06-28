@@ -287,27 +287,35 @@ class GitBook
             if (! is_dir($_appendixes)) {
                 mkdir($_appendixes, 0775, true);
             }
-            if ($appendixesDomain) {
-                foreach ($appendixesDomain as &$appendix) {
-                    if (! ($path = ($appendix['path'] ?? false))) {
-                        exception('MissingAppendixDocFile');
-                    }
-                    if (! is_file($path)) {
-                        exception('AppendixDocFileNotExist', compact('path'));
-                    }
-                    if (! ($key = ($appendix['key'] ?? false))) {
-                        exception('MissingAppendixDocDomainKey');
-                    }
-                    $_key = ospath($_appendixes, $key);
-                    if (! is_dir($_key)) {
-                        mkdir($_key, 0775, true);
-                    }
-                    $href = basename($path);
-                    copy($path, ospath($_key, $href));
 
-                    $appendix['href'] = join(DIRECTORY_SEPARATOR, ['_appendixes', $key, $href]);
+            $_appendixesDomain = [];
+            if ($appendixesDomain) {
+                foreach ($appendixesDomain as $__domain) {
+                    foreach ($__domain as $appendix) {
+                        if (! ($path = ($appendix['path'] ?? false))) {
+                            exception('MissingAppendixDocFile');
+                        }
+                        if (! is_file($path)) {
+                            exception('AppendixDocFileNotExist', compact('path'));
+                        }
+                        if (! ($key = ($appendix['key'] ?? false))) {
+                            exception('MissingAppendixDocDomainKey');
+                        }
+                        $_key = ospath($_appendixes, $key);
+                        if (! is_dir($_key)) {
+                            mkdir($_key, 0775, true);
+                        }
+                        $href = basename($path);
+                        copy($path, ospath($_key, $href));
+
+                        $appendix['href'] = join(DIRECTORY_SEPARATOR, ['_appendixes', $key, $href]);
+
+                        $_appendixesDomain[] = $appendix;
+                    }
                 }
             }
+
+            unset($appendix);
 
             $appendixesGlobal = $domain['appendixes']['global'] ?? [];
             foreach ($appendixesGlobal as &$appendix) {
@@ -332,7 +340,7 @@ class GitBook
 
             $this->render($this->summary, $summary, [
                 'tree' => $this->menuTree,
-                'appendixes' => ['domain' => $appendixesDomain, 'global' => $appendixesGlobal],
+                'appendixes' => ['domain' => $_appendixesDomain, 'global' => $appendixesGlobal],
                 'errors' => true,
             ]);
 
