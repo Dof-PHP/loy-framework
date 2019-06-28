@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Dof\Framework\Doc\UI;
 
 use Throwable;
+use Dof\Framework\ConfigManager;
+use Dof\Framework\Kernel;
 
 class GitBook
 {
@@ -361,7 +363,33 @@ class GitBook
         $this->buildHttp(false);
         $this->buildWrapin(false);
         $this->buildModel(false);
+        $this->buildAssets();
         $this->publish();
+    }
+
+    private function buildAssets()
+    {
+        $assets = ConfigManager::getDomain('docs.assets');
+        if (! $assets) {
+            return;
+        }
+
+        foreach ($assets as $asset) {
+            $path = ospath(Kernel::getRoot(), $asset);
+            if (! is_file($path)) {
+                exception('InvalidDocAssetsPath', compact('path', 'asset'));
+            }
+
+            $arr = array_trim_from_string($asset, DIRECTORY_SEPARATOR);
+            unset($arr[0]);
+            $_asset = ospath($this->output, '__assets', $arr);
+            $_dir = dirname($_asset);
+            if (! is_dir($_dir)) {
+                mkdir($_dir, 0775, true);
+            }
+
+            copy($path, $_asset);
+        }
     }
 
     private function publish()

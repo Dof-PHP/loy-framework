@@ -25,6 +25,10 @@ rm -rf __site 2>&1 > /dev/null
 
 gitbook build <?= $version ?> __site/<?= $version ?>
 
+if [ -d "__assets" ]; then
+    cp -r __assets __site/<?= $version ?> 2>&1 > /dev/null
+fi
+
 <?php endforeach ?>
 
 cp index.html __site
