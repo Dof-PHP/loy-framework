@@ -571,12 +571,21 @@ class MySQLBuilder
     /**
      * Get id list only by given conditions
      */
-    public function ids() : array
+    public function ids()
     {
-        $this->select = ['id'];
+        return $this->column('id', false);
+    }
+
+    public function column(string $column, bool $unique = true)
+    {
+        $this->select = [$column];
         $res = $this->get();
 
-        return $res ? array_column($res, 'id') : [];
+        if ($this->sql) {
+            return $res;
+        }
+
+        return $res ? array_unique(array_column($res, $column)) : [];
     }
 
     public function count() : int
