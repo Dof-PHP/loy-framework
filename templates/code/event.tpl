@@ -8,6 +8,7 @@ use Dof\Framework\Event;
 
 /**
  * @Title(Event Name)
+ * @Standalone(0)
  * @_Listener(Domain\__DOMAIN__\Listener\ActionOn__NAME__)
  */
 class __NAME__ extends Event
