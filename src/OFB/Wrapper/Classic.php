@@ -16,7 +16,7 @@ class Classic
         return [
             '__DATA__' => 'data',
             'code' => 0,
-            'info' => 'ok',
+            '__INFO__' => 'info',
             'more',
         ];
     }

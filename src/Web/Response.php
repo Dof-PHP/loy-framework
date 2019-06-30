@@ -250,9 +250,9 @@ class Response
         return $this;
     }
 
-    public function getWraperr(string $key)
+    public function getWraperr(string $key, $default = null)
     {
-        return $this->wrappers['err'][$key] ?? null;
+        return $this->wrappers['err'][$key] ?? $default;
     }
 
     public function addWraperr(string $key, $value)
@@ -262,9 +262,9 @@ class Response
         return $this;
     }
 
-    public function getWrapout(string $key)
+    public function getWrapout(string $key, $default = null)
     {
-        return $this->wrappers['out'][$key] ?? null;
+        return $this->wrappers['out'][$key] ?? $default;
     }
 
     public function addWrapout(string $key, $value)
@@ -274,14 +274,13 @@ class Response
         return $this;
     }
 
-    public function getWrapper(string $key, string $type)
+    public function getWrapper(string $key, string $type, $default = null)
     {
-        $tyep = strtolower($type);
-        if (! in_array($type, ['err', 'out'])) {
+        if (! ciin($type, ['err', 'out'])) {
             return null;
         }
 
-        return $this->wrappers[$type][$key] ?? null;
+        return $this->wrappers[$type][$key] ?? $default;
     }
 
     public function __descruct()

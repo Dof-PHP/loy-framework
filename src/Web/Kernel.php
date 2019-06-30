@@ -407,16 +407,20 @@ final class Kernel
      */
     private static function packing($result = null)
     {
-        $isError = Response::hasError();
+        $hasError = Response::hasError();
         $wrapout = Port::get('wrapout');
         $wraperr = Port::get('wraperr');
-        $wrapper = $isError ? wrapper($wraperr, 'err') : wrapper($wrapout, 'out');
+        $wrapper = $hasError ? wrapper($wraperr, 'err') : wrapper($wrapout, 'out');
 
         if ((! $wrapper) || (! is_array($wrapper))) {
             return $result;
         }
 
-        return $isError ? Response::wraperr($result, $wrapper) : Response::wrapout($result, $wrapper);
+        if ($hasError) {
+            return Response::wraperr($result, $wrapper);
+        }
+
+        return Response::wrapout($result, $wrapper);
     }
 
     public static function throwIfService(Throwable $e, string $domain, Closure $ifNot)

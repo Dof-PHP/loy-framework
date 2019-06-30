@@ -19,6 +19,8 @@ class ResponseSupport
             return $result->send();
         }
 
+        $response->addWrapout('info', $port->infook);
+
         if ($result instanceof Service) {
             return $result->execute();
         }

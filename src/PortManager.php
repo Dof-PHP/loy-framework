@@ -272,7 +272,6 @@ final class PortManager
             exception('MissingPortMethodTitle', compact('class', 'method'));
         }
         $subtitle = $attrs['SUBTITLE'] ?? null;
-        $remark = $attrs['REMARK'] ?? ($attrs['NOTES'] ?? null);
         $auth = $attrs['AUTH'] ?? ($docClass['AUTH'] ?? '0');
 
         $domainTitle   = ConfigManager::getDomainByNamespace($class, 'domain.title', $domainKey);
@@ -287,6 +286,8 @@ final class PortManager
         $globalHeaderStatus = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.headerstatus', []);
 
         $defaultVersion = $docClass['VERSION'] ?? null;
+        $defaultInfoOK  = $docClass['INFOOK']  ?? null;
+        $defaultRemark  = $docClass['REMARK']  ?? ($docClass['NOTES'] ?? null);
         $defaultStatus  = $docClass['STATUS']  ?? null;
         $defaultGroup   = $docClass['GROUP']   ?? [];
         $defaultModels  = $docClass['MODEL']   ?? null;
@@ -316,6 +317,7 @@ final class PortManager
         $group   = $attrs['GROUP']   ?? [];
         $status  = $attrs['STATUS']  ?? $defaultStatus;
         $version = $attrs['VERSION'] ?? $defaultVersion;
+        $infoOK  = $attrs['INFOOK']  ?? $defaultInfoOK;
         $models  = $attrs['MODEL']   ?? $defaultModels;
         $models  = (($attrs['MODEL'] ?? null) === '_') ? null : $models;
         $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
@@ -339,6 +341,7 @@ final class PortManager
         $nopipein  = $attrs['NOPIPEIN']  ?? [];
         $nopipeout = $attrs['NOPIPEOUT'] ?? [];
         $arguments = $attrs['ARGUMENT']  ?? [];
+        $remark = ($attrs['REMARK'] ?? ($attrs['NOTES'] ?? null)) ?? $defaultRemark;
 
         // Decide version prefix in route definition
         $_version = $version[0] ?? null;
@@ -386,6 +389,7 @@ final class PortManager
             'method' => $method,
             'title'  => $title,
             'remark' => $remark,
+            'infook' => $infoOK,
             'model'  => $models,
             'author' => $author,
             'suffix' => $suffix,

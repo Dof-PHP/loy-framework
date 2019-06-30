@@ -151,6 +151,10 @@ class Response extends Facade
                 $data[$default] = self::getInstance()->getWrapout('paginator');
                 continue;
             }
+            if ($key === '__INFO__') {
+                $data[$default] = self::getInstance()->getWrapout('info', 'ok');
+                continue;
+            }
 
             $_key = is_int($key) ? $default : $key;
             $_val = self::getInstance()->getWrapout($_key);

@@ -13,6 +13,6 @@ class ActionOnly
 
     public function wrapout()
     {
-        return ['code' => 0, 'info' => 'ok', 'more'];
+        return ['code' => 0, '__INFO__' => 'info', 'more'];
     }
 }

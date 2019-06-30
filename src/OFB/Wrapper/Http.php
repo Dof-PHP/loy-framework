@@ -8,6 +8,6 @@ class Http
 {
     public function wrapout()
     {
-        return ['__DATA__' => 'data', 'status' => 200, 'message' => 'ok', 'meta', 'extra'];
+        return ['__DATA__' => 'data', 'status' => 200, '__INFO__' => 'message', 'meta', 'extra'];
     }
 }
