@@ -162,6 +162,11 @@ LINK;
 <?php endif ?>
 <?php endif ?>
 
+<?php if ($remark ?? null) : ?>
+> <?= $remark ?>
+<?php endif ?>
+
+
 <script>
 function goDofDoc(path) {
     let url = new URL(window.location.href)

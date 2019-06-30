@@ -272,6 +272,7 @@ final class PortManager
             exception('MissingPortMethodTitle', compact('class', 'method'));
         }
         $subtitle = $attrs['SUBTITLE'] ?? null;
+        $remark = $attrs['REMARK'] ?? ($attrs['NOTES'] ?? null);
         $auth = $attrs['AUTH'] ?? ($docClass['AUTH'] ?? '0');
 
         $domainTitle   = ConfigManager::getDomainByNamespace($class, 'domain.title', $domainKey);
@@ -384,6 +385,7 @@ final class PortManager
             'class'  => $class,
             'method' => $method,
             'title'  => $title,
+            'remark' => $remark,
             'model'  => $models,
             'author' => $author,
             'suffix' => $suffix,
@@ -505,6 +507,7 @@ final class PortManager
             'auth'  => $auth,
             'verbs' => $verbs,
             'title' => $title,
+            'remark' => $remark,
             'models'  => self::formatDocNamespace($models),
             'author'  => $author,
             'status'  => $status,
