@@ -28,6 +28,10 @@ abstract class Event extends Model implements Job
 
     final public function publish()
     {
+        if (self::standalone()) {
+            return $this->execute();
+        }
+
         $listeners = self::listeners();
         if (! $listeners) {
             return;
@@ -96,6 +100,11 @@ abstract class Event extends Model implements Job
         }
 
         return strtolower(join(':', [self::EVENT_QUEUE, $key]));
+    }
+
+    final public static function standalone() : bool
+    {
+        return confirm(self::meta()['STANDALONE'] ?? null);
     }
 
     final public static function listeners() : array
