@@ -7,7 +7,7 @@ namespace Dof\Framework;
 class Tester
 {
     /**
-     * Check if two array have the same key/value pairs in the same order and of the same types.
+     * Check if two arrays have the same key/value pairs in the same order and of the same types.
      *
      * @return bool
      */
@@ -21,7 +21,7 @@ class Tester
     }
 
     /**
-     * Check if two array have the same key/value pairs.
+     * Check if two arrays have the same key/value pairs.
      *
      * @return bool
      */

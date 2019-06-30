@@ -497,7 +497,7 @@ if (! function_exists('id_list')) {
         $ids = array_filter(array_trim_from_string($list, ','));
 
         array_filter($ids, function ($id) {
-            return TypeHint::isPint($id);
+            return \Dof\Framework\TypeHint::isPint($id);
         });
 
         array_walk($ids, function (&$id) {
