@@ -55,8 +55,10 @@ abstract class Event extends Model implements Job
 
     /**
      * Broadcast event as queue job
+     *
+     * This method can be overrode if event class does not need broadcasting
      */
-    final public function execute()
+    public function execute()
     {
         $this->broadcast();
     }

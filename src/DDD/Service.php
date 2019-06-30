@@ -6,15 +6,16 @@ namespace Dof\Framework\DDD;
 
 use Throwable;
 use Dof\Framework\Container;
+use Dof\Framework\OFB\Traits\DI;
 
 abstract class Service
 {
+    use DI;
+
     const EXCEPTION_NAME = 'DofServiceException';
 
     /** @var array: A config map for custom exception */
     protected $__errors = [];
-
-    private $__singleton__ = [];
 
     abstract public function execute();
 
@@ -62,26 +63,6 @@ abstract class Service
         $context['__errors'] = $this->__errors;
 
         exception(self::EXCEPTION_NAME, compact('message', 'context'));
-    }
-
-    final public function single(string $namespace)
-    {
-        $single = $this->__singleton__[$namespace] ?? null;
-        if ($single) {
-            return $single;
-        }
-
-        return $this->__singleton__[$namespace] = Container::di($namespace);
-    }
-
-    final public function di(string $namespace, bool $single = true)
-    {
-        return $single ? $this->single($namespace) : Container::di($namespace);
-    }
-
-    final public static function new()
-    {
-        return Container::di(static::class);
     }
 
     final public static function init()

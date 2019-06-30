@@ -7,12 +7,15 @@ namespace Dof\Framework\DDD;
 use Dof\Framework\TypeHint;
 use Dof\Framework\ModelManager;
 use Dof\Framework\Container;
+use Dof\Framework\OFB\Traits\DI;
 
 /**
  * Data Model
  */
 abstract class Model
 {
+    use DI;
+
     /**
      * Compare two data model and get there differences
      *
@@ -93,11 +96,6 @@ abstract class Model
     final public function compare(Model $model, array $nodiff = null) : ?array
     {
         return Model::diff($this, $model, $nodiff);
-    }
-
-    final public static function new()
-    {
-        return Container::di(static::class);
     }
 
     public static function attrs()
