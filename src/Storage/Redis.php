@@ -186,7 +186,7 @@ class Redis extends Storage implements Storable, Cachable, Queuable
         $this->cmds[] = [
             microtime(true) - $start,
             $cmd,
-            fixed_string(join(' ', $params), 255)
+            $params
         ];
 
         return $this;

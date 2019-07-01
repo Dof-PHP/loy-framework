@@ -24,17 +24,6 @@ class Memcached extends Storage implements Storable, Cachable
         return $result;
     }
 
-    private function appendCMD(float $start, string $cmd, ...$params)
-    {
-        $this->cmds[] = [
-            microtime(true) - $start,
-            $cmd,
-            fixed_string(join(' ', $params), 255)
-        ];
-
-        return $this;
-    }
-
     public function get(string $key)
     {
         $start = microtime(true);
@@ -72,5 +61,16 @@ class Memcached extends Storage implements Storable, Cachable
         $this->getConnection()->set($key, $value, $expiration);
 
         $this->appendCMD($start, 'set', $key, $value, $expiration);
+    }
+
+    private function appendCMD(float $start, string $cmd, ...$params)
+    {
+        $this->cmds[] = [
+            microtime(true) - $start,
+            $cmd,
+            $params
+        ];
+
+        return $this;
     }
 }
