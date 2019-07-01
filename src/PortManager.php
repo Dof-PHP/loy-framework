@@ -651,6 +651,7 @@ final class PortManager
                     $_val = is_int($key) ? null : $val;
                     if (in_array($_key, [
                         '__DATA__',
+                        '__INFO__',
                         '__PAGINATOR__',
                     ])) {
                         $_val = $_key;
