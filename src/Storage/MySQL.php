@@ -307,15 +307,21 @@ class MySQL extends Storage implements Storable
         try {
             $this->appendSQLAfterExecute(function () use ($connection) {
                 $connection->beginTransaction();
-            });
+            }, 'BEGIN');
 
             $transaction($this);
 
             $this->appendSQLAfterExecute(function () use ($connection) {
                 $connection->commit();
-            });
+            }, 'COMMIT');
         } catch (Throwable $e) {
-            $connection->rollBack();
+            if ($connection->inTransaction()) {
+                $this->appendSQLAfterExecute(function () use ($connection) {
+                    $connection->rollBack();
+                }, 'ROLLBACK');
+            }
+            
+            exception('MySQLTransactionFailed', [], $e);
         }
     }
 
