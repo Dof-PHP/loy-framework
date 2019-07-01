@@ -581,7 +581,13 @@ class MySQLBuilder
      */
     public function ids()
     {
-        return $this->column('id', false);
+        $ids = $this->column('id', false);
+
+        if ($this->sql) {
+            return $ids;
+        }
+
+        return $ids ? id_array($ids) : [];
     }
 
     public function column(string $column, bool $unique = true)
