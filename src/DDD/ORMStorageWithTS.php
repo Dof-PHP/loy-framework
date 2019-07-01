@@ -15,6 +15,7 @@ class ORMStorageWithTS extends ORMStorage
      * @Length(10)
      * @Notnull(1)
      * @Unsigned(1)
+     * @Default(0)
      */
     protected $createdAt;
 
