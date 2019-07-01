@@ -69,8 +69,13 @@ class Redis extends Storage implements Storable, Cachable, Queuable
         $start = microtime(true);
         $result = $this->getConnection()->get($key);
         $this->appendCMD($start, 'get', $key);
+        if ($result === false) {
+            return null;
+        }
 
-        return $result === false ? null : unserialize($result);
+        $_result = unserialize($result);
+
+        return $_result === false ? $result : $_result;
     }
 
     public function dels(array $keys)
