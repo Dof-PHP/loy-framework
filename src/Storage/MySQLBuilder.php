@@ -637,6 +637,15 @@ class MySQLBuilder
         ]);
     }
 
+    public function existing(string $column = 'id')
+    {
+        $this->select = [$column];
+
+        $result = $this->get();
+
+        return $this->sql ? $result : ($result ? true : false);
+    }
+
     public function first()
     {
         $this->offset = 0;
@@ -644,7 +653,7 @@ class MySQLBuilder
 
         $res = $this->get();
 
-        return $res[0] ?? null;
+        return $this->sql ? $res : ($res[0] ?? null);
     }
 
     public function get()
