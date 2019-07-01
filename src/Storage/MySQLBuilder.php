@@ -597,7 +597,9 @@ class MySQLBuilder
             return [];
         }
 
-        return $unique ? array_unique(array_column($res, $column)) : $res;
+        $res = array_column($res, $column);
+
+        return $unique ? array_unique($res) : $res;
     }
 
     public function count() : int
