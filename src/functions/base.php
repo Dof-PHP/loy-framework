@@ -432,6 +432,10 @@ if (! function_exists('subsets')) {
 if (! function_exists('array_unique_merge')) {
     function array_unique_merge(...$arrs) : array
     {
+        if (count($arrs) === 0) {
+            return [];
+        }
+
         return array_unique((array) array_merge(...$arrs));
     }
 }
