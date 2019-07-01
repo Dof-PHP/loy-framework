@@ -434,10 +434,10 @@ final class Kernel
             $error  = ERR::DOF_SERVICE_EXCEPTION;
             // Here we treat all service exception as client side error by default
             // Coz if not there should never throw the exception named as this
-            $status = 400;
+            $status = 503;
             if ($_error = ($errors[$message] ?? null)) {
                 $error  = [($_error[0] ?? -1), $message];
-                $status = $_error[1] ?? 400;
+                $status = $_error[1] ?? 503;
                 if ($info = ($_error[2] ?? null)) {
                     $context['__info'] = $info;
                 }
@@ -447,7 +447,7 @@ final class Kernel
 
             unset($context['__errors']);
 
-            Response::error($status, $error, $context, $domain);
+            Response::exception($status, $error, $context, $domain);
         } else {
             $ifNot();
         }
