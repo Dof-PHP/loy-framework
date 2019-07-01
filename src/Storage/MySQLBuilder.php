@@ -41,15 +41,8 @@ class MySQLBuilder
     private $offset;
     private $limit;
 
-    public function reset()
+    public function resetConditions()
     {
-        $this->origin = null;
-        $this->sql = false;
-        $this->db = null;
-        $this->table = null;
-        $this->select = [];
-        $this->alias = [];
-        $this->aliasRaw = [];
         $this->where = [];
         $this->exists = [];
         $this->wheres = [];
@@ -69,9 +62,24 @@ class MySQLBuilder
         $this->orRawHaving = [];
         $this->orsHaving = [];
         $this->rawOrHaving = [];
+
+        return $this;
+    }
+
+    public function reset()
+    {
+        $this->origin = null;
+        $this->sql = false;
+        $this->db = null;
+        $this->table = null;
+        $this->select = [];
+        $this->alias = [];
+        $this->aliasRaw = [];
         $this->group = [];
         $this->offset = null;
         $this->limit = null;
+
+        $this->resetConditions();
 
         return $this;
     }
@@ -650,6 +658,20 @@ class MySQLBuilder
         return $this->sql ? $result : ($result ? true : false);
     }
 
+    public function pk(string $pk = 'id')
+    {
+        $this->offset = 0;
+        $this->limit = 1;
+        $this->select = [$pk];
+
+        $res = $this->get();
+        if ($this->sql) {
+            return $res;
+        }
+
+        return $res ? intval($res[0][$pk] ?? null) : null;
+    }
+
     public function first()
     {
         $this->offset = 0;
@@ -836,6 +858,23 @@ class MySQLBuilder
         $sql = sprintf($sql, $table, $column, $column, $step, $where);
 
         return $this->sql ? $this->generate($sql, $params) : $this->origin->exec($sql, $params);
+    }
+
+    public function save(int $id, array $data, string $pk = 'id')
+    {
+        if (($id < 1) || (! $data)) {
+            return;
+        }
+
+        $this->resetConditions();
+
+        $this->where = [
+            [$pk, '=', $id],
+        ];
+
+        unset($data[$pk]);
+
+        return $this->update($data);
     }
 
     /**

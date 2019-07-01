@@ -190,6 +190,11 @@ class Console
         return $text;
     }
 
+    public function throw(Throwable $exception)
+    {
+        $this->error(json_pretty(parse_throwable($exception)));
+    }
+
     public function exception(string $message, array $context = [], Throwable $previous = null)
     {
         $context = parse_throwable($previous, $context);

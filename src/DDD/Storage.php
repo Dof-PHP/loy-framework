@@ -23,6 +23,10 @@ abstract class Storage implements Repository
         $this->__storage = StorageManager::init(static::class);
     }
 
+    public function init()
+    {
+    }
+
     final public static function new()
     {
         return new static;
