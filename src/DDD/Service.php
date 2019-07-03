@@ -6,13 +6,12 @@ namespace Dof\Framework\DDD;
 
 use Throwable;
 use Dof\Framework\Container;
+use Dof\Framework\EXCP;
 use Dof\Framework\OFB\Traits\DI;
 
 abstract class Service
 {
     use DI;
-
-    const EXCEPTION_NAME = 'DofServiceException';
 
     /** @var array: A config map for custom exception */
     protected $__errors = [];
@@ -39,7 +38,7 @@ abstract class Service
      */
     final public function throw(Throwable $previous)
     {
-        if (is_anonymous($previous) && (is_exception($previous, self::EXCEPTION_NAME))) {
+        if (is_anonymous($previous) && (is_exception($previous, EXCP::DOF_SERVICE_EXCEPTION))) {
             $context = [];
             $context = parse_throwable($previous, $context);
             $context = $context['__previous'] ?? [];
@@ -62,7 +61,7 @@ abstract class Service
         $context = parse_throwable($previous, $context);
         $context['__errors'] = $this->__errors;
 
-        exception(self::EXCEPTION_NAME, compact('message', 'context'));
+        exception(EXCP::DOF_SERVICE_EXCEPTION, compact('message', 'context'));
     }
 
     final public static function init()

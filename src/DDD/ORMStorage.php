@@ -125,6 +125,10 @@ class ORMStorage extends Storage
             return 0;
         }
         if (is_int($entity)) {
+            if ($entity < 1) {
+                return 0;
+            }
+
             $entity = $this->find($entity);
             if (! $entity) {
                 return 0;

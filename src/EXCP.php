@@ -10,6 +10,7 @@ class EXCP
 {
     const VIOLATED_UNIQUE_CONSTRAINT = 'ViolatedUniqueConstraint';
     const INPUT_FIELDS_SENTENCE_GRAMMER_ERROR = 'InputFieldsSentenceGrammerError';
+    const DOF_SERVICE_EXCEPTION = 'DofServiceException';
 
     public static function is(Throwable $e, string $name) : bool
     {
