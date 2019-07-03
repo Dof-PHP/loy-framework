@@ -26,6 +26,10 @@ final class TypeHint
         'mediumint' => true,
         'varchar' => true,
         'char' => true,
+        'text' => true,
+        'longtext' => true,
+        'mediumtext' => true,
+        'tinytext' => true,
     ];
 
     public static function convert($val, string $type, bool $force = false)
@@ -56,6 +60,26 @@ final class TypeHint
     }
 
     public static function convertToChar($val, bool $force = false)
+    {
+        return self::convertToString($val, $force);
+    }
+
+    public static function convertToMediumtext($val, bool $force = false)
+    {
+        return self::convertToString($val, $force);
+    }
+
+    public static function convertToTinytext($val, bool $force = false)
+    {
+        return self::convertToString($val, $force);
+    }
+
+    public static function convertToLongtext($val, bool $force = false)
+    {
+        return self::convertToString($val, $force);
+    }
+
+    public static function convertToText($val, bool $force = false)
     {
         return self::convertToString($val, $force);
     }
@@ -164,6 +188,26 @@ final class TypeHint
     }
 
     public static function isChar($val) : bool
+    {
+        return self::isString($val);
+    }
+
+    public static function isTinytext($val) : bool
+    {
+        return self::isString($val);
+    }
+
+    public static function isMediumtext($val) : bool
+    {
+        return self::isString($val);
+    }
+
+    public static function isLongtext($val) : bool
+    {
+        return self::isString($val);
+    }
+
+    public static function isText($val) : bool
     {
         return self::isString($val);
     }
