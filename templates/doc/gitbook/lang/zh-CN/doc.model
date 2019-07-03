@@ -13,6 +13,6 @@
         $_arguments = '`'.enjson($arguments).'`';
     }
 ?>
-| `<?= $name ?>` | <?= $title ?> | <?= $type ?> | <?= $_arguments ?> | <?= $notes ?: '-' ?> |
+| `<?= $name ?>` | <?= $title ?> | <?= ucfirst($type) ?> | <?= $_arguments ?> | <?= $notes ?: '-' ?> |
 <?php endforeach ?>
 <?php endif ?>

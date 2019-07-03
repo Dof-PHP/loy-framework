@@ -28,7 +28,7 @@ LINK;
     }
     $rules = $rules ? join('<br>', $rules) : '-';
 ?>
-| `<?= $name ?>` | <?= $title ?> | <?= $type ?> | <?= $rules ?> | <?= $default ?> | <?= $compatibles ?> | <?= $notes ?: '-' ?> |
+| `<?= $name ?>` | <?= $title ?> | <?= ucfirst($type) ?> | <?= $rules ?> | <?= $default ?> | <?= $compatibles ?> | <?= $notes ?: '-' ?> |
 <?php endforeach ?>
 <?php endif ?>
 

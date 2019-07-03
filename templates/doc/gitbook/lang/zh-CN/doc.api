@@ -79,7 +79,7 @@ LINK;
     $rules = $rules ? join('<br>', $rules) : '-';
     $location = join('/', $location);
 ?>
-| `<?= $name ?>` | <?= $title ?> | <?= $type ?> | <?= $location ?> | <?= $rules ?> | <?= $default ?> | <?= $compatibles ?> | <?= $notes ?: '-' ?> |
+| `<?= $name ?>` | <?= $title ?> | <?= ucfirst($type) ?> | <?= $location ?> | <?= $rules ?> | <?= $default ?> | <?= $compatibles ?> | <?= $notes ?: '-' ?> |
 <?php endforeach ?>
 <?php endif ?>
 
@@ -146,7 +146,7 @@ LINK;
         $_arguments = '`'.enjson($arguments).'`';
     }
 ?>
-| `<?= $name ?>` | <?= $title ?> | <?= $type ?> | <?= $_arguments ?> | <?= $notes ?: '-' ?> |
+| `<?= $name ?>` | <?= $title ?> | <?= ucfirst($type) ?> | <?= $_arguments ?> | <?= $notes ?: '-' ?> |
 <?php endforeach ?>
 <?php endif ?>
 
