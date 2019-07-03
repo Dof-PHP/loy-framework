@@ -99,7 +99,7 @@ class Console
             $left = $this->render(str_repeat('·', (100 - $_percent)), self::INFO_COLOR);
 
             $__output = get_buffer_string(function () use ($do, $key, $task) {
-                $do($key, $task);
+                $do($task, $key);
             });
 
             if ($outputProgress) {
