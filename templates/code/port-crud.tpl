@@ -107,8 +107,8 @@ class __NAME__
      */
     public function list(List__NAME__ $service)
     {
-        $params = route('params')->pipe->get(Paginate::class);
+        $paginate = route('params')->pipe->get(Paginate::class);
 
-        return $service->setPage($params->page)->setSize($params->size)->execute();
+        return $service->setPage($paginate->page)->setSize($paginate->size)->execute();
     }
 }
