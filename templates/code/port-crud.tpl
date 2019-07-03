@@ -75,7 +75,7 @@ class __NAME__
      * @Route({id})
      * @Verb(PUT)
      * @Argument(id){inroute}
-     * @Argument(param1)
+     * @Argument(param1){need:0}
      */
     public function update(int $id, Update__NAME__ $service)
     {
