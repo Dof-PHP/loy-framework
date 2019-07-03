@@ -97,6 +97,10 @@ class MySQLSchema
     private function syncTableColumns(string $db, string $table)
     {
         $meta = $this->annotations['meta'] ?? [];
+        if (confirm($meta['NOSYNC'] ?? 0)) {
+            return;
+        }
+
         $columns = $this->annotations['columns'] ?? [];
         $properties = $this->annotations['properties'] ?? [];
 
@@ -274,6 +278,10 @@ class MySQLSchema
     private function syncTableIndexes(string $db, string $table)
     {
         $meta = $this->annotations['meta'] ?? [];
+        if (confirm($meta['NOSYNC'] ?? 0)) {
+            return;
+        }
+
         $columns = $this->annotations['columns'] ?? [];
         $properties = $this->annotations['properties'] ?? [];
 
@@ -365,6 +373,10 @@ class MySQLSchema
 
     public function syncTableSchema(string $db, string $table)
     {
+        if (confirm($this->annotations['meta']['NOSYNC'] ?? 0)) {
+            return;
+        }
+
         $_table = $this->mysql()->rawGet("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE table_schema='{$db}' AND table_name='{$table}'")[0] ?? [];
         $commentInSchema = strval($_table['TABLE_COMMENT'] ?? '');
         $commentInCode = trim(strval($this->annotations['meta']['COMMENT'] ?? ''));
@@ -457,6 +469,10 @@ class MySQLSchema
     public function initTable(string $db, string $table)
     {
         $meta = $this->annotations['meta'] ?? [];
+        if (confirm($meta['NOSYNC'] ?? 0)) {
+            return;
+        }
+
         $columns = $this->annotations['columns'] ?? [];
         $properties = $this->annotations['properties'] ?? [];
 
