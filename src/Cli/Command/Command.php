@@ -522,6 +522,82 @@ class Command
         return $this->buildDocsAll($console);
     }
 
+    private function buildPortCategories(array $categories)
+    {
+        $data = [];
+
+        foreach ($categories as $_category => $category) {
+            $children = [];
+            $list = $category['list'] ?? [];
+            if ($list) {
+                foreach ($list as $port) {
+                    foreach ($port['verbs'] ?? [] as $verb) {
+                        $children[] = [
+                            'title' => $port['title'] ?? null,
+                            'route' => $port['route'] ?? null,
+                            'verb' => $verb,
+                        ];
+                    }
+                }
+            }
+
+            $data[] = [
+                'title' => $category['title'] ?? $_category,
+                'categories' => $this->buildPortCategories($category['group'] ?? []),
+                'apis' => $children,
+            ];
+        }
+
+        return $data;
+    }
+
+    /**
+     * @CMD(port.dump)
+     * @Desc(Dump all ports data as a format)
+     * @Option(format){notes=Dump format: JSON/XML/ARRAY&default=JSON}
+     * @Option(save){notes=File path when has save option}
+     */
+    public function dumpPort($console)
+    {
+        $save = $console->getOption('save', null, true);
+
+        $data = [];
+
+        $docs = PortManager::getDocs();
+        foreach ($docs as $_version => $version) {
+            $domains = $version['main'] ?? [];
+            if (! $domains) {
+                continue;
+            }
+
+            $category = [];
+            $category['title'] = $_version;
+            $category['categories'] = $this->buildPortCategories($domains);
+
+            $data['categories'][] = $category;
+        }
+
+        $format = $console->getOption('format', 'json');
+        if (! ciin($format, ['json', 'xml', 'array'])) {
+            $format = 'json';
+        }
+
+        switch (strtolower($format)) {
+            case 'array':
+                array2code($data, $save);
+                break;
+            case 'xml':
+                save($save, enxml($data));
+                break;
+            case 'json':
+            default:
+                save($save, enjson($data));
+                break;
+        }
+
+        $console->success('Done!');
+    }
+
     /**
      * @CMD(compile.clear)
      * @Desc(Clear all classes compile cache)
