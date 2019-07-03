@@ -35,11 +35,11 @@ class ERR
     const PIPEOUT_CLASS_NOT_EXISTS = [50000023, 'PipeoutClassNotExists'];
     const PIPEOUT_HANDLER_NOT_EXISTS = [50000024, 'PipeoutHandlerNotExists'];
     const PIPEOUT_THROUGH_FAILED = [50000025, 'PipeoutThroughFailed'];
-    const TOKEN_SECRET_MISSING = [50000026, 'TokenSecretMissing'];
-    const TOKEN_SECRET_ID_MISSING = [50000027, 'TokenSecretIdMissing'];
-    const TOKEN_SECRET_KEY_MISSING = [50000027, 'TokenSecretKeyMissing'];
+    const DOF_SERVICE_EXCEPTION = [40000026, 'DofServiceException'];
+    const TOKEN_SECRET_MISSING = [50000027, 'TokenSecretMissing'];
+    const TOKEN_SECRET_ID_MISSING = [50000028, 'TokenSecretIdMissing'];
+    const TOKEN_SECRET_KEY_MISSING = [50000029, 'TokenSecretKeyMissing'];
 
-    const DOF_SERVICE_EXCEPTION = [40000000, 'DofServiceException'];
     const INVALID_REQUEST_MIME = [40000001, 'InvalidRequestMime'];
     const WRAPIN_VALIDATE_FAILED = [40000002, 'WrapinValidateFailed'];
     const INVALID_ROUTE_PARAMETER = [40000003, 'InvalidRouteParameter'];

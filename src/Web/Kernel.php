@@ -14,7 +14,6 @@ use Dof\Framework\WrapinManager;
 use Dof\Framework\ConfigManager;
 use Dof\Framework\TypeHint;
 use Dof\Framework\Validator;
-use Dof\Framework\DDD\Service;
 use Dof\Framework\Facade\Log;
 use Dof\Framework\Facade\Request;
 use Dof\Framework\Facade\Response;
@@ -425,7 +424,7 @@ final class Kernel
 
     public static function throwIfService(Throwable $e, string $domain, Closure $ifNot)
     {
-        if (is_anonymous($e) && (is_exception($e, Service::EXCEPTION_NAME))) {
+        if (is_anonymous($e) && (is_exception($e, EXCP::DOF_SERVICE_EXCEPTION))) {
             $previous = parse_throwable($e)['__previous'] ?? [];
             $message = $previous['message'] ?? null;
             $context = $previous['context'] ?? [];
