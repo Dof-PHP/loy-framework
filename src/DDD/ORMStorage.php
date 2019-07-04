@@ -262,9 +262,9 @@ class ORMStorage extends Storage
     public function list(
         int $page,
         int $size,
-        Collection $filter,
-        string $sortField,
-        string $sortOrder
+        Collection $filter = null,
+        string $sortField = null,
+        string $sortOrder = null
     ) : array {
         // TODO: to be override
     }
