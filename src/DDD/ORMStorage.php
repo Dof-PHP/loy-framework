@@ -258,4 +258,14 @@ class ORMStorage extends Storage
 
         return $entity;
     }
+
+    public function list(
+        int $page,
+        int $size,
+        Collection $filter,
+        string $sortField,
+        string $sortOrder
+    ) : array {
+        // TODO: to be override
+    }
 }

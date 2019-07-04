@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
 
 use Dof\Framework\OFB\Pipe\Paginate;
+use Dof\Framework\OFB\Pipe\Sorting;
 use Domain\__DOMAIN__\Http\ERR;
 use Domain\__DOMAIN__\Service\CRUD\Create__NAME__;
 use Domain\__DOMAIN__\Service\CRUD\Delete__NAME__;
@@ -103,12 +104,19 @@ class __NAME__
      * @Route(/)
      * @Verb(GET)
      * @PipeIn(Paginate)
+     * @PipeIn(Sorting)
      * @WrapOut(Dof\Framework\OFB\Wrapper\Pagination)
      */
     public function list(List__NAME__ $service)
     {
         $paginate = route('params')->pipe->get(Paginate::class);
+        $sorting = route('params')->pipe->get(Sorting::class);
 
-        return $service->setPage($paginate->page)->setSize($paginate->size)->execute();
+        return $service
+            ->setPage($paginate->page)
+            ->setSize($paginate->size)
+            ->setSortField($sort->field)
+            ->setSortOrder($sort->order)
+            ->execute();
     }
 }

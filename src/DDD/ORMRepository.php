@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dof\Framework\DDD;
 
+use Dof\Framework\Collection;
+
 interface ORMRepository extends Repository
 {
     /**
@@ -37,4 +39,22 @@ interface ORMRepository extends Repository
      * @return Entity|null
      */
     public function find(int $pk) : ?Entity;
+
+    /**
+     * Get list of entities with pagination
+     *
+     * @param int $page
+     * @param int $size
+     * @param Collection $filter
+     * @param string $sortField
+     * @param string $sortOrder
+     * @return array
+     */
+    public function list(
+        int $page,
+        int $size,
+        Collection $filter,
+        string $sortField,
+        string $sortOrder
+    ) : array;
 }

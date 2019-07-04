@@ -10,10 +10,11 @@ use Domain\__DOMAIN__\Repository\__ENTITY__Repository;
 
 class List__ENTITY__ extends Service
 {
-    private $id;
     private $page;
     private $size;
-    private $search;
+    private $sortField;
+    private $sortOrder;
+    private $filter;
 
     private $repository;
 
@@ -24,11 +25,12 @@ class List__ENTITY__ extends Service
 
     public function execute()
     {
-        return $this->repository->search(
+        return $this->repository->list(
             $this->page,
             $this->size,
-            $this->id,
-            $this->search
+            $this->filter,
+            $this->sortField,
+            $this->sortOrder
         );
     }
 
@@ -46,16 +48,23 @@ class List__ENTITY__ extends Service
         return $this;
     }
 
-    public function setId(int $id)
+    public function setSortOrder(string $order)
     {
-        $this->id = $id;
+        $this->sortOrder = $sortOrder;
 
         return $this;
     }
 
-    public function setSearch(string $search)
+    public function setSortField(string $field)
     {
-        $this->search = $search;
+        $this->sortField = $sortField;
+
+        return $this;
+    }
+
+    public function setFilter(Collection $filter)
+    {
+        $this->filter = $filter;
 
         return $this;
     }
