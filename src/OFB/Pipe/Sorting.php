@@ -14,7 +14,7 @@ class Sorting
         $field = $order = null;
         if ($sort) {
             $sort = sprintf('sort(%s)', $sort);
-            $sort = IFRSN::parse($paginate);
+            $sort = IFRSN::parse($sort);
             $sort = $sort['sort']['fields'] ?? null;
             if ($sort) {
                 $field = $sort['field'] ?? null;

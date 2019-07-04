@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Domain\__DOMAIN__\Service\CRUD;
 
 use Throwable;
+use Dof\Framework\Collection;
 use Dof\Framework\DDD\Service;
 use Domain\__DOMAIN__\Repository\__ENTITY__Repository;
 
@@ -48,21 +49,21 @@ class List__ENTITY__ extends Service
         return $this;
     }
 
-    public function setSortOrder(string $order)
+    public function setSortOrder(string $order = null)
     {
         $this->sortOrder = $sortOrder;
 
         return $this;
     }
 
-    public function setSortField(string $field)
+    public function setSortField(string $field = null)
     {
         $this->sortField = $sortField;
 
         return $this;
     }
 
-    public function setFilter(Collection $filter)
+    public function setFilter(Collection $filter = null)
     {
         $this->filter = $filter;
 

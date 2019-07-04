@@ -265,7 +265,7 @@ class ORMStorage extends Storage
         Collection $filter = null,
         string $sortField = null,
         string $sortOrder = null
-    ) : array {
+    ) {
         // TODO: to be override
     }
 }

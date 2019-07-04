@@ -52,11 +52,20 @@ final class Connection
         }
 
         try {
-            $pdo = new PDO($dsn, $user, $pswd, [
-                PDO::ATTR_PERSISTENT => true,
-                // PDO::ATTR_TIMEOUT    => 3,
-            ]);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $options = [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ];
+
+            if ($config->get('persistent')) {
+                $options[PDO::ATTR_PERSISTENT] = true;
+            }
+
+            // if ($timeout = $config->get('timeout', 0, ['pint'])) {
+            // $options[PDO::ATTR_TIMEOUT] = $timeout;
+            // }
+
+            $pdo = new PDO($dsn, $user, $pswd, $options);
+
             // $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
             return self::$pool['mysql'][$connection] = $pdo;

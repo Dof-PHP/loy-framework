@@ -56,5 +56,5 @@ interface ORMRepository extends Repository
         Collection $filter = null,
         string $sortField = null,
         string $sortOrder = null
-    ) : array;
+    );
 }

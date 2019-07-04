@@ -548,7 +548,7 @@ class MySQLBuilder
         return $this;
     }
 
-    public function order(string $column, string $sort)
+    public function order(string $column, string $sort = 'asc')
     {
         $this->order[$column] = $sort;
 
