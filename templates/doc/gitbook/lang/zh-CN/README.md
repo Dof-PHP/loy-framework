@@ -95,6 +95,20 @@ GET /v1/users?__paginate=size{10},page{1}
 GET /v1/users?__paginate_size=20&__paginate_page=2
 ```
 
+### 列表查询接口的排序参数
+
+- `__sort` （默认；优先级最高）
+
+``` http
+GET /v1/users?__sort=field{id},order{desc}
+```
+
+- `__sort_field` 和 `__sort_order`
+
+``` http
+GET /v1/users?__sort_field=id&__sort_order=desc
+```
+
 ## HTTP 响应错误码编码规范提案
 
 ### 特殊情况——请求成功
