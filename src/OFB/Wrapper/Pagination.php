@@ -12,7 +12,7 @@ class Pagination
             '__DATA__' => 'data',
             '__PAGINATOR__' => 'page',
             'code' => 0,
-            '__INFO__' => 'ifo',
+            '__INFO__' => 'info',
             'more',
             // 'meta'
         ];
