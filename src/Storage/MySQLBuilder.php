@@ -783,8 +783,8 @@ class MySQLBuilder
         $group = '';
         if ($this->group) {
             $group .= ' GROUP BY ';
-            foreach ($this->group as $group) {
-                $group .= " `{$group}` ";
+            foreach ($this->group as $_group) {
+                $group .= " `{$_group}` ";
                 if (false !== next($this->group)) {
                     $group .= ',';
                 }
