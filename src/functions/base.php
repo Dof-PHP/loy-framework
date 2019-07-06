@@ -1364,3 +1364,9 @@ if (! function_exists('confirm')) {
         return ciin($value, ['1', 'true', 'yes', 'y']);
     }
 }
+if (! function_exists('in_list')) {
+    function in_list(string $value, string $list, string $separator = ',') : bool
+    {
+        return in_array($value, array_trim_from_string($list, $separator));
+    }
+}

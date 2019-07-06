@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Dof\Framework\OFB\Pipe;
 
+use Dof\Framework\Facade\Response;
 use Dof\Framework\DSL\IFRSN;
+use Dof\Framework\Web\ERR;
 
 class Sorting
 {
@@ -30,6 +32,13 @@ class Sorting
 
         if (! ciin($order, ['asc', 'desc'])) {
             $order = null;
+        }
+
+        if ($field) {
+            $allow = $port->pipein->get(static::class)->fields;
+            if (! in_list($field, $allow)) {
+                Response::abort(401, ERR::INVALID_SORTING_FIELD, compact('field', 'allow'), $port->get('class'));
+            }
         }
 
         $route->params->pipe->set(__CLASS__, collect([

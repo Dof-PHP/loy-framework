@@ -6,6 +6,7 @@ namespace Dof\Framework;
 
 use Dof\Framework\Facade\Annotation;
 use Dof\Framework\Facade\Request;
+use Dof\Framework\OFB\Pipe\Sorting;
 
 final class PortManager
 {
@@ -279,8 +280,8 @@ final class PortManager
         $globalWrapin  = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wrapin', null);
         $globalWrapout = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wrapout', null);
         $globalWraperr = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.wraperr', null);
-        $globalPipein  = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.pipein', []);
-        $globalPipeout = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.pipeout', []);
+        $globalPipein  = self::formatPipes(ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.pipein', []));
+        $globalPipeout = self::formatPipes(ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.pipeout', []));
         $globalHeaderIn  = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.headerin', []);
         $globalHeaderOut = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.headerout', []);
         $globalHeaderStatus = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.headerstatus', []);
@@ -303,10 +304,10 @@ final class PortManager
         $defaultWraperr = $docClass['WRAPERR'] ?? $globalWraperr;
         $defaultWraperr = (($docClass['WRAPERR'] ?? null) === '_') ? null : $defaultWraperr;
         $defaultAssembler = $docClass['ASSEMBLER'] ?? null;
-        $defaultPipein    = $docClass['PIPEIN']    ?? [];
-        $defaultPipeout   = $docClass['PIPEOUT']   ?? [];
-        $defaultNoPipein  = $docClass['NOPIPEIN']  ?? [];
-        $defaultNoPipeout = $docClass['NOPIPEOUT'] ?? [];
+        $defaultPipein    = self::formatPipes($docClass['PIPEIN'] ?? []);
+        $defaultPipeout   = self::formatPipes($docClass['PIPEOUT'] ?? []);
+        $defaultNoPipein  = self::formatPipes($docClass['NOPIPEIN'] ?? []);
+        $defaultNoPipeout = self::formatPipes($docClass['NOPIPEOUT'] ?? []);
         $defaultArguments = $docClass['ARGUMENT']  ?? [];
         $defaultHeaderIn  = $docClass['HEADERIN']  ?? [];
         $defaultHeaderOut = $docClass['HEADEROUT'] ?? [];
@@ -336,11 +337,11 @@ final class PortManager
         $headerIn  = $attrs['HEADERIN']  ?? [];
         $headerOut = $attrs['HEADEROUT'] ?? [];
         $headerStatus = $attrs['HEADERSTATUS'] ?? $defaultHeaderStatus;
-        $pipein    = $attrs['PIPEIN']    ?? [];
-        $pipeout   = $attrs['PIPEOUT']   ?? [];
-        $nopipein  = $attrs['NOPIPEIN']  ?? [];
+        $pipein    = $attrs['PIPEIN'] ?? [];
+        $pipeout   = $attrs['PIPEOUT'] ?? [];
+        $nopipein  = $attrs['NOPIPEIN'] ?? [];
         $nopipeout = $attrs['NOPIPEOUT'] ?? [];
-        $arguments = $attrs['ARGUMENT']  ?? [];
+        $arguments = $attrs['ARGUMENT'] ?? [];
         $remark = ($attrs['REMARK'] ?? ($attrs['NOTES'] ?? null)) ?? $defaultRemark;
 
         // Decide version prefix in route definition
@@ -357,10 +358,10 @@ final class PortManager
 
         $headerInList  = array_unique_merge($globalHeaderIn, $defaultHeaderIn, $headerIn);
         $headerOutList = array_unique_merge($globalHeaderOut, $defaultHeaderOut, $headerOut);
-        $pipeinList    = array_unique_merge($globalPipein, $defaultPipein, $pipein);
-        $pipeoutList   = array_unique_merge($globalPipeout, $defaultPipeout, $pipeout);
-        $nopipeinList  = array_unique_merge($defaultNoPipein, $nopipein);
-        $nopipeoutList = array_unique_merge($defaultNoPipeout, $nopipeout);
+        $pipeinList    = array_merge($globalPipein, $defaultPipein, $pipein);
+        $pipeoutList   = array_merge($globalPipeout, $defaultPipeout, $pipeout);
+        $nopipeinList  = array_merge($defaultNoPipein, $nopipein);
+        $nopipeoutList = array_merge($defaultNoPipeout, $nopipeout);
         $argumentList  = array_merge($defaultArguments, $arguments);
 
         // Arguments existence check
@@ -530,6 +531,10 @@ final class PortManager
                 'status' => $headerStatus,
             ],
             'subtitle' => $subtitle,
+            'sortings' => self::formatSortings(
+                $pipeinList[Sorting::class]['fields'] ?? null,
+                $ofProperties
+            ),
         ];
 
         $groups = self::formatDocGroups(array_merge($defaultGroup, $group), $class);
@@ -564,6 +569,46 @@ final class PortManager
         }
 
         self::$docs[$_version]['appendixes'] = $appendixes;
+    }
+
+    public static function formatSortings(string $sortings = null, array $ofProperties = [])
+    {
+        if (! $sortings) {
+            return null;
+        }
+
+        $sortings = array_trim_from_string($sortings, ',');
+
+        $list = [];
+        foreach ($sortings as $field) {
+            $title = $ofProperties[$field]['doc']['TITLE'] ?? null;
+
+            $list[$field] = $title;
+        }
+
+        return $list;
+    }
+
+    public static function formatPipes($pipes)
+    {
+        if (! is_array($pipes)) {
+            return [];
+        }
+
+        $list = [];
+
+        foreach ($pipes as $pipe => $ext) {
+            if (is_int($pipe) && is_string($ext)) {
+                $list[$ext] = [];
+                continue;
+            }
+            if (is_string($pipe)) {
+                $list[$pipe] = is_array($ext) ? $ext : [];
+                continue;
+            }
+        }
+
+        return $list;
     }
 
     public static function formatDocAppendixes(
@@ -893,14 +938,14 @@ final class PortManager
         return true;
     }
 
-    public static function __annotationFilterPipein(string $pipein, array $ext, string $namespace = null) : ?string
+    public static function __annotationFilterPipein(string $pipein, array $ext, string $namespace = null) : ?array
     {
         $pipein = trim($pipein);
         if (! $pipein) {
             return null;
         }
         if (class_exists($pipein)) {
-            return $pipein;
+            return [$pipein => $ext];
         }
         if ((! $namespace) || (! class_exists($namespace))) {
             exception('MissingPipeInUseClass', compact('pipein', 'namespace'));
@@ -911,17 +956,17 @@ final class PortManager
             exception('PipeInNotExists', compact('pipein', 'namespace'));
         }
 
-        return $_pipein;
+        return [$_pipein => $ext];
     }
 
-    public static function __annotationFilterNopipein(string $nopipein, array $ext, string $namespace = null) : ?string
+    public static function __annotationFilterNopipein(string $nopipein, array $ext, string $namespace = null) : ?array
     {
         $nopipein = trim($nopipein);
         if (! $nopipein) {
             return null;
         }
         if (class_exists($nopipein)) {
-            return $nopipein;
+            return [$nopipein => $ext];
         }
         if ((! $namespace) || (! class_exists($namespace))) {
             exception('MissingNoPipeInUseClass', compact('nopipein', 'namespace'));
@@ -932,17 +977,17 @@ final class PortManager
             exception('NoPipeInNotExists', compact('nopipein', 'namespace'));
         }
 
-        return $_nopipein;
+        return [$_nopipein => $ext];
     }
 
-    public static function __annotationFilterNopipeout(string $nopipeout, array $ext, string $namespace = null) : ?string
+    public static function __annotationFilterNopipeout(string $nopipeout, array $ext, string $namespace = null) : ?array
     {
         $nopipeout = trim($nopipeout);
         if (! $nopipeout) {
             return null;
         }
         if (class_exists($nopipeout)) {
-            return $nopipeout;
+            return [$nopipeout => $ext];
         }
         if ((! $namespace) || (! class_exists($namespace))) {
             exception('MissingNoPipeOutUseClass', compact('nopipeout', 'namespace'));
@@ -953,17 +998,17 @@ final class PortManager
             exception('NoPipeOutNotExists', compact('nopipeout', 'namespace'));
         }
 
-        return $_nopipeout;
+        return [$_nopipeout => $ext];
     }
 
-    public static function __annotationFilterPipeout(string $pipeout, array $ext, string $namespace = null) : ?string
+    public static function __annotationFilterPipeout(string $pipeout, array $ext, string $namespace = null) : ?array
     {
         $pipeout = trim($pipeout);
         if (! $pipeout) {
             return null;
         }
         if (class_exists($pipeout)) {
-            return $pipeout;
+            return [$pipeout => $ext];
         }
         if ((! $namespace) || (! class_exists($namespace))) {
             exception('MissingPipeOutUseClass', compact('pipeout', 'namespace'));
@@ -974,7 +1019,7 @@ final class PortManager
             exception('PipeOutNotExists', compact('pipeout', 'namespace'));
         }
 
-        return $_pipeout;
+        return [$_pipeout => $ext];
     }
 
     public static function __annotationMultipleMergeSuffix() : bool

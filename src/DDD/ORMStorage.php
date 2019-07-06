@@ -268,4 +268,9 @@ class ORMStorage extends Storage
     ) {
         // TODO: to be override
     }
+
+    final public function column(string $attr) : ?string
+    {
+        return $this->annotations()['properties'][$attr]['COLUMN'] ?? null;
+    }
 }

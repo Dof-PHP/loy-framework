@@ -250,8 +250,8 @@ final class Kernel
      */
     private static function pipingin()
     {
-        $pipes = Port::get('pipein');
-        $noin  = Port::get('nopipein');
+        $pipes = Port::getRaw('pipein');
+        $noin  = Port::getRaw('nopipein');
         if (count($pipes) === 0) {
             return;
         }
@@ -273,7 +273,7 @@ final class Kernel
             return false;
         };
 
-        foreach ($pipes as $pipe) {
+        foreach ($pipes as $pipe => $ext) {
             if ($noin && $shouldPipeInBeIgnored($pipe, $noin)) {
                 continue;
             }
@@ -339,8 +339,8 @@ final class Kernel
      */
     private static function pipingout($result)
     {
-        $pipes = Port::get('pipeout');
-        $noout = Port::get('nopipeout');
+        $pipes = Port::getRaw('pipeout');
+        $noout = Port::getRaw('nopipeout');
         if (count($pipes) === 0) {
             return $result;
         }
@@ -363,7 +363,7 @@ final class Kernel
         };
 
         $_result = $result;
-        foreach ($pipes as $pipe) {
+        foreach ($pipes as $pipe => $ext) {
             if ($noout && $shouldPipeOutBeIgnored($pipe, $noout)) {
                 continue;
             }

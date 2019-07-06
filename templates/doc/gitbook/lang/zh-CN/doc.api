@@ -83,6 +83,15 @@ LINK;
 <?php endforeach ?>
 <?php endif ?>
 
+<?php if ($sortings ?? false) : ?>
+### 可排序字段
+| 字段 | 说明 |
+| :--- | :--- |
+<?php foreach($sortings as $field => $title) : ?>
+| <?= $field ?> | <?= $title ?> |
+<?php endforeach ?>
+<?php endif ?>
+
 <?php if ($headers['out'] ?? []) : ?>
 ### 响应头
 

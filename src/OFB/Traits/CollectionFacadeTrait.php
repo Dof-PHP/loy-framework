@@ -34,6 +34,20 @@ trait CollectionFacadeTrait
         self::getInstance()->set($key, $value);
     }
 
+    public static function getRaw(string $key, string $default = null)
+    {
+        $val = self::get($key, $default);
+        if (is_null($val)) {
+            return null;
+        }
+
+        if (is_collection($val)) {
+            return uncollect($val);
+        }
+
+        return $val;
+    }
+
     public static function get(string $key, string $default = null)
     {
         $key = strtolower($key);
