@@ -181,6 +181,24 @@ class Redis extends Storage implements Storable, Cachable, Queuable
         return $this;
     }
 
+    /**
+     * Re-packing scan for reference variable passing
+     *
+     * Or you may need workaround code like this:
+     *
+     *  call_user_func_array([$redis, 'scan'], array(&$it, $key, 100));
+     */
+    public function scan(&$it, string $match = null, int $limit = 10)
+    {
+        $start = microtime(true);
+
+        $result = $this->getConnection()->scan($it, $match, $limit);
+
+        $this->appendCMD($start, sprintf('scan %d match %s count %d', $it, $match, $limit));
+
+        return $result;
+    }
+
     private function appendCMD(float $start, string $cmd, ...$params)
     {
         $this->cmds[] = [
