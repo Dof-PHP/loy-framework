@@ -14,8 +14,8 @@ namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
  * @Version(v1)
  * @Auth(0)
  * @Status(0)
- * @Group(__NAME__)
  * @Route(__NAME__)
+ * @_Group(__NAME__)
  * @MimeOut(json)
  */
 class __NAME__
