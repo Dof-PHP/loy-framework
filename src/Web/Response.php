@@ -288,6 +288,31 @@ class Response
         $this->send();
     }
 
+    public function getServerName()
+    {
+        return $_SERVER['SERVER_NAME'] ?? null;
+    }
+
+    public function getServerOS()
+    {
+        return PHP_OS;
+    }
+
+    public function getServerInfo()
+    {
+        return php_uname();
+    }
+
+    public function getServerIP()
+    {
+        return $_SERVER['SERVER_ADDR'] ?? null;
+    }
+
+    public function getServerPort()
+    {
+        return $_SERVER['SERVER_PORT'] ?? null;
+    }
+
     public function getContext() : array
     {
         return $this->sent

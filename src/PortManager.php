@@ -7,6 +7,7 @@ namespace Dof\Framework;
 use Dof\Framework\Facade\Annotation;
 use Dof\Framework\Facade\Request;
 use Dof\Framework\OFB\Pipe\Sorting;
+use Dof\Framework\DDD\Repository;
 
 final class PortManager
 {
@@ -285,6 +286,7 @@ final class PortManager
         $globalHeaderIn  = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.headerin', []);
         $globalHeaderOut = ConfigManager::getDomainMergeDomainByNamespace($class, 'http.port.headerout', []);
         $globalHeaderStatus = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.headerstatus', []);
+        $globalLogging = ConfigManager::getDomainFinalDomainByNamespace($class, 'http.port.logging', null);
 
         $defaultVersion = $docClass['VERSION'] ?? null;
         $defaultInfoOK  = $docClass['INFOOK']  ?? null;
@@ -312,6 +314,8 @@ final class PortManager
         $defaultHeaderIn  = $docClass['HEADERIN']  ?? [];
         $defaultHeaderOut = $docClass['HEADEROUT'] ?? [];
         $defaultHeaderStatus = $docClass['HEADERSTATUS'] ?? $globalHeaderStatus;
+        $defaultLogging = $docClass['LOGGING'] ?? $globaLogging;
+        $defaultLogging = (($docClass['LOGGING'] ?? null) === '_') ? null : $defaultLogging;
 
         $route   = $attrs['ROUTE']   ?? null;
         $alias   = $attrs['ALIAS']   ?? null;
@@ -343,6 +347,8 @@ final class PortManager
         $nopipeout = $attrs['NOPIPEOUT'] ?? [];
         $arguments = $attrs['ARGUMENT'] ?? [];
         $remark = ($attrs['REMARK'] ?? ($attrs['NOTES'] ?? null)) ?? $defaultRemark;
+        $logging = $attrs['LOGGING'] ?? $defaultLogging;
+        $logging = (($attrs['LOGGING'] ?? null) === '_') ? null : $logging;
 
         // Decide version prefix in route definition
         $_version = $version[0] ?? null;
@@ -352,7 +358,7 @@ final class PortManager
 
         $urlpath = join('/', [$_version, $globalRoute, $defaultRoute, $route]);
         list($urlpath, $route, $params) = self::parse($urlpath);
-        if (! $urlpath || (! $route)) {
+        if ((! $urlpath) || (! $route)) {
             return;
         }
 
@@ -399,6 +405,7 @@ final class PortManager
             'wrapin'  => $wrapin,
             'wrapout' => $wrapout,
             'wraperr' => $wraperr,
+            'logging' => $logging,
             'version' => $version,
             'status'  => $status,
             'pipein'  => $pipeinList,
@@ -415,6 +422,7 @@ final class PortManager
             'argument'  => [],    // Port parameters validated for port method
             '__arguments'  => $properties,
             '__parameters' => $ofMethod['parameters'] ?? [],
+            '__docext' => $ofMethod['doc']['__ext__'] ?? [],
         ];
 
         // Formatting routes and alias data
@@ -1270,17 +1278,34 @@ final class PortManager
         return $_wrapin;
     }
 
-    public static function __annotationFilterGroup(string $group, array $ext, string $namespace)
+    public static function __annotationFilterGroup(string $group, array $ext = [], string $namespace = null)
     {
         return array_trim_from_string($group, '/');
     }
 
-    public static function __annotationFilterVersion(string $version, array $ext)
+    public static function __annotationFilterVersion(string $version, array $ext = [], string $namespace = null)
     {
         return [$version, array_change_key_case($ext, CASE_UPPER)];
     }
 
-    public static function __annotationFilterRoute(string $val)
+    public static function __annotationFilterLogging(string $logging, array $ext = [], string $namespace = null)
+    {
+        $logging = trim($logging);
+
+        if (! interface_exists($logging)) {
+            exception('LoggingRepositoryNotExists', compact('namespace', 'logging'));
+        }
+        if (! is_subclass_of($logging, Repository::class)) {
+            exception('LoggingNotSubClassOfRepository', compact('namespace', 'logging'));
+        }
+        if (! method_exists($logging, 'logging')) {
+            exception('MissingLoggingMethodInRepository', compact('namespace', 'logging'));
+        }
+
+        return $logging;
+    }
+
+    public static function __annotationFilterRoute(string $val, array $ext = [], string $namespace = null)
     {
         $arr = array_trim(explode('/', trim($val)));
 

@@ -136,6 +136,13 @@ final class Kernel
         }
 
         try {
+            self::logging();
+        } catch (Throwable $e) {
+            Log::log('port-logging-failure', join('@', [$class, $method]), parse_throwable($e));
+            // Kernel::throw(ERR::LOGGING_REQUEST_FAILED, [], 500, $e, $class);
+        }
+
+        try {
             Response::setBody($result)->send();
         } catch (Throwable $e) {
             Kernel::throw(ERR::SENDING_RESPONSE_FAILED, [], 500, $e, $class);
@@ -396,6 +403,42 @@ final class Kernel
         }
 
         return $_result;
+    }
+
+    /**
+     * Business custom logging logics
+     *
+     * SHOULD NOT throw exceptions/errors to break off normall http response
+     */
+    public static function logging()
+    {
+        $logging = Port::get('logging');
+        if (! $logging) {
+            return;
+        }
+
+        call_user_func_array([Container::di($logging), 'logging'], [[
+            'at' => Core::getUptime(false),
+            'api' => 'http',
+            'operator_id' => (int) Port::get('__logging_operator_id__'),
+            'client_ip'  => Request::getClientIP(),
+            'client_os'  => Request::getClientOS(),
+            'client_name' => Request::getClientName(),
+            'client_info' => Request::getClientUA(),
+            'client_port' => Request::getClientPort(),
+            'server_ip' => Response::getServerIP(),
+            'server_os' => Response::getServerOS(),
+            'server_name' => Response::getServerName(),
+            'server_info' => Response::getServerInfo(),
+            'server_port' => Response::getServerPort(),
+            'server_status' => Response::getStatus(),
+            'server_error' => (int) Response::getError(),
+            'class'  => Port::get('class'),
+            'method' => Port::get('method'),
+            'title'  => Port::get('title'),
+            'action_value'  => Route::get('urlpath'),
+            'action_type'   => Route::get('verb'),
+        ]]);
     }
 
     /**

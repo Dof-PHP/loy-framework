@@ -35,6 +35,7 @@ class ERR
     const PIPEOUT_CLASS_NOT_EXISTS = [50000023, 'PipeoutClassNotExists'];
     const PIPEOUT_HANDLER_NOT_EXISTS = [50000024, 'PipeoutHandlerNotExists'];
     const PIPEOUT_THROUGH_FAILED = [50000025, 'PipeoutThroughFailed'];
+    const LOGGING_REQUEST_FAILED = [50000026, 'LoggingRequestFailed'];
     const DOF_SERVICE_EXCEPTION = [40000026, 'DofServiceException'];
     const TOKEN_SECRET_MISSING = [50000027, 'TokenSecretMissing'];
     const TOKEN_SECRET_ID_MISSING = [50000028, 'TokenSecretIdMissing'];

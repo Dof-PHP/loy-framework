@@ -7,7 +7,7 @@ namespace Dof\Framework\OFB\Model;
 /**
  * @Title(Pagination field format)
  */
-class Pagination
+class Pagination extends Model
 {
     /**
      * @Title(Total count of items in current query conditions)

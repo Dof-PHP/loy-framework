@@ -1061,33 +1061,34 @@ class Command
      * @Option(withtssd){notes=Whether orm storage has timestamps and is soft deleted&default=false}
      * @Option(withsd){notes=Whether orm storage is soft deleted&default=false}
      * @Option(impl){notes=Whether orm storage implements a repository&default=false}
+     * @Option(logging){notes=Whether the orm storage is a logging storage&default=false}
      */
     public function addORMStorage($console)
     {
-        $domain = $console->getOption('domain');
-        if (! $domain) {
-            $console->exception('MissingDomainName');
-        }
+        $domain = $console->getOption('domain', null, true);
         $path = DomainManager::getByKey($domain);
         if (! $path) {
             $console->exception('DomainNotExists', [$domain]);
         }
-        $name = $console->getOption('storage');
-        if (! $name) {
-            $console->exception('MissingORMStorageName');
-        }
+        $name = $console->getOption('storage', null, true);
         $class = ospath($path, StorageManager::STORAGE_DIR, "{$name}ORM.php");
         if (is_file($class) && (! $console->hasOption('force'))) {
             $console->exception('StorageAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
+        if ($console->hasOption('logging')) {
+            $tpl = 'storage-orm-logging.tpl';
+        } else {
+            $tpl = $console->getOption('impl', false)
+                ? 'storage-orm-impl.tpl'
+                : 'storage-orm.tpl';
+        }
 
-        $tpl = $console->getOption('impl', false) ? 'storage-orm-impl.tpl' : 'storage-orm.tpl';
         $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', $tpl);
         if (! is_file($template)) {
             $console->exception('ORMStorageClassTemplateNotExist', [$template]);
         }
 
-        $storage = $console->getOption('withts', true) ? 'ORMStorageWithTS' : 'ORMStorage';
+        $storage = $console->getOption('withts', false) ? 'ORMStorageWithTS' : 'ORMStorage';
         $storage = $console->getOption('withtssd', false) ? 'ORMStorageWithTSSD' : $storage;
         $storage = $console->getOption('withsd', false) ? 'ORMStorageWithSD' : $storage;
 
@@ -1161,33 +1162,35 @@ class Command
      * @Option(domain){notes=Domain name of repository to be created}
      * @Option(repo){notes=Name of repository to be created}
      * @Option(force){notes=Whether force recreate repository when given repository name exists}
-     * @Option(type){notes=Repository type: Entity/ORM | Model/KV&default=Entity/ORM}
+     * @Option(type){notes=Repository type: Entity/ORM | Model/KV | Logging&default=Entity/ORM}
      * @Option(storage){notes=Storage path relative to storage base}
      * @Option(entity){notes=Entity path relative to entity base}
      * @Option(model){notes=Model path relative to model base}
      */
     public function addRepository($console)
     {
-        $domain = $console->getOption('domain');
-        if (! $domain) {
-            $console->exception('MissingDomainName');
-        }
+        $domain = $console->getOption('domain', null, true);
         $path = DomainManager::getByKey($domain);
         if (! $path) {
             $console->exception('DomainNotExists', [$domain]);
         }
-        $name = $console->getOption('repo');
-        if (! $name) {
-            $console->exception('MissingRepositoryName');
-        }
+        $name = $console->getOption('repo', null, true);
         $class = ospath($path, RepositoryManager::REPOSITORY_DIR, "{$name}Repository.php");
         if (is_file($class) && (! $console->hasOption('force'))) {
             $console->exception('StorageAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
         $type = $console->getOption('type', 'entity');
-        $isEntity = ciin($type, ['entity', 'orm']);
-        $tpl = $isEntity ? 'repository-entity.tpl' : 'repository-model.tpl';
+        if ($isLogging = ci_equal($type, 'logging')) {
+            $tpl = 'repository-logging.tpl';
+        } elseif ($isEntity = ciin($type, ['entity', 'orm'])) {
+            $tpl = 'repository-entity.tpl';
+        } elseif ($isModel = ciin($type, ['model', 'kv'])) {
+            $tpl = 'repository-model.tpl';
+        } else {
+            $console->exception('InvalidType', compact('type'));
+        }
+
         $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', $tpl);
         if (! is_file($template)) {
             $console->exception('RepositoryInterfaceTemplateNotExist', [$template]);
@@ -1197,7 +1200,7 @@ class Command
         if ($_storage = $console->getOption('storage')) {
             $storage = path2ns($_storage, true);
         }
-        if ($isEntity) {
+        if ($isLogging || ($isEntity ?? false)) {
             $storage .= 'ORM';
         }
 
@@ -1207,10 +1210,10 @@ class Command
         $repo = str_replace('__NAME__', $name, $repo);
         $repo = str_replace('__STORAGE__', $storage, $repo);
 
-        if ($isEntity) {
+        if ($isEntity ?? false) {
             $entity = $console->getOption('entity', $name);
             $repo = str_replace('__ENTITY__', path2ns($entity, true), $repo);
-        } else {
+        } elseif ($isModel ?? false) {
             $model = $console->getOption('model', $name);
             $repo = str_replace('__MODEL__', path2ns($model, true), $repo);
         }
@@ -1415,7 +1418,7 @@ class Command
      */
     public function addDomain($console)
     {
-        $name = $console->getParams()[0] ?? null;
+        $name = $console->first();
         if (! $name) {
             $console->exception('MissingDomainName');
         }
@@ -1436,7 +1439,7 @@ PHP;
 
         save($file, $init);
 
-        $console->success('Done!');
+        $console->success("Created new oomain: {$_name}");
     }
 
     /**
@@ -1572,6 +1575,38 @@ PHP;
             $console->render("Created Listener: ", $console::SUCCESS_COLOR)
             .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
         );
+    }
+
+    /**
+     * @CMD(logging.add)
+     * @Desc(Add a Logging repository and storage at the same time)
+     * @Option(domain){notes=Domain name of logging to be created}
+     * @Option(logging){notes=Logging name}
+     * @Option(force){notes=Whether force recreate logging when given logging name exists}
+     */
+    public function addLogging($console)
+    {
+        $logging = $console->getOption('logging', null, true);
+        $domain = $console->getOption('domain', 'Logging');
+        if (! DomainManager::getByKey($domain)) {
+            $console->setParams([$domain]);
+
+            $this->addDomain($console);
+        }
+
+        $console->setOption('domain', $domain);
+        if ($storage = $console->getOption('storage')) {
+            $console->setOption('storage', "{$storage}/{$logging}Log");
+        } else {
+            $console->setOption('storage', "{$logging}Log");
+        }
+
+        $console->setOption('repo', "{$logging}Log");
+        $console->setOption('type', "logging");
+        $this->addRepository($console);
+
+        $console->setOption('logging', true);
+        $this->addORMStorage($console);
     }
 
     /**

@@ -59,18 +59,6 @@ final class Kernel
         self::$uptime   = microtime(true);
         self::$upmemory = memory_get_usage();
 
-        if (! is_dir(self::$root = $root)) {
-            exception('InvalidProjectRoot', ['root' => $root]);
-        }
-
-        ConfigManager::init(self::$root);
-
-        if ($tz = ConfigManager::getEnv('TIMEZONE')) {
-            // if (in_array($tz, timezone_identifiers_list())) {
-            date_default_timezone_set($tz);
-            // }
-        }
-
         // Do some cleaning works before PHP process exit, like:
         // - Clean up database locks
         // - Rollback uncommitted transactions
@@ -102,6 +90,7 @@ final class Kernel
 
             Log::log('exception', $throwable->getMessage(), $context);
         });
+
         // Record every uncatched error regardless to the setting of the error_reporting setting
         set_error_handler(function ($errno, $errstr, $errfile, $errline) {
             $context = [
@@ -113,6 +102,18 @@ final class Kernel
             Log::log('error', $errstr, $context);
             // throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
         });
+
+        if (! is_dir(self::$root = $root)) {
+            exception('InvalidProjectRoot', ['root' => $root]);
+        }
+
+        ConfigManager::init(self::$root);
+
+        if ($tz = ConfigManager::getEnv('TIMEZONE')) {
+            // if (in_array($tz, timezone_identifiers_list())) {
+            date_default_timezone_set($tz);
+            // }
+        }
 
         DomainManager::load(self::$root);
 
@@ -153,9 +154,9 @@ final class Kernel
         return self::$upmemory;
     }
 
-    public static function getUptime()
+    public static function getUptime(bool $float = true)
     {
-        return self::$uptime;
+        return $float ? self::$uptime : intval(self::$uptime);
     }
 
     public static function root() : string

@@ -208,16 +208,38 @@ class Request
         return $this->getMethod();
     }
 
-    public function getIp() : ?string
+    public function getClientIp() : ?string
     {
-        return $this->getOrSet('ip', function () {
+        return $this->getOrSet('client_ip', function () {
             return http_client_ip();
         });
     }
 
-    public function getUA() : ?string
+    public function getClientOS()
     {
-        return $this->getOrSet('ua', function () {
+        return $this->getOrSet('client_os', function () {
+            return http_client_os();
+        });
+    }
+
+    public function getClientName()
+    {
+        return $this->getOrSet('client_name', function () {
+            return http_client_name();
+        });
+        // $_SERVER['REMOTE_PORT'] ?? null,
+    }
+
+    public function getClientPort()
+    {
+        return $this->getOrSet('client_port', function () {
+            return $_SERVER['REMOTE_PORT'] ?? null;
+        });
+    }
+
+    public function getClientUA() : ?string
+    {
+        return $this->getOrSet('client_user_agent', function () {
             return $this->getHeader('USER_AGENT');
         });
     }
@@ -368,10 +390,10 @@ class Request
         }
         if ($logClient) {
             $log[1] = [
-                http_client_name(),
-                http_client_os(),
-                http_client_ip(),
-                $_SERVER['REMOTE_PORT'] ?? null,
+                $this->getClientName(),
+                $this->getClientOS(),
+                $this->getClientIP(),
+                $this->getClientPort(),
             ];
         }
         if ($logServer) {
