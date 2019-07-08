@@ -157,8 +157,8 @@ class Response extends Facade
             }
 
             $_key = is_int($key) ? $default : $key;
-            $_val = self::getInstance()->getWrapout($_key);
-            $_val = is_null($_val) ? (is_int($key) ? null : $default) : $val;
+            $val  = self::getInstance()->getWrapout($_key);
+            $_val = is_null($val) ? (is_int($key) ? null : $default) : $val;
             $data[$_key] = $_val;
         }
 
