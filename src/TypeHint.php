@@ -24,6 +24,7 @@ final class TypeHint
         'tinyint' => true,
         'smallint' => true,
         'mediumint' => true,
+        'decimal' => true,
         'varchar' => true,
         'char' => true,
         'text' => true,
@@ -182,6 +183,21 @@ final class TypeHint
         return boolval($val);
     }
 
+    public static function convertToDecimal($val, bool $force = false) : bool
+    {
+        return floatval($val);
+    }
+
+    public static function convertToDouble($val, bool $force = false) : bool
+    {
+        return floatval($val);
+    }
+
+    public static function convertToFloat($val, bool $force = false) : bool
+    {
+        return floatval($val);
+    }
+
     public static function isArray($val) : bool
     {
         return is_array($val) || ($val instanceof Collection);
@@ -318,6 +334,27 @@ final class TypeHint
         }
 
         $_val = intval($val);
+
+        return $val == $_val;
+    }
+
+    public static function isDecimal($val) : bool
+    {
+        return self::isFloat($val);
+    }
+
+    public static function isDouble($val) : bool
+    {
+        return self::isFloat($val);
+    }
+
+    public static function isFloat($val) : bool
+    {
+        if (! is_numeric($val)) {
+            return false;
+        }
+
+        $_val = floatval($val);
 
         return $val == $_val;
     }
