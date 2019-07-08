@@ -160,7 +160,7 @@ final class TypeHint
         return self::convertToInt($val, $force);
     }
 
-    public static function convertToInt($val, bool $force = false)
+    public static function convertToInt($val, bool $force = false) : int
     {
         if ($force) {
             return intval($val);
@@ -183,17 +183,17 @@ final class TypeHint
         return boolval($val);
     }
 
-    public static function convertToDecimal($val, bool $force = false) : bool
+    public static function convertToDecimal($val, bool $force = false) : float
     {
         return floatval($val);
     }
 
-    public static function convertToDouble($val, bool $force = false) : bool
+    public static function convertToDouble($val, bool $force = false) : float
     {
         return floatval($val);
     }
 
-    public static function convertToFloat($val, bool $force = false) : bool
+    public static function convertToFloat($val, bool $force = false) : float
     {
         return floatval($val);
     }
