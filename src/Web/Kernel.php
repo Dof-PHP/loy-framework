@@ -417,6 +417,14 @@ final class Kernel
             return;
         }
 
+        $argvs = Port::argvs();
+        if ($argvs['password'] ?? false) {
+            $argvs['password'] = '*';
+        }
+        if ($argvs['secret'] ?? false) {
+            $argvs['secret'] = '*';
+        }
+
         call_user_func_array([Container::di($logging), 'logging'], [[
             'at' => Core::getUptime(false),
             'api' => 'http',
@@ -425,7 +433,7 @@ final class Kernel
             'action_type' => Route::get('verb'),
             'action_value' => Route::get('urlpath'),
             'action_params' => enjson(Route::get('params.kv')),
-            'arguments' => enjson(Port::argvs()),
+            'arguments' => enjson($argvs),
             'class'  => Port::get('class'),
             'method' => Port::get('method'),
             'client_ip'  => Request::getClientIP(),
