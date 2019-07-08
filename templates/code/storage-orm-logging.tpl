@@ -65,6 +65,14 @@ class __NAME__ORM extends ORMStorage implements __NAME__Repository
     protected $actionValue;
 
     /**
+     * @Column(action_params)
+     * @Type(varchar)
+     * @Length(191)
+     * @Comment(Action value parameters , vary from api type)
+     */
+    protected $actionParams;
+
+    /**
     * @Column(action_type)
     * @Type(varchar)
     * @Comment(Action type, vary from api type)
@@ -72,6 +80,13 @@ class __NAME__ORM extends ORMStorage implements __NAME__Repository
     * @Default()
     */
     protected $actionType;
+
+    /**
+    * @Column(arguments)
+    * @Type(text)
+    * @Comment(Action arguments)
+    */
+    protected $arguments;
 
     /**
      * @Column(class)

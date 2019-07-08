@@ -420,7 +420,14 @@ final class Kernel
         call_user_func_array([Container::di($logging), 'logging'], [[
             'at' => Core::getUptime(false),
             'api' => 'http',
+            'title' => Port::get('title'),
             'operator_id' => (int) Port::get('__logging_operator_id__'),
+            'action_type' => Route::get('verb'),
+            'action_value' => Route::get('urlpath'),
+            'action_params' => enjson(Route::get('params.kv')),
+            'arguments' => enjson(Port::argvs()),
+            'class'  => Port::get('class'),
+            'method' => Port::get('method'),
             'client_ip'  => Request::getClientIP(),
             'client_os'  => Request::getClientOS(),
             'client_name' => Request::getClientName(),
@@ -432,12 +439,7 @@ final class Kernel
             'server_info' => Response::getServerInfo(),
             'server_port' => Response::getServerPort(),
             'server_status' => Response::getStatus(),
-            'server_error' => (int) Response::getError(),
-            'class'  => Port::get('class'),
-            'method' => Port::get('method'),
-            'title'  => Port::get('title'),
-            'action_value'  => Route::get('urlpath'),
-            'action_type'   => Route::get('verb'),
+            'server_error'  => (int) Response::getError(),
         ]]);
     }
 
