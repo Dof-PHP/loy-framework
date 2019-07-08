@@ -314,7 +314,7 @@ final class PortManager
         $defaultHeaderIn  = $docClass['HEADERIN']  ?? [];
         $defaultHeaderOut = $docClass['HEADEROUT'] ?? [];
         $defaultHeaderStatus = $docClass['HEADERSTATUS'] ?? $globalHeaderStatus;
-        $defaultLogging = $docClass['LOGGING'] ?? $globaLogging;
+        $defaultLogging = $docClass['LOGGING'] ?? $globalLogging;
         $defaultLogging = (($docClass['LOGGING'] ?? null) === '_') ? null : $defaultLogging;
 
         $route   = $attrs['ROUTE']   ?? null;
