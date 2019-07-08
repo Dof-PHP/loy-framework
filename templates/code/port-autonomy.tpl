@@ -5,16 +5,19 @@ declare(strict_types=1);
 namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
 
 // use Dof\Framework\OFB\Pipe\Paginate;
+// use Dof\Framework\OFB\Pipe\Sorting;
 // use Domain\__DOMAIN__\Http\ERR;
-// use Domain\__DOMAIN__\Service\Action__NAME__;
 // use Dof\Framework\OFB\Wrapper\Pagination;
+// use Domain\__DOMAIN__\Service\__NAME__ as Service;
 
 /**
  * @Author(name@group.com)
  * @Version(v1)
  * @Auth(0)
+ * @Title(Port Title)
  * @Status(0)
  * @Route(__NAME__)
+ * @Verb(GET)
  * @_Group(__NAME__)
  * @Autonomy(0)
  * @MimeOut(json)
@@ -24,17 +27,15 @@ class __NAME__
     /**
      * @Title(Parameter Title)
      * @Type(String)
+     * @Need(1)
      */
     private $param1;
 
     /**
-     * @Title(Port Title)
      * @_SubTitle(Port SubTitle)
-     * @Route(/)
-     * @Verb(POST)
-     * @Argument(param1)
      */
-    public function action(Action__NAME__ $service)
+    // public function execute(Service $service)
+    public function execute()
     {
         // extract(pargvs());
         // $service->error(ERR::_, 500);

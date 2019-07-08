@@ -261,7 +261,10 @@ final class PortManager
             exception('BadPortClassWithOutDomainKey', compact('class'));
         }
         $attrs = $ofMethod['doc'] ?? [];
-        if (($attrs['NOTROUTE'] ?? false) || ($docClass['NOTROUTE'] ?? false)) {
+        if ($attrs['NOTROUTE'] ?? false) {
+            return;
+        }
+        if (($docClass['NOTROUTE'] ?? false) && (($attrs['NOTROUTE'] ?? false) !== '0')) {
             return;
         }
         $nodoc  = $attrs['NODOC'] ?? ($docClass['NODOC'] ?? false);

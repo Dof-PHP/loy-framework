@@ -969,6 +969,7 @@ class Command
      * @Option(port){notes=Name of port to be created}
      * @Option(force){notes=Whether force recreate port when given port name exists}
      * @Option(crud){notes=Whether add crud port methods into port&default=false}
+     * @Option(autonomy){notes=Whether create an autonomy port&default=false}
      */
     public function addPort($console)
     {
@@ -989,7 +990,14 @@ class Command
             $console->exception('PortAlreadyExists', [get_namespace_of_file($class, true), $class]);
         }
 
-        $tpl = $console->hasOption('crud') ? 'port-crud.tpl' : 'port-basic.tpl';
+        if ($console->hasOption('autonomy')) {
+            $tpl = 'port-autonomy.tpl';
+        } elseif ($console->hasOption('crud')) {
+            $tpl = 'port-crud.tpl';
+        } else {
+            $tpl = 'port-basic.tpl';
+        }
+
         $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', $tpl);
         if (! is_file($template)) {
             $console->exception('PortClassTemplateNotExist', [$template]);

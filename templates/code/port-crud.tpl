@@ -22,6 +22,7 @@ use Domain\__DOMAIN__\Service\CRUD\List__NAME__;
  * @Model(Domain\__DOMAIN__\Entity\__NAME__)
  * @Assembler(Domain\__DOMAIN__\Assembler\__NAME__)
  * @MimeOut(json)
+ * @Autonomy(0)
  */
 class __NAME__
 {
@@ -39,6 +40,7 @@ class __NAME__
 
     /**
      * @Title(Create Resource __NAME__)
+     * @SubTitle(Sub Title Create Resource __NAME__)
      * @Route(/)
      * @Verb(POST)
      * @Argument(param1)
