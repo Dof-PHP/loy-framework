@@ -267,7 +267,7 @@ final class Kernel
             foreach ($noin as $exclude) {
                 if ((! $exclude) || (! class_exists($exclude))) {
                     Kernel::throw(ERR::NOPIPEIN_CLASS_NOT_EXISTS, [
-                        'nopipein' => $_exclude,
+                        'nopipein' => $exclude,
                         'class'    => Route::get('class'),
                         'method'   => Route::get('method'),
                     ], 500, null, Route::get('class'));
@@ -356,7 +356,7 @@ final class Kernel
             foreach ($noout as $exclude) {
                 if ((! $exclude) || (! class_exists($exclude))) {
                     Kernel::throw(ERR::NOPIPEOUT_CLASS_NOT_EXISTS, [
-                        'nopipeout' => $_exclude,
+                        'nopipeout' => $exclude,
                         'class'     => Route::get('class'),
                         'method'    => Route::get('method'),
                     ], 500, null, Route::get('class'));

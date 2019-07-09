@@ -18,9 +18,12 @@ namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
  * @Status(0)
  * @Route(__NAME__)
  * @Verb(GET)
- * @_Group(__NAME__)
  * @Autonomy(0)
  * @MimeOut(json)
+ * @_Model()
+ * @_PipeIn()
+ * @_WrapOut()
+ * @_Group(__NAME__)
  */
 class __NAME__
 {

@@ -17,6 +17,7 @@ namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
  * @Route(__NAME__)
  * @_Group(__NAME__)
  * @Autonomy(0)
+ * @_Model(param1)
  * @MimeOut(json)
  */
 class __NAME__
