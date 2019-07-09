@@ -1439,7 +1439,7 @@ PHP;
 
         save($file, $init);
 
-        $console->success("Created new oomain: {$_name}");
+        $console->success("Created new domain: {$_name}");
     }
 
     /**
