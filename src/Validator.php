@@ -36,32 +36,37 @@ class Validator
             $val = $this->data[$key] ?? null;
             $noneed = is_null($val) || ('' === $val) || (is_array($val) && empty($val));
             $need = !$noneed;
-            if ($noneed) {
-                $exists = array_key_exists($key, $this->data);
-                foreach ($rules as $_rule => $_ext) {
-                    // Typehint to defined type
-                    if ($exists && ci_equal($_rule, 'TYPE') && ($type = ($_ext[1] ?? null))) {
-                        if (! TypeHint::support($type)) {
-                            exception('UnSupportedTypeHint', compact('key', 'val', 'type'));
-                        }
-
-                        try {
-                            $this->result[$key] = TypeHint::convert($val, $type, true);
-                        } catch (Throwable $e) {
-                            exception('TypeHintEmptyValueFailed', compact('tpye', 'key', 'val'), $e);
-                        }
-                    }
-                    if (self::REQUIRE_RULES[strtolower($_rule)] ?? false) {
-                        $need = true;
-                        // break;
-                    }
-                }
-            }
 
             // If value is null or empty and no require rules on that value
             // Then we skip the next validateions
             if (! $need) {
-                continue;
+                foreach ($rules as $_rule => $_ext) {
+                    if (self::REQUIRE_RULES[strtolower($_rule)] ?? false) {
+                        $need = true;
+                        break;
+                    }
+                }
+
+                if (! $need) {
+                    $exists = array_key_exists($key, $this->data);
+                    foreach ($rules as $_rule => $_ext) {
+                        // Typehint to defined type
+                        if ($exists && ci_equal($_rule, 'TYPE') && ($type = ($_ext[1] ?? null))) {
+                            if (! TypeHint::support($type)) {
+                                exception('UnSupportedTypeHint', compact('key', 'val', 'type'));
+                            }
+
+                            try {
+                                $this->result[$key] = TypeHint::convert($val, $type, true);
+                            } catch (Throwable $e) {
+                                // Ignore
+                                // exception('TypeHintEmptyValueFailed', compact('tpye', 'key', 'val'), $e);
+                            }
+                        }
+                    }
+
+                    continue;
+                }
             }
 
             foreach ($rules as $rule => list($msg, $ext)) {
@@ -72,7 +77,6 @@ class Validator
                 }
 
                 if (true !== $res) {
-                    $val = $this->data[$key] ?? null;
                     $msg = sprintf($msg, $key, $val, ...$ext);
                     $this->addFail($msg, compact('key', 'val', 'ext'));
                     if ($this->abortOnFail) {

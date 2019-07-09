@@ -33,7 +33,7 @@ final class TypeHint
         'tinytext' => true,
     ];
 
-    public static function convert($val, string $type, bool $force = false)
+    public static function convert(&$val, string $type, bool $force = false)
     {
         $converter = 'convertTo'.ucfirst(strtolower($type));
         if (! method_exists(__CLASS__, $converter)) {
@@ -43,7 +43,7 @@ final class TypeHint
         return self::$converter($val, $force);
     }
 
-    public static function convertToArray($val, bool $force = false) : array
+    public static function convertToArray(&$val, bool $force = false) : array
     {
         if ($val instanceof Collection) {
             return (array) $val->toArray();
@@ -60,37 +60,37 @@ final class TypeHint
         return (array) $val;
     }
 
-    public static function convertToChar($val, bool $force = false)
+    public static function convertToChar(&$val, bool $force = false)
     {
         return self::convertToString($val, $force);
     }
 
-    public static function convertToMediumtext($val, bool $force = false)
+    public static function convertToMediumtext(&$val, bool $force = false)
     {
         return self::convertToString($val, $force);
     }
 
-    public static function convertToTinytext($val, bool $force = false)
+    public static function convertToTinytext(&$val, bool $force = false)
     {
         return self::convertToString($val, $force);
     }
 
-    public static function convertToLongtext($val, bool $force = false)
+    public static function convertToLongtext(&$val, bool $force = false)
     {
         return self::convertToString($val, $force);
     }
 
-    public static function convertToText($val, bool $force = false)
+    public static function convertToText(&$val, bool $force = false)
     {
         return self::convertToString($val, $force);
     }
 
-    public static function convertToVarchar($val, bool $force = false)
+    public static function convertToVarchar(&$val, bool $force = false)
     {
         return self::convertToString($val, $force);
     }
 
-    public static function convertToString($val, bool $force = false)
+    public static function convertToString(&$val, bool $force = false)
     {
         if ($force) {
             return strval($val);
@@ -107,7 +107,7 @@ final class TypeHint
         exception('TypeHintStringFailed', compact('val'));
     }
 
-    public static function convertToPint($val, bool $force = false)
+    public static function convertToPint(&$val, bool $force = false)
     {
         $val = $force ? intval($val) : self::convertToInt($val);
 
@@ -118,7 +118,7 @@ final class TypeHint
         return $val;
     }
 
-    public static function convertToBint($val, bool $force = false)
+    public static function convertToBint(&$val, bool $force = false)
     {
         $val = $force ? intval($val) : self::convertToInt($val);
 
@@ -129,7 +129,7 @@ final class TypeHint
         return $val;
     }
 
-    public static function convertToUint($val, bool $force = false)
+    public static function convertToUint(&$val, bool $force = false)
     {
         $val = $force ? intval($val) : self::convertToInt($val);
 
@@ -140,27 +140,27 @@ final class TypeHint
         return $val;
     }
 
-    public static function convertToInteger($val, bool $force = false)
+    public static function convertToInteger(&$val, bool $force = false)
     {
         return self::convertToInt($val, $force);
     }
 
-    public static function convertToBigint($val, bool $force = false)
+    public static function convertToBigint(&$val, bool $force = false)
     {
         return self::convertToInt($val, $force);
     }
 
-    public static function convertToSmallint($val, bool $force = false)
+    public static function convertToSmallint(&$val, bool $force = false)
     {
         return self::convertToInt($val, $force);
     }
 
-    public static function convertToTinyint($val, bool $force = false)
+    public static function convertToTinyint(&$val, bool $force = false)
     {
         return self::convertToInt($val, $force);
     }
 
-    public static function convertToInt($val, bool $force = false) : int
+    public static function convertToInt(&$val, bool $force = false) : int
     {
         if ($force) {
             return intval($val);
@@ -173,27 +173,27 @@ final class TypeHint
         exception('TypeHintIntFailed', compact('val'));
     }
 
-    public static function convertToBoolean($val, bool $force = false) : bool
+    public static function convertToBoolean(&$val, bool $force = false) : bool
     {
         return self::convertToBool($val, $force);
     }
 
-    public static function convertToBool($val, bool $force = false) : bool
+    public static function convertToBool(&$val, bool $force = false) : bool
     {
         return boolval($val);
     }
 
-    public static function convertToDecimal($val, bool $force = false) : float
+    public static function convertToDecimal(&$val, bool $force = false) : float
     {
         return floatval($val);
     }
 
-    public static function convertToDouble($val, bool $force = false) : float
+    public static function convertToDouble(&$val, bool $force = false) : float
     {
         return floatval($val);
     }
 
-    public static function convertToFloat($val, bool $force = false) : float
+    public static function convertToFloat(&$val, bool $force = false) : float
     {
         return floatval($val);
     }
