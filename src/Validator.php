@@ -40,18 +40,27 @@ class Validator
             // If value is null or empty and no require rules on that value
             // Then we skip the next validateions
             if (! $need) {
+                $hasDefault = false;
                 foreach ($rules as $_rule => $_ext) {
                     if (self::REQUIRE_RULES[strtolower($_rule)] ?? false) {
                         $need = true;
-                        break;
+                        // break;
+                    }
+                    if (ci_equal($_rule, 'default')) {
+                        $hasDefault = true;
+                        $val = $_ext[1] ?? null;
                     }
                 }
 
                 if (! $need) {
                     $exists = array_key_exists($key, $this->data);
+                    if ((! $exists) && (! $hasDefault)) {
+                        continue;
+                    }
+
                     foreach ($rules as $_rule => $_ext) {
                         // Typehint to defined type
-                        if ($exists && ci_equal($_rule, 'TYPE') && ($type = ($_ext[1] ?? null))) {
+                        if (ci_equal($_rule, 'TYPE') && ($type = ($_ext[1] ?? null))) {
                             if (! TypeHint::support($type)) {
                                 exception('UnSupportedTypeHint', compact('key', 'val', 'type'));
                             }
