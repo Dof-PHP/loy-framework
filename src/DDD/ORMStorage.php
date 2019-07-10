@@ -262,7 +262,7 @@ class ORMStorage extends Storage
     public function list(
         int $page,
         int $size,
-        Collection $filter = null,
+        Collection $filter,
         string $sortField = null,
         string $sortOrder = null
     ) {

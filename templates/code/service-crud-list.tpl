@@ -63,7 +63,7 @@ class List__ENTITY__ extends Service
         return $this;
     }
 
-    public function setFilter(Collection $filter = null)
+    public function setFilter(Collection $filter)
     {
         $this->filter = $filter;
 
