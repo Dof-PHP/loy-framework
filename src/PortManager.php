@@ -359,7 +359,13 @@ final class PortManager
             $_version = null;
         }
 
-        $urlpath = join('/', [$_version, $globalRoute, $defaultRoute, $route]);
+        $extends = $attrs['__ext__']['ROUTE']['extends'] ?? '1';
+        if ($extends === '0') {
+            $urlpath = join('/', [$_version, $globalRoute, $route]);
+        } else {
+            $urlpath = join('/', [$_version, $globalRoute, $defaultRoute, $route]);
+        }
+
         list($urlpath, $route, $params) = self::parse($urlpath);
         if ((! $urlpath) || (! $route)) {
             return;
