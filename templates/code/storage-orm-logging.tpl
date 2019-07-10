@@ -12,6 +12,7 @@ use Domain\__DOMAIN__\Repository\__NAME__Repository;
  * @Driver(mysql)
  * @Database(__DOMAIN__)
  * @Table(__NAME__)
+ * @NoSync(0)
  * @Comment(Logging table of __NAME__)
  * @Engine(InnoDB)
  * @Charset(utf8mb4)

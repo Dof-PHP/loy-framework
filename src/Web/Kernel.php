@@ -264,7 +264,7 @@ final class Kernel
         }
 
         $shouldPipeInBeIgnored = function ($pipein, $noin) : bool {
-            foreach ($noin as $exclude) {
+            foreach ($noin as $exclude => $ext) {
                 if ((! $exclude) || (! class_exists($exclude))) {
                     Kernel::throw(ERR::NOPIPEIN_CLASS_NOT_EXISTS, [
                         'nopipein' => $exclude,
@@ -353,7 +353,7 @@ final class Kernel
         }
 
         $shouldPipeOutBeIgnored = function ($pipeout, $noout) : bool {
-            foreach ($noout as $exclude) {
+            foreach ($noout as $exclude => $ext) {
                 if ((! $exclude) || (! class_exists($exclude))) {
                     Kernel::throw(ERR::NOPIPEOUT_CLASS_NOT_EXISTS, [
                         'nopipeout' => $exclude,
