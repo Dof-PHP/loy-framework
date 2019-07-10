@@ -36,6 +36,13 @@ class Redis extends Storage implements Storable, Cachable, Queuable
         return $this->cmds;
     }
 
+    public function connectable() : bool
+    {
+        $connection = $this->getConnection();
+
+        return $connection && ($connection->ping() === '+PONG');
+    }
+
     public function getConnection()
     {
         parent::getConnection();

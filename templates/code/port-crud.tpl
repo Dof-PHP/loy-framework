@@ -45,6 +45,7 @@ class __NAME__
      * @Verb(POST)
      * @Argument(param1)
      * @HeaderStatus(201){Created Success}
+     * @_Logging(Domain\__DOMAIN__\Repository\Create__NAME__LogRepository)
      */
     public function create(Create__NAME__ $service)
     {
@@ -63,6 +64,7 @@ class __NAME__
      * @Argument(id){inroute}
      * @HeaderStatus(204){Deleted Success}
      * @Assembler(_)
+     * @_Logging(Domain\__DOMAIN__\Repository\Delete__NAME__LogRepository)
      */
     public function delete(int $id, Delete__NAME__ $service)
     {
@@ -79,6 +81,7 @@ class __NAME__
      * @Verb(PUT)
      * @Argument(id){inroute}
      * @Argument(param1){need:0}
+     * @_Logging(Domain\__DOMAIN__\Repository\Update__NAME__LogRepository)
      */
     public function update(int $id, Update__NAME__ $service)
     {
@@ -95,6 +98,7 @@ class __NAME__
      * @Route({id})
      * @Verb(GET)
      * @Argument(id){inroute}
+     * @_Logging(Domain\__DOMAIN__\Repository\Show__NAME__LogRepository)
      */
     public function show(int $id, Show__NAME__ $service)
     {
@@ -108,6 +112,7 @@ class __NAME__
      * @PipeIn(Paginate)
      * @PipeIn(Sorting)
      * @WrapOut(Dof\Framework\OFB\Wrapper\Pagination)
+     * @_Logging(Domain\__DOMAIN__\Repository\List__NAME__LogRepository)
      */
     public function list(List__NAME__ $service)
     {

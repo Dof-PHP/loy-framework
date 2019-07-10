@@ -349,6 +349,61 @@ class Command
     }
 
     /**
+     * @CMD(test.storage.connection)
+     * @Desc(Test connection status for all storages in domains)
+     * @Option(fails){notes=Whether output success tests info&default=false}
+     * @Option(verbose){notes=Whether output exception details tests&default=false}
+     */
+    public function testStorageConnection($console)
+    {
+        $storages = StorageManager::getStorages();
+        if (! $storages) {
+            $console->info('NoStoragesFoundInDomains');
+        }
+
+        $fails = [];
+
+        foreach ($storages as $storage) {
+            $namespace = $storage['meta']['NAMESPACE'] ?? null;
+            if (! namespace_exists($namespace)) {
+                $console->fail("InvalidStorageNamespace:{$namespace}");
+            }
+
+            $output = true;
+
+            try {
+                $connectable = $namespace::new()->storage()->connectable();
+                if (true === $connectable) {
+                    if ($console->hasOption('fails')) {
+                        $output = false;
+                    } else {
+                        $console->output($console->render('Success: ', $console::SUCCESS_COLOR));
+                    }
+                } else {
+                    $console->output($console->render('Fail: ', $console::FAIL_COLOR));
+                    $fails['fail'][] = $namespace;
+                }
+            } catch (Throwable $e) {
+                $console->output($console->render('Exception: ', $console::ERROR_COLOR));
+                $context = parse_throwable($e);
+                $context['namespace'] = $namespace;
+                $context['filepath']  = get_file_of_namespace($namespace);
+                $fails['exception'][] = $context;
+            }
+
+            if ($output) {
+                $file = get_file_of_namespace($namespace);
+                $file = str_replace(Kernel::getRoot().'/', '', $file);
+                $console->info($file);
+            }
+        }
+
+        if ($console->hasOption('verbose') && $fails) {
+            $console->output($console->render(json_pretty($fails), $console::ERROR_COLOR));
+        }
+    }
+
+    /**
      * @CMD(test.domain)
      * @Desc(Run domain tests)
      * @Argv(1){notes=The domain name to run test cases}

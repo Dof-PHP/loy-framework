@@ -34,6 +34,7 @@ class __NAME__
      * @Route(/)
      * @Verb(POST)
      * @Argument(param1)
+     * @_Logging(Domain\__DOMAIN__\Repository\__NAME__LogRepository)
      */
     public function action(Action__NAME__ $service)
     {

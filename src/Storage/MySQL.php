@@ -325,6 +325,13 @@ class MySQL extends Storage implements Storable
         }
     }
 
+    public function connectable() : bool
+    {
+        $connection = $this->getConnection();
+
+        return $connection && (get_class($connection) === PDO::class);
+    }
+
     public function getConnection()
     {
         parent::getConnection();

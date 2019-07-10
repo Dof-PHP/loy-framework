@@ -36,6 +36,7 @@ class __NAME__
 
     /**
      * @_SubTitle(Port SubTitle)
+     * @_Logging(Domain\__DOMAIN__\Repository\__NAME__LogRepository)
      */
     // public function execute(Service $service)
     public function execute()

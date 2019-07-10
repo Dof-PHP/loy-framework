@@ -1231,9 +1231,9 @@ if (! function_exists('get_last_trace')) {
     }
 }
 if (! function_exists('namespace_exists')) {
-    function namespace_exists(string $ns) : bool
+    function namespace_exists(string $ns = null) : bool
     {
-        return $ns && class_exists($ns) || interface_exists($ns) || trait_exists($ns);
+        return $ns && (class_exists($ns) || interface_exists($ns) || trait_exists($ns));
     }
 }
 if (! function_exists('get_class_consts')) {
