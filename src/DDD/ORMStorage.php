@@ -271,7 +271,17 @@ class ORMStorage extends Storage
         string $sortField = null,
         string $sortOrder = null
     ) {
-        // TODO: to be override
+        $builder = $this->builder();
+
+        if ($sortField && ($column = $this->column($sortField))) {
+            $builder->order($column, $sortOrder ?: 'desc');
+        } else {
+            $builder->order('id', 'desc');
+        }
+
+        $list = $builder->paginate($page, $size);
+
+        return $this->converts($list);
     }
 
     final public function column(string $attr) : ?string
