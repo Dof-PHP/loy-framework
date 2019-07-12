@@ -35,7 +35,7 @@ final class CacheManager
     */
     public static function get(string $namespace, string $key, string $driver = null) : ?Cachable
     {
-        $instance = self::$namespaces[$namespace] ?? null;
+        $instance = self::$namespaces[$namespace][$key] ?? null;
         if ($instance) {
             return $instance;
         }
@@ -106,7 +106,7 @@ final class CacheManager
             });
         }
 
-        return self::$namespaces[$namespace] = $instance;
+        return self::$namespaces[$namespace][$key] = $instance;
     }
 
     public static function buildAnnotationsByDriver(string $driver, string $key, array $config = [])
