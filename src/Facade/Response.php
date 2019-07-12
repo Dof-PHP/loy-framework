@@ -32,10 +32,14 @@ class Response extends Facade
     public static function error(int $status, array $error, array $context = [], string $domain = null)
     {
         $code = (int) ($error[0] ?? -1);
-        $info = (string) ($error[1] ?? -1);
+        $info = ($error[1] ?? -1);
         if ($_info = ($context['__info'] ?? null)) {
-            $context['__info'] = $info;
+            $context['__info'][] = $info;
             $info = $_info;
+        }
+        if ($text = $error[2] ?? null) {
+            $context['__info'][] = $info;
+            $info = $text;
         }
 
         // TODO
@@ -46,7 +50,7 @@ class Response extends Facade
             ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_DEBUG', false)
             : ConfigManager::getEnv('HTTP_DEBUG', false);
 
-        $body = $debug ? [$code, $info, $context] : [$code, $info];
+        $body = $debug ? [$code, stringify($info), $context] : [$code, stringify($info)];
 
         // We dont record user error coz it might be huge amount abused reqeusts
 
@@ -87,17 +91,21 @@ class Response extends Facade
         unset($context['__request']);
 
         $code = (int) ($error[0] ?? -1);
-        $info = (string) ($error[1] ?? -1);
+        $info = $error[1] ?? -1;
         if ($_info = ($context['__info'] ?? null)) {
-            $context['__info'] = $info;
+            $context['__info'][] = $info;
             $info = $_info;
+        }
+        if ($text = $error[2] ?? null) {
+            $context['__info'][] = $info;
+            $info = $text;
         }
 
         $debug = $domain
             ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_DEBUG', false)
             : ConfigManager::getEnv('HTTP_DEBUG', false);
 
-        $body = $debug ? [$code, $info, $context] : [$code, $info];
+        $body = $debug ? [$code, stringify($info), $context] : [$code, stringify($info)];
 
         $wraperr = Port::get('wraperr');
         $wraperr = $wraperr ? $wraperr : ConfigManager::getFramework('web.exception.wrapper', null);

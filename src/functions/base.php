@@ -572,6 +572,9 @@ if (! function_exists('is_assoc_array')) {
 if (! function_exists('stringify')) {
     function stringify($value)
     {
+        if (is_string($val)) {
+            return $val;
+        }
         if (is_null($value)) {
             return '';
         }
