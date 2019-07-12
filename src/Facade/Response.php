@@ -34,11 +34,11 @@ class Response extends Facade
         $code = (int) ($error[0] ?? -1);
         $info = ($error[1] ?? -1);
         if ($_info = ($context['__info'] ?? null)) {
-            $context['__info'][] = $info;
+            $context['__info'] = $info;
             $info = $_info;
         }
         if ($text = $error[2] ?? null) {
-            $context['__info'][] = $info;
+            $context['__info'] = $info;
             $info = $text;
         }
 
@@ -93,11 +93,11 @@ class Response extends Facade
         $code = (int) ($error[0] ?? -1);
         $info = $error[1] ?? -1;
         if ($_info = ($context['__info'] ?? null)) {
-            $context['__info'][] = $info;
+            $context['__info'] = $info;
             $info = $_info;
         }
         if ($text = $error[2] ?? null) {
-            $context['__info'][] = $info;
+            $context['__info'] = $info;
             $info = $text;
         }
 
