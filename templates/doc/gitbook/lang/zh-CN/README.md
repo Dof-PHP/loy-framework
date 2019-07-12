@@ -109,6 +109,17 @@ GET /v1/users?__sort=field{id},order{desc}
 GET /v1/users?__sort_field=id&__sort_order=desc
 ```
 
+### 时间戳格式化参数
+
+前面的例子中有个 `createdAt{format:1}` 这样的字段参数表达式，其中这个 `format` 属于字段参数，用途是指定要返回的时间戳字段的格式。
+
+框架内部定义了几种常用格式，字段参数值及其格式对应如下：
+
+- `1`：`Y-m-d H:i:s`
+- `2`：`y/m/d H:i:s`
+- `3`：`d/m/y H:i:s`
+- `0`：不传时默认，即返回时间戳本身。 
+
 ## HTTP 响应错误码编码规范提案
 
 ### 特殊情况——请求成功
