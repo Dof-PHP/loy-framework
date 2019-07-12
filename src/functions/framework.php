@@ -274,7 +274,15 @@ if (! function_exists('get_annotation_ns')) {
 if (! function_exists('logging')) {
     function logging(string $level, string $message, ...$context)
     {
-        return call_user_func_array([\Dof\Framework\Facade\Log::class, $level], [$message, $context]);
+        if ($level === 'log') {
+            $_level = $message;
+            $_message = array_shift($context) ?? $_level;
+            $params = [$_level, $_message, $context];
+        } else {
+            $params = [$message, $context];
+        }
+
+        return call_user_func_array([\Dof\Framework\Facade\Log::class, $level], $params);
     }
 }
 if (! function_exists('logger')) {
