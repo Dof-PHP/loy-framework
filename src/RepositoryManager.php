@@ -264,12 +264,12 @@ final class RepositoryManager
 
     public static function isORMCacheEnabled(string $storage) : bool
     {
-        $global = ConfigManager::getDomainFinalEnvByNamespace($storage, 'ENABLE_ORM_CACHE', false);
-        if ($global) {
-            return !boolval(StorageManager::get($storage)['meta']['NOCACHE'] ?? 0);
+        $meta = StorageManager::get($storage)['meta'] ?? [];
+        if (array_key_exists('CACHE', $meta)) {
+            return boolval($meta['CACHE'] ?? 0);
         }
 
-        return boolval(StorageManager::get($storage)['meta']['CACHE'] ?? 0);
+        return (bool) ConfigManager::getDomainFinalEnvByNamespace($storage, 'ENABLE_ORM_CACHE', false);
     }
 
     public static function formatStorageCacheKey(string $storage, int $pk) : string
