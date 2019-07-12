@@ -15,9 +15,10 @@ final class TypeHint
         'double' => true,
         'float' => true,
         'string' => true,
-        'array' => true,
         'bool' => true,
         'boolean' => true,
+        'array' => true,
+        'listarrayofreference' => true,
 
         // SQL column type compatible
         'bigint' => true,
@@ -41,6 +42,11 @@ final class TypeHint
         }
 
         return self::$converter($val, $force);
+    }
+
+    public static function convertToListarrayofreference(&$val, bool $force = false) : array
+    {
+        return self::convertToArray($val, $force);
     }
 
     public static function convertToArray(&$val, bool $force = false) : array
