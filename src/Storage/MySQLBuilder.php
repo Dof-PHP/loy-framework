@@ -948,7 +948,7 @@ class MySQLBuilder
     /**
      * Add on record from storage class annotations
      */
-    public function add(array $data) : int
+    public function add(array $data)
     {
         $annotations= $this->origin->annotations();
         $columns = array_keys($data);
