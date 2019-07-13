@@ -469,7 +469,7 @@ class Command
         if ($_failure > 0) {
             $console->fail(json_pretty($failure));
         }
-        $console->warning('-- Exception Exceptions: '.$_exception);
+        $console->warning('-- Exception Tests: '.$_exception);
         if ($_exception > 0) {
             $console->warning(json_pretty($exception));
         }
