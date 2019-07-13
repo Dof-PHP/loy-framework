@@ -929,11 +929,13 @@ final class PortManager
             $params[$_rule.$_ext] = $error;
         }
 
-        // Add default NEED rule for saving definitions
+        // Add default NEED rule to save definitions
         if ($neednot) {
-            unset($params['NEED'], $params['NEED:0']);
+            unset($params['NEED'], $params['NEED:0'], $params['NEED:1']);
         } else {
-            $params['NEED'] = null;
+            $_err = $params['NEED:1'] ?? ($params['NEED'] ?? null);
+            unset($params['NEED:0'], $params['NEED:1']);
+            $params['NEED'] = $_err;
         }
 
         $argvs = array_trim_from_string($arg, ',');
