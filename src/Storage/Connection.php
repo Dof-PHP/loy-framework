@@ -114,12 +114,15 @@ final class Connection
         $config = is_collection($config) ? $config : collect($config);
 
         $memcached = new \Memcached($connection);
-        //See: <https://help.aliyun.com/document_detail/48432.html>
-        $memcached->setOptions([
-            \Memcached::OPT_COMPRESSION     => false,
-            \Memcached::OPT_BINARY_PROTOCOL => true,
-            \Memcached::OPT_TCP_NODELAY     => true,
-        ]);
+        if ($config->tcp_nodelay ?? true) {
+            $memcached->setOption(\Memcached::OPT_TCP_NODELAY, true);
+        }
+        if (! ($config->compression ?? false)) {
+            $memcached->setOption(\Memcached::OPT_COMPRESSION, false);
+        }
+        if ($config->binary_protocol ?? true) {
+            $memcached->setOption(\Memcached::OPT_BINARY_PROTOCOL, true);
+        }
         if ($config->libketama_compatible ?? true) {
             $memcached->setOption(\Memcached::OPT_LIBKETAMA_COMPATIBLE, true);
         }

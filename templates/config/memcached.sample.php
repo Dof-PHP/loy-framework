@@ -12,6 +12,9 @@ return [
             'sasl_user' => '',
             // 'persistent_id' => null,
             // 'libketama_compatible' => false,
+            // 'tcp_nodelay' => true,
+            // 'compression' => false,
+            // 'binary_protocol' => true,
             'sasl_pswd' => '',
         ],
 
