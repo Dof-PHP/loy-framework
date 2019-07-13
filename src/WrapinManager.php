@@ -188,8 +188,15 @@ final class WrapinManager
                     $rule = $value;
                     $value = $ext[$annotation]['ext'] ?? null;
                 }
+                $errmsg = $ext[$annotation]['err'] ?? (
+                    array_keys($ext[$annotation] ?? [])[0] ?? $value
+                );
 
-                $errmsg = $ext[$annotation]['err'] ?? (array_keys($ext[$annotation] ?? [])[0] ?? null);
+                // Empty value for specific rules who does not need it
+                if ($annotation === 'NEED') {
+                    $value = null;
+                }
+
                 if (is_null($errmsg)) {
                     $rules[$key][] = sprintf('%s:%s', $rule, $value);
                 } else {
