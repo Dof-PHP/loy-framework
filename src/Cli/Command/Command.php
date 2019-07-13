@@ -187,7 +187,10 @@ class Command
                     }
                 }
             }
+
+            $console->line();
         }
+
         $console->line();
     }
 
