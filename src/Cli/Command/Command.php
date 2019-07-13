@@ -682,7 +682,7 @@ class Command
 
         EventManager::flush();
 
-        $console->success('Done!');
+        $console->success('Cleared!');
     }
 
     /**
@@ -691,6 +691,8 @@ class Command
      */
     public function compile($console)
     {
+        $this->clearCompile($console);
+
         try {
             ConfigManager::compileDefault(Kernel::getRoot(), true);
 
@@ -716,7 +718,7 @@ class Command
 
             EventManager::compile($domains, true);
 
-            $console->success('Done!', true);
+            $console->success('Compiled!', true);
         } catch (Throwable $e) {
             $console->exception('CompileFailed', [], $e);
         }
