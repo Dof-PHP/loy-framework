@@ -24,6 +24,11 @@ class Memcached extends Storage implements Storable, Cachable
         return $result;
     }
 
+    public function connectable() : bool
+    {
+        return count($this->getConnection()->getStats()) > 0;
+    }
+
     public function get(string $key)
     {
         $start = microtime(true);
