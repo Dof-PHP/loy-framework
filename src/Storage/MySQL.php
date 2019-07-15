@@ -273,13 +273,13 @@ class MySQL extends Storage implements Storable
         return $db ? "`{$db}`.`{$prefix}{$table}`" : "`{$prefix}{$table}`";
     }
 
-    public function quote(string $val)
+    public function quote($val)
     {
         $type = $this->getPDOValueConst($val);
 
         $needdb = $this->needdb;
         $this->needdb = false;
-        $res = $this->getConnection()->quote($val, $type);
+        $res = $this->getConnection()->quote(strval($val), $type);
         $this->needdb = $needdb;
 
         return $res;
