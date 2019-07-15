@@ -497,7 +497,16 @@ if (! function_exists('array_stringify_main')) {
                 $str .= $margin."],\n";
                 --$level;
             } else {
-                $val  = is_int($val) ? $val : (is_null($val) ? 'null' : ("'".addslashes(stringify($val))."'"));
+                if (is_numeric($val)) {
+                    $val = $val;
+                } elseif (is_bool($val)) {
+                    $val = $val ? 'true' : 'false';
+                } elseif (is_null($val)) {
+                    $val = 'null';
+                } else {
+                    $val  = "'".addslashes(stringify($val))."'";
+                }
+
                 $str .= $val.",\n";
             }
         }

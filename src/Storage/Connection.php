@@ -120,7 +120,7 @@ final class Connection
         if (! ($config->compression ?? false)) {
             $memcached->setOption(\Memcached::OPT_COMPRESSION, false);
         }
-        if ($config->binary_protocol ?? true) {
+        if ($config->binary_protocol ?? false) {
             $memcached->setOption(\Memcached::OPT_BINARY_PROTOCOL, true);
         }
         if ($config->libketama_compatible ?? true) {
