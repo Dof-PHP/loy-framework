@@ -658,9 +658,16 @@ if (! function_exists('is_xml')) {
     }
 }
 if (! function_exists('ci_equal')) {
-    function ci_equal(string $a, string $b) : bool
+    function ci_equal($a, $b) : bool
     {
-        return strtolower($b) === strtolower($a);
+        if ((! is_string($a)) && (! is_numeric($a))) {
+            return false;
+        }
+        if ((! is_string($b)) && (! is_numeric($b))) {
+            return false;
+        }
+
+        return strtolower(strval($b)) === strtolower(strval($a));
     }
 }
 if (! function_exists('ciin')) {
