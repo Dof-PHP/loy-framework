@@ -499,7 +499,12 @@ final class Kernel
 
             unset($context['__errors']);
 
-            Response::exception($status, $error, $context, $domain);
+            if ($status >= 500) {
+                Response::exception($status, $error, $context, $domain);
+                return;
+            }
+
+            Response::error($status, $error, $context, $domain);
         } else {
             $ifNot();
         }
