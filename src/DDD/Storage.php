@@ -38,6 +38,11 @@ abstract class Storage implements Repository
         return $this->__storage;
     }
 
+    final public static function connection()
+    {
+        return self::annotations()['meta']['CONNECTION'] ?? null;
+    }
+
     final public static function database()
     {
         return self::annotations()['meta']['DATABASE'] ?? null;
