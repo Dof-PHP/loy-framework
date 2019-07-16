@@ -39,16 +39,18 @@ class ORMStorage extends Storage
         return $this->converts($this->builder()->paginate($page, $size));
     }
 
-    final public static function table(bool $prefix = true) : string
+    final public static function table(bool $database = false, bool $prefix = true) : string
     {
         $meta = self::annotations()['meta'] ?? [];
         $table = $meta['TABLE'] ?? '';
         if ($prefix) {
-            $_prefix = $meta['PREFIX'] ?? '';
-            return "{$_prefix}{$table}";
+            $prefix = $meta['PREFIX'] ?? '';
+        }
+        if ($database && ($database = $meta['DATABASE'] ?? '')) {
+            $database = "`{$database}`.";
         }
 
-        return $table;
+        return "{$database}`{$prefix}{$table}`";
     }
 
     final public function create(Entity &$entity) : Entity
