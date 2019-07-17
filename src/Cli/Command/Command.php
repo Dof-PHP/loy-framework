@@ -1083,6 +1083,47 @@ class Command
     }
 
     /**
+     * @CMD(wrapin.add)
+     * @Desc(Add a wrapin class in a domain)
+     * @Option(domain){notes=Domain name of wrapin to be created}
+     * @Option(wrapin){notes=Name of wrapin to be created}
+     * @Option(force){notes=Whether force recreate wrapin when given wrapin name exists}
+     */
+    public function addWrapIn($console)
+    {
+        $domain = $console->getOption('domain', null, true);
+        $path = DomainManager::getByKey($domain);
+        if (! $path) {
+            $console->exception('DomainNotExists', [$domain]);
+        }
+        $name = $console->getOption('wrapin', null, true);
+
+        $class = ospath($path, WrapinManager::WRAPIN_DIR, "{$name}.php");
+        if (is_file($class) && (! $console->hasOption('force'))) {
+            $console->exception('WrapinAlreadyExists', [get_namespace_of_file($class, true), $class]);
+        }
+
+        $template = ospath(Kernel::root(), Kernel::TEMPLATE, 'code', 'wrapin.tpl');
+        if (! is_file($template)) {
+            $console->exception('WrapinClassTemplateNotExist', [$template]);
+        }
+
+        $pipe = file_get_contents($template);
+        $pipe = str_replace('__DOMAIN__', $domain, $pipe);
+        $pipe = str_replace('__NAMESPACE__', path2ns($name), $pipe);
+        $pipe = str_replace('__NAME__', basename($name), $pipe);
+
+        save($class, $pipe);
+
+        $_class = get_namespace_of_file($class, true);
+
+        $console->line(
+            $console->render('Created WrapIn: ', $console::SUCCESS_COLOR)
+            .$console->render("{$_class} ({$class})", $console::INFO_COLOR)
+        );
+    }
+
+    /**
      * @CMD(pipe.add)
      * @Desc(Add a pipe class in a domain)
      * @Option(domain){notes=Domain name of pipe to be created}

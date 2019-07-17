@@ -98,9 +98,9 @@ final class WrapinManager
             if (! ($attrs['doc']['TYPE'] ?? false)) {
                 exception('MissingWrapinAttrType', ['wrapin' => $namespace, 'attr' => $name]);
             }
-
-            self::$wrapins[$namespace]['properties'][$name] = $attrs['doc'] ?? [];
         }
+
+        self::$wrapins[$namespace]['properties'] = $ofProperties;
     }
 
     /**
@@ -115,10 +115,12 @@ final class WrapinManager
         if (! class_exists($wrapin)) {
             exception('WrapperInNotExists', compact('wrapin'));
         }
-
         $wrapins = self::get($wrapin);
+        if (! $wrapins) {
+            exception('WrapperInNotExists', compact('wrapin'));
+        }
 
-        return self::execute($wrapins, $wrapin, $params);
+        return self::execute($wrapins['properties'] ?? [], $wrapin, $params);
     }
 
     /**
@@ -138,7 +140,7 @@ final class WrapinManager
             exception('UnIterableWrapinArguments', compact('arguments'));
         }
 
-        $data = $rules = $wrapins = [];
+        $data = $rules = $wrapins = $wrapinList = [];
         foreach ($arguments as $key => $argument) {
             $argument = $argument['doc'] ?? [];
             if (! $argument) {
@@ -166,16 +168,32 @@ final class WrapinManager
                 if (self::RESERVE_KEYS[$annotation] ?? false) {
                     continue;
                 }
+                if (substr($annotation, 0, 1) === '_') {
+                    continue;
+                }
+
                 if ($annotation === 'WRAPIN') {
+                    if (! is_iterable($val)) {
+                        $err = 'UnIterableWrapinList';
+                        return Validator::setFails(
+                            collect(['InvalidWrapinList' => compact('key', 'val', 'err')], null, false)
+                        );
+                    }
+
                     if ($ext['WRAPIN']['list'] ?? false) {
-                        if (is_iterable($val)) {
-                            foreach ($val as $item) {
-                                $wrapins[] = [$value => $item];
-                            }
+                        if (! is_index_array($val)) {
+                            return Validator::setFails(
+                                collect(['InvalidWrapinList' => compact('val')], null, false)
+                            );
+                        }
+
+                        foreach ($val as $item) {
+                            $wrapinList[$key][] = [$value, $item];
                         }
                     } else {
-                        $wrapins[] = [$value => $val];
+                        $wrapins[$key] = [$value, $val];
                     }
+
                     continue;
                 }
 
@@ -189,7 +207,7 @@ final class WrapinManager
                     $value = $ext[$annotation]['ext'] ?? null;
                 }
                 $errmsg = $ext[$annotation]['err'] ?? (
-                    array_keys($ext[$annotation] ?? [])[0] ?? $value
+                    array_keys($ext[$annotation] ?? [])[0] ?? null
                 );
 
                 // Empty value for specific rules who does not need it
@@ -211,33 +229,61 @@ final class WrapinManager
             return $validator;
         }
 
-        // Execute another wrappins from annotations
-        if ($wrapins) {
-            foreach ($wrapins as $__wrapin) {
-                foreach ($__wrapin as $wrapin => $_data) {
-                    if (! $_data) {
-                        continue;
-                    }
+        $result = $validator->getResult();
 
-                    $_wrapin = get_annotation_ns($wrapin, $origin);
-                    if (false === $_wrapin) {
-                        exception('InvalidWrapinAnnotation', compact('wrapin'));
-                    }
-
-                    $validator = self::apply($_wrapin, $_data);
-                    if (($fails = $validator->getFails()) && ($fail = $fails->first())) {
-                        $fails   = $fails->toArray();
-                        $context = $fail->value;
-                        $context['wrapins'][] = $_wrapin;
-                        $fails[$fail->key] = $context;
-
-                        $validator->setFails(collect($fails, null, false));
-
-                        return $validator;
-                    }
-                }
+        // Execute another normal wrappins
+        foreach ($wrapins as $_key => list($wrapin, $_data)) {
+            $_wrapin = get_annotation_ns($wrapin, $origin);
+            if (false === $_wrapin) {
+                exception('InvalidWrapinAnnotation', compact('wrapin'));
             }
+
+            $_validator = self::apply($_wrapin, $_data);
+
+            if (($fails = $_validator->getFails()) && ($fail = $fails->first())) {
+                $fails = $fails->toArray();
+                $context = $fail->value;
+                $context['wrapins'][] = $_wrapin;
+                $fails[$fail->key] = $context;
+
+                $_validator->setFails(collect($fails, null, false));
+
+                return $_validator;
+            }
+
+            $result[$_key] = $_validator->getResult();
         }
+
+        // Execute another list wrappins
+        foreach ($wrapinList as $_key => $list) {
+            $_result = [];
+            foreach ($list as $idx => list($wrapin, $_data)) {
+                $_wrapin = get_annotation_ns($wrapin, $origin);
+                if (false === $_wrapin) {
+                    exception('InvalidWrapinAnnotation', compact('idx', 'wrapin'));
+                }
+
+                $_validator = self::apply($_wrapin, $_data);
+
+                if (($fails = $_validator->getFails()) && ($fail = $fails->first())) {
+                    $fails = $fails->toArray();
+                    $context = $fail->value;
+                    $context['wrapins'][] = $_wrapin;
+                    $context['idx'][] = $idx + 1;
+                    $fails[$fail->key] = $context;
+
+                    $_validator->setFails(collect($fails, null, false));
+
+                    return $_validator;
+                }
+
+                $_result[] = $_validator->getResult();
+            }
+
+            $result[$_key] = $_result;
+        }
+        
+        $validator->setResult($result);
 
         return $validator;
     }

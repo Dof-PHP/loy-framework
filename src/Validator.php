@@ -569,7 +569,7 @@ class Validator
 
             $hasRequireRule = $hasDefaultRule = false;
             foreach ($__rules as $rule => $msg) {
-                if ((! is_scalar($rule)) || (! is_scalar($msg))) {
+                if ((! is_scalar($rule)) || ((! is_scalar($msg)) && (! is_null($msg)))) {
                     exception('InvalidValidatorRule', compact('rule', 'msg'));
                 }
 
@@ -650,6 +650,19 @@ class Validator
     {
         $this->data = $this->result = $data;
         $this->errors = $this->fails = null;
+    
+        return $this;
+    }
+
+    /**
+     * Setter for result
+     *
+     * @param array $result
+     * @return Validator
+     */
+    public function setResult(array $result)
+    {
+        $this->result = $result;
     
         return $this;
     }

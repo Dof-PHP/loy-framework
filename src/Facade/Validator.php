@@ -10,6 +10,6 @@ use Dof\Framework\TypeHint;
 
 class Validator extends Facade
 {
-    public static $singleton = true;
+    public static $singleton = false;
     protected static $namespace = Instance::class;
 }

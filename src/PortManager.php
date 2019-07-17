@@ -11,8 +11,9 @@ use Dof\Framework\DDD\Repository;
 
 final class PortManager
 {
-    const PORT_DIR   = ['Http', 'Port'];
-    const PIPE_DIR   = ['Http', 'Pipe'];
+    const PORT_DIR = ['Http', 'Port'];
+    const PIPE_DIR = ['Http', 'Pipe'];
+    const WRAPIN_DIR = ['Http', 'WrapIn'];
     const AUTH_TYPES = ['0', '1', '2', '3'];
     const AUTONOMY_HANLDER = 'execute';
     const SUPPORT_HTTP_VERB = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
