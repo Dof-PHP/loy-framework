@@ -528,7 +528,11 @@ class GitBook
         $data['key'] = $key;
 
         foreach ($annotation['properties'] ?? [] as $name => $options) {
-            $rules = $options;
+            $rules = $options['doc'] ?? [];
+            if (! $rules) {
+                continue;
+            }
+
             array_unset(
                 $rules,
                 '__ext__',
