@@ -73,7 +73,8 @@ final class Kernel
         }
 
         if (is_file($flag = ospath($root, Kernel::HALT_FLAG))) {
-            Kernel::throw(ERR::SERVER_CLOSED, dejson($flag, true, true), 503);
+            $status = ConfigManager::getFramework('web.halt.status', 503);
+            Kernel::throw(ERR::SERVER_CLOSED, dejson($flag, true, true), $status);
         }
 
         try {
