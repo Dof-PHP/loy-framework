@@ -218,7 +218,7 @@ class GitBook
         }
         $this->render($this->readme, $readme, ['version' => 'Wrapin List']);
         
-        $summary = ospath($ver, self::SUMMARY);
+        $summary = ospath($path, self::SUMMARY);
         if (is_file($summary)) {
             unlink($summary);
         }
@@ -527,12 +527,8 @@ class GitBook
         $data['wrapin'] = $annotation['meta']['TITLE'] ?? $key;
         $data['key'] = $key;
 
-        foreach ($annotation['properties'] ?? [] as $name => $options) {
-            $rules = $options['doc'] ?? [];
-            if (! $rules) {
-                continue;
-            }
-
+        foreach ($annotation['properties'] ?? [] as $name => list('doc' => $options)) {
+            $rules = $options;
             array_unset(
                 $rules,
                 '__ext__',
@@ -549,7 +545,7 @@ class GitBook
 
             $data['params'][] = [
                 'name' => $name,
-                'type' => $options['TYPE']  ?? null,
+                'type' => $options['TYPE'] ?? null,
                 'title' => $options['TITLE'] ?? null,
                 'notes' => $options['NOTES'] ?? null,
                 'default' => $options['DEFAULT'] ?? null,
