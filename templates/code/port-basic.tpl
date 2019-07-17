@@ -17,8 +17,8 @@ namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
  * @Route(__NAME__)
  * @_Group(__NAME__)
  * @Autonomy(0)
- * @_Model()
  * @MimeOut(json)
+ * @_PipeIn()
  */
 class __NAME__
 {
@@ -34,6 +34,8 @@ class __NAME__
      * @Route(/)
      * @Verb(POST)
      * @Argument(param1)
+     * @_Assembler(Domain\__DOMAIN__\Assembler\__NAME__)
+     * @_Model(Domain\__DOMAIN__\Entity\__NAME__)
      * @_Logging(Domain\__DOMAIN__\Repository\__NAME__LogRepository)
      */
     public function action(Action__NAME__ $service)
