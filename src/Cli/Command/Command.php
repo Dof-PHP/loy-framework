@@ -589,6 +589,10 @@ class Command
             $list = $category['list'] ?? [];
             if ($list) {
                 foreach ($list as $port) {
+                    if ($port['nodump'] ?? false) {
+                        continue;
+                    }
+
                     foreach ($port['verbs'] ?? [] as $verb) {
                         $children[] = [
                             'title' => $port['title'] ?? null,

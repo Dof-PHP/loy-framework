@@ -319,6 +319,7 @@ final class PortManager
         $defaultHeaderStatus = $docClass['HEADERSTATUS'] ?? $globalHeaderStatus;
         $defaultLogging = $docClass['LOGGING'] ?? $globalLogging;
         $defaultLogging = (($docClass['LOGGING'] ?? null) === '_') ? null : $defaultLogging;
+        $defaultNoDump = $docClass['NODUMP'] ?? null;
 
         $route   = $attrs['ROUTE']   ?? null;
         $alias   = $attrs['ALIAS']   ?? null;
@@ -352,6 +353,7 @@ final class PortManager
         $remark = ($attrs['REMARK'] ?? ($attrs['NOTES'] ?? null)) ?? $defaultRemark;
         $logging = $attrs['LOGGING'] ?? $defaultLogging;
         $logging = (($attrs['LOGGING'] ?? null) === '_') ? null : $logging;
+        $nodump = $attrs['NODUMP'] ?? $defaultNoDump;
 
         // Decide version prefix in route definition
         $_version = $version[0] ?? null;
@@ -530,6 +532,7 @@ final class PortManager
             'verbs' => $verbs,
             'title' => $title,
             'remark' => $remark,
+            'nodump'  => $nodump,
             'models'  => self::formatDocNamespace($models),
             'author'  => $author,
             'status'  => $status,
