@@ -72,7 +72,7 @@ class Command
                 $console->exception('CommandToHelpNotExist', [$cmd]);
             }
 
-            $console->line($console->render("Usage: php dof {$cmd} [--options ...] [[--] parameters ...]", 'YELLOW'), 2);
+            $console->line($console->render("Usage: php dof {$cmd} [--options ...] [[--] arguments ...]", 'YELLOW'), 2);
             extract($attr);
 
             $console->line(
@@ -108,7 +108,7 @@ class Command
             $console->info('* File: '.($reflector['file'] ?? get_file_of_namespace($class)));
             $console->info('* Line: '.($reflector['line'] ?? -1));
         } else {
-            $console->line($console->render('Usage: php dof {COMMAND} [--options ...] [[--] parameters ...]', 'YELLOW'));
+            $console->line($console->render('Usage: php dof {COMMAND} [--options ...] [[--] arguments ...]', 'YELLOW'));
         }
 
         $console->line();
