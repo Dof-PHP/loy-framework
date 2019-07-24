@@ -277,7 +277,7 @@ final class PortManager
         if ((! $nodoc) && (! $title)) {
             exception('MissingPortMethodTitle', compact('class', 'method'));
         }
-        $subtitle = $attrs['SUBTITLE'] ?? null;
+        $subtitle = $attrs['SUBTITLE'] ?? ($docClass['SUBTITLE'] ?? null);
         $auth = $attrs['AUTH'] ?? ($docClass['AUTH'] ?? '0');
 
         $domainTitle   = ConfigManager::getDomainByNamespace($class, 'domain.title', $domainKey);
