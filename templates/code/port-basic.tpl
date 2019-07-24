@@ -40,8 +40,9 @@ class __NAME__
      */
     public function action(Action__NAME__ $service)
     {
-        // extract(pargvs());
         // $service->error(ERR::_, 500);
+
+        // extract(pargvs());
 
         return $service
             ->setParam1(port('argument')->param1)

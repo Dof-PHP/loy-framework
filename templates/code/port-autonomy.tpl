@@ -19,7 +19,7 @@ namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
  * @Status(0)
  * @Route(__NAME__)
  * @Verb(GET)
- * @Autonomy(0)
+ * @Autonomy(1)
  * @MimeOut(json)
  * @_Model(Domain\__DOMAIN__\Entity\__NAME__)
  * @_Assembler(Domain\__DOMAIN__\Assembler\__NAME__)
@@ -40,8 +40,9 @@ class __NAME__
     // public function execute(Service $service)
     public function execute()
     {
-        // extract(pargvs());
         // $service->error(ERR::_, 500);
+
+        // extract(pargvs());
 
         return $service
             ->setParam1(port('argument')->param1)
