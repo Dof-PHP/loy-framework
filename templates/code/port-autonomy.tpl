@@ -15,15 +15,18 @@ namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
  * @Version(v1)
  * @Auth(0)
  * @Title(Port Title)
+ * @_SubTitle(Port SubTitle)
  * @Status(0)
  * @Route(__NAME__)
  * @Verb(GET)
  * @Autonomy(0)
  * @MimeOut(json)
- * @_Model()
+ * @_Model(Domain\__DOMAIN__\Entity\__NAME__)
+ * @_Assembler(Domain\__DOMAIN__\Assembler\__NAME__)
  * @_PipeIn()
  * @_WrapOut()
  * @_Group(__NAME__)
+ * @_Logging(Domain\Logging\Repository\__NAME__LogRepository)
  */
 class __NAME__
 {
@@ -34,10 +37,6 @@ class __NAME__
      */
     private $param1;
 
-    /**
-     * @_SubTitle(Port SubTitle)
-     * @_Logging(Domain\__DOMAIN__\Repository\__NAME__LogRepository)
-     */
     // public function execute(Service $service)
     public function execute()
     {
