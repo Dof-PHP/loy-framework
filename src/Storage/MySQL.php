@@ -275,7 +275,7 @@ class MySQL extends Storage implements Storable
 
     public function quote($val)
     {
-        if (is_numeric($val)) {
+        if (in_array(gettype($val), ['integer', 'double', 'float'])) {
             return $val;
         }
 

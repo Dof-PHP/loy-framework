@@ -21,6 +21,7 @@ class MySQLBuilder
     private $where = [];
     private $wheres = [];
     private $whereRaw = [];
+    private $raw;
     private $rawWhere = [];
     private $or = [];
     private $ors = [];
@@ -47,6 +48,7 @@ class MySQLBuilder
         $this->exists = [];
         $this->wheres = [];
         $this->whereRaw = [];
+        $this->raw = null;
         $this->rawWhere = [];
         $this->or = [];
         $this->ors = [];
@@ -286,6 +288,13 @@ class MySQLBuilder
     public function where(string $column, $value, string $operator = '=')
     {
         $this->where[] = [$column, $operator, $value];
+
+        return $this;
+    }
+
+    public function raw(string $raw)
+    {
+        $this->raw = $raw;
 
         return $this;
     }
@@ -1186,6 +1195,10 @@ class MySQLBuilder
      */
     private function buildWhere(bool $asGroup = false) : array
     {
+        if ($this->raw) {
+            return ["WHERE ({$this->raw})", []];
+        }
+
         $where = '';
         $params = [];
 
