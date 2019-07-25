@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Dof\Framework;
 
+use Dof\Framework\DDD\Model;
+use Dof\Framework\DDD\Entity;
+
 final class TypeHint
 {
     const SUPPORTS = [
@@ -19,6 +22,8 @@ final class TypeHint
         'boolean' => true,
         'array' => true,
         'listarrayofreference' => true,
+        'model' => true,
+        'entity' => true,
 
         // SQL column type compatible
         'bigint' => true,
@@ -204,6 +209,24 @@ final class TypeHint
         return floatval($val);
     }
 
+    public static function convertToEntity(&$val, bool $force = false) : Entity
+    {
+        if (self::isEntity($val)) {
+            return $val;
+        }
+
+        exception('InvalidEntityToConvert', compact('val'));
+    }
+
+    public static function convertToModel(&$val, bool $force = false) : Model
+    {
+        if (self::isModel($val)) {
+            return $val;
+        }
+
+        exception('InvalidModelToConvert', compact('val'));
+    }
+
     public static function isArray($val) : bool
     {
         return is_array($val) || ($val instanceof Collection);
@@ -363,6 +386,16 @@ final class TypeHint
         $_val = floatval($val);
 
         return $val == $_val;
+    }
+
+    public static function isEntity($val) : bool
+    {
+        return is_subclass_of($val, Entity::class);
+    }
+
+    public static function isModel($val) : bool
+    {
+        return is_subclass_of($val, Model::class);
     }
 
     public static function support(string &$type = null) : bool
