@@ -151,8 +151,9 @@ class MySQLSchema
                 if (trim(strval($property['AUTOINC'] ?? '')) === '1') {
                     $autoinc = 'AUTO_INCREMENT';
                 }
+                $unsigned = (($property['UNSIGNED'] ?? null) == 1) ? 'UNSIGNED' : '';
 
-                $add .= "ADD COLUMN `{$column}` {$_type} {$notnull} {$autoinc} {$default} {$comment}";
+                $add .= "ADD COLUMN `{$column}` {$_type} {$unsigned} {$notnull} {$autoinc} {$default} {$comment}";
                 if (false !== next($columnsAdd)) {
                     $add .= ",\n";
                 }

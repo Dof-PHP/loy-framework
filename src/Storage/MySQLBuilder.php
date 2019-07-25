@@ -659,11 +659,13 @@ class MySQLBuilder
 
     public function existing(string $column = 'id')
     {
-        $this->select = [$column];
+        $this->aliasRaw("COUNT({$column})", 'cnt');
+
+        $this->select = ['cnt'];
 
         $result = $this->get();
 
-        return $this->sql ? $result : ($result ? true : false);
+        return $this->sql ? $result : ($result > 0);
     }
 
     public function pk(string $pk = 'id')
