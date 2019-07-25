@@ -134,6 +134,13 @@ class MySQLBuilder
         return $this;
     }
 
+    public function notinRaw(string $column, $value)
+    {
+        $this->whereRaw[] = [$column, 'NOTINRAW', $value];
+
+        return $this;
+    }
+
     public function orin(string $column, $value)
     {
         $this->or[] = [$column, 'IN', $value];
@@ -214,6 +221,13 @@ class MySQLBuilder
         $operator = $equal ? '<=' : '<';
 
         $this->where[] = [$column, $operator, $value];
+
+        return $this;
+    }
+
+    public function range($value, string $columnStart, string $columnEnd)
+    {
+        $this->where[] = [$value, 'RANGE', [$columnStart, $columnEnd]];
 
         return $this;
     }
@@ -1284,7 +1298,7 @@ class MySQLBuilder
     }
 
     private function __buildWhere(
-        string $column,
+        $column,
         string $operator,
         $val,
         &$params,
@@ -1292,6 +1306,7 @@ class MySQLBuilder
     ) : string {
         $operator = trim($operator);
         $placeholder = '?';
+        $columnRaw = $column;
         if (! $expression) {
             $column = "`{$column}`";
         }
@@ -1319,9 +1334,9 @@ class MySQLBuilder
         } elseif (ciin($operator, ['is not null', 'is null'])) {
             $placeholder = '';
         // No params need when null conditions
-        } elseif (ci_equal($operator, 'inraw')) {
+        } elseif (ciin($operator, ['inraw', 'notinraw'])) {
             $column = "`{$column}`";
-            $operator = 'IN';
+            $operator = ci_equal($operator, 'inraw') ? 'IN' : 'NOT IN';
             $placeholder = "({$val})";
         } elseif (ciin($operator, ['between', 'not between'])) {
             list($start, $end) = $val;
@@ -1331,6 +1346,12 @@ class MySQLBuilder
             $params[] = $end;
 
             return "({$column} {$operator} ? AND ?)";
+        } elseif (ci_equal($operator, 'range')) {
+            list($start, $end) = $val;
+
+            $params[] = $columnRaw;
+
+            return "(? BETWEEN `{$start}` AND `{$end}`)";
         } elseif (is_collection($val)) {
             $column = "`{$column}`";
             $type = $val->key ?? null;
