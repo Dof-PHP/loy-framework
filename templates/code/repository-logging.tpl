@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Domain\__DOMAIN__\Repository__NAMESPACE__;
 
+// use Dof\Framework\Collection;
 use Dof\Framework\DDD\ORMRepository;
 
 /**

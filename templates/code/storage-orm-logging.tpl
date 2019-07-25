@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Domain\__DOMAIN__\Storage__NAMESPACE__;
 
+// use Dof\Framework\Collection;
 use Dof\Framework\DDD\ORMStorage;
 use Domain\__DOMAIN__\Repository\__NAME__Repository;
 
