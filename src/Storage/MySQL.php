@@ -275,6 +275,10 @@ class MySQL extends Storage implements Storable
 
     public function quote($val)
     {
+        if (is_numeric($val)) {
+            return $val;
+        }
+
         $type = $this->getPDOValueConst($val);
 
         $needdb = $this->needdb;

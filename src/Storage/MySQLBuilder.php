@@ -724,7 +724,7 @@ class MySQLBuilder
         array_walk($params, function (&$val) {
             $val = $this->origin
             ? $this->origin->quote((string) $val)
-            : "'{$val}'";    // TODO&FIXME
+            : (is_numeric($val) ? $val : "'{$val}'");    // TODO&FIXME
         });
 
         $idx = 0;
