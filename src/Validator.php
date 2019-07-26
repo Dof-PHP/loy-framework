@@ -407,7 +407,7 @@ class Validator
         $value = $this->data[$key] ?? null;
 
         if (is_null($this->data[$has] ?? null)) {
-            return null;
+            return true;
         }
 
         return (!is_null($value)) && ($value !== '');
@@ -421,7 +421,7 @@ class Validator
             return (!is_null($value)) && ($value !== '');
         }
 
-        return null;
+        return true;
     }
 
     private function validateNeed($key)
