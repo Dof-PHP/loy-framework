@@ -18,12 +18,9 @@
                 $_rule .= <<<LINK
 :<a href='javascript:void(0);' onclick='goDofDoc("_wrapin/{$err}.html")'>{$err}</a>
 LINK;
-            } else {
-                $_rule = $err ? "{$rule}:{$err}" : $rule;
             }
-        } else {
-            $_rule = "{$rule}";
         }
+        $_rule = join(':', array_trim_from_string("{$rule}:{$err}", ':'));
         $rules[] = $_rule;
     }
     $rules = $rules ? join('<br>', $rules) : '-';

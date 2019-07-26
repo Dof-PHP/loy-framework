@@ -141,6 +141,7 @@ final class WrapinManager
         }
 
         $data = $rules = $wrapins = $wrapinList = [];
+
         foreach ($arguments as $key => $argument) {
             $argument = $argument['doc'] ?? [];
             if (! $argument) {
@@ -160,6 +161,7 @@ final class WrapinManager
 
             $ext = $argument['__ext__'] ?? [];
             unset($argument['__ext__']);
+            $need = false;
             foreach ($argument as $annotation => $value) {
                 $_annotation = array_trim_from_string($annotation, ':');
                 $annotation = $_annotation[0] ?? $annotation;
@@ -212,7 +214,15 @@ final class WrapinManager
 
                 // Empty value for specific rules who does not need it
                 if ($annotation === 'NEED') {
+                    $need = true;
+                    if ($value === '0') {
+                        continue;
+                    }
+
                     $value = null;
+                }
+                if (ciin($annotation, ['needifno', 'needifhas'])) {
+                    $need = true;
                 }
 
                 if (is_null($errmsg)) {
@@ -221,6 +231,10 @@ final class WrapinManager
                     $errmsg = sprintf($errmsg, (($argument['TITLE'] ?? $_key) ?? ''), $value);
                     $rules[$key][sprintf('%s:%s', $rule, $value)] = $errmsg;
                 }
+            }
+
+            if (! $need) {
+                $rules[$key][] = 'NEED';
             }
         }
 

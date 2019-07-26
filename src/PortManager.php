@@ -916,7 +916,6 @@ final class PortManager
     public static function __annotationFilterArgument(string $arg, array $ext = [], string $namespace = null) : array
     {
         $params = [];
-        $neednot = false;
         foreach ($ext as $rule => $error) {
             $arr = array_trim_from_string($rule, ':');
             $_rule = $arr[0] ?? false;
@@ -925,21 +924,8 @@ final class PortManager
             if (! $_rule) {
                 continue;
             }
-            $_rule = strtoupper($_rule);
-            if (($_rule === 'NEED') && ($_ext == '0')) {
-                $neednot = true;
-            }
             $_ext = ('' === $_ext) ? '' : ":{$_ext}";
-            $params[$_rule.$_ext] = $error;
-        }
-
-        // Add default NEED rule to save definitions
-        if ($neednot) {
-            unset($params['NEED'], $params['NEED:0'], $params['NEED:1']);
-        } else {
-            $_err = $params['NEED:1'] ?? ($params['NEED'] ?? null);
-            unset($params['NEED:0'], $params['NEED:1']);
-            $params['NEED'] = $_err;
+            $params[strtoupper($_rule).$_ext] = $error;
         }
 
         $argvs = array_trim_from_string($arg, ',');
