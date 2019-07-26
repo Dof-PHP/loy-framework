@@ -297,4 +297,50 @@ class ORMStorage extends Storage
     {
         return $this->annotations()['properties'][$attr]['COLUMN'] ?? null;
     }
+
+    /**
+     * Set a value for a entity attr without guaranteeing record existence
+     */
+    final public function set(int $pk, string $attr, $value)
+    {
+        $column = $this->column($attr);
+        if (! $column) {
+            exception('MissingColumnOfAttributeToSet', compact('attr'));
+        }
+
+        $res = $this->builder()->where('id', $pk)->set($column, $value);
+
+        if ($res > 0) {
+            RepositoryManager::remove(static::class, $pk);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Set a batch value for entity attrs without guaranteeing record existence
+     */
+    final public function update(int $pk, array $data)
+    {
+        $_data = [];
+        foreach ($data as $attr => $value) {
+            $column = $this->column($attr);
+            if (! $column) {
+                exception('MissingColumnOfAttributeToSet', compact('attr'));
+            }
+            $_data[$column] = $value;
+        }
+
+        if (! $_data) {
+            return $this;
+        }
+
+        $res = $this->builder()->where('id', $pk)->update($_data);
+
+        if ($res > 0) {
+            RepositoryManager::remove(static::class, $pk);
+        }
+
+        return $this;
+    }
 }
