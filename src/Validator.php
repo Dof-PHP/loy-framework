@@ -37,51 +37,40 @@ class Validator
             $noneed = is_null($val) || ('' === $val) || (is_array($val) && empty($val));
             $need = !$noneed;
 
+            $hasDefault = false;
+            $type = $default = null;
+            foreach ($rules as $_rule => $_ext) {
+                if (self::REQUIRE_RULES[strtolower($_rule)] ?? false) {
+                    $need = true;
+                    continue;
+                }
+                if (ci_equal($_rule, 'TYPE')) {
+                    $type = $_ext[1] ?? null;
+                }
+                if (ci_equal($_rule, 'default')) {
+                    $hasDefault = true;
+                    $default = $_ext[1] ?? null;
+                }
+            }
+
             // If value is null or empty and no require rules on that value
             // Then we skip the next validateions
             if (! $need) {
-                $hasDefault = false;
-                foreach ($rules as $_rule => $_ext) {
-                    if (self::REQUIRE_RULES[strtolower($_rule)] ?? false) {
-                        $need = true;
-                        // break;
-                    }
-                    if (ci_equal($_rule, 'default')) {
-                        $hasDefault = true;
-                        $val = $_ext[1] ?? null;
-                    }
-                }
-
-                if (! $need) {
-                    $exists = array_key_exists($key, $this->data);
-                    if ((! $exists) && (! $hasDefault)) {
-                        continue;
-                    }
-
-                    foreach ($rules as $_rule => $_ext) {
-                        // Typehint to defined type
-                        if (ci_equal($_rule, 'TYPE') && ($type = ($_ext[1] ?? null))) {
-                            if (! TypeHint::support($type)) {
-                                exception('UnSupportedTypeHint', compact('key', 'val', 'type'));
-                            }
-
-                            try {
-                                $this->result[$key] = TypeHint::convert($val, $type, true);
-                            } catch (Throwable $e) {
-                                // Ignore
-                                // exception('TypeHintEmptyValueFailed', compact('tpye', 'key', 'val'), $e);
-                            }
-                        }
-                    }
-
+                $exists = array_key_exists($key, $this->data);
+                if ((! $exists) && (! $hasDefault)) {
                     continue;
                 }
+                $val = $default;
+                $this->typehint($key, $val, $type);
+                continue;
             }
 
             foreach ($rules as $rule => list($msg, $ext)) {
                 $ext = ci_equal($rule, 'default') ? [$ext] : array_trim_from_string($ext, ',');
                 $res = $this->validate($rule, $key, $ext);
                 if (is_null($res)) {
+                    // Typehint value of current key only
+                    $this->typehint($key, $val, $type);
                     break;
                 }
 
@@ -96,6 +85,24 @@ class Validator
         }
 
         return $this;
+    }
+
+    private function typehint(string $key, $val, string $type = null)
+    {
+        if (! $type) {
+            return;
+        }
+        if (! TypeHint::support($type)) {
+            exception('UnSupportedTypeHint', compact('key', 'val', 'type'));
+        }
+
+        try {
+            // Typehint to defined type
+            $this->result[$key] = TypeHint::convert($val, $type, true);
+        } catch (Throwable $e) {
+            // Ignore
+            // exception('TypeHintEmptyValueFailed', compact('tpye', 'key', 'val'), $e);
+        }
     }
 
     private function validate(string $rule, string $key, array $ext)
@@ -407,7 +414,7 @@ class Validator
         $value = $this->data[$key] ?? null;
 
         if (is_null($this->data[$has] ?? null)) {
-            return true;
+            return null;
         }
 
         return (!is_null($value)) && ($value !== '');
@@ -421,7 +428,7 @@ class Validator
             return (!is_null($value)) && ($value !== '');
         }
 
-        return true;
+        return null;
     }
 
     private function validateNeed($key)
