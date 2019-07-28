@@ -615,7 +615,8 @@ class MySQLBuilder
 
     public function column(string $column, bool $unique = true)
     {
-        $this->select = [$column];
+        // $this->select = [$column];
+
         $res = $this->get();
 
         if ($this->sql) {
