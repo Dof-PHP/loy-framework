@@ -613,9 +613,11 @@ class MySQLBuilder
         return $ids ? id_array($ids) : [];
     }
 
-    public function column(string $column, bool $unique = true)
+    public function column(string $column, bool $unique = true, bool $one = true)
     {
-        // $this->select = [$column];
+        if ($one) {
+            $this->select = [$column];
+        }
 
         $res = $this->get();
 
