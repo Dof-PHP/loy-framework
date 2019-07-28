@@ -489,6 +489,10 @@ final class PortManager
         $validators = [];
         foreach ($properties as $key => $arg) {
             $_doc = $arg['doc'] ?? [];
+            if (is_null($_doc['NEED:0'] ?? null)) {
+                $_doc['NEED'] = 1;
+            }
+
             $param = [
                 'name' => $key,
                 'type' => $_doc['TYPE'] ?? null,
