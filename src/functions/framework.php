@@ -285,6 +285,16 @@ if (! function_exists('logging')) {
         return call_user_func_array([\Dof\Framework\Facade\Log::class, $level], $params);
     }
 }
+if (! function_exists('logif')) {
+    function logif(\Closure $if, string $level, string $message, ...$context)
+    {
+        if (! $if()) {
+            return;
+        }
+
+        logging($level, $message, ...$context);
+    }
+}
 if (! function_exists('logger')) {
     function logger()
     {
