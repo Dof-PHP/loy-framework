@@ -42,7 +42,7 @@ final class Connection
         $host = $config->get('host', '', ['string']);
         $port = $config->get('port', 3306, ['pint']);
         $user = $config->get('user');
-        $pswd = $config->get('passwd', '', ['need']);
+        $pswd = $config->get('passwd', '');
         $charset = $config->get('charset', 'utf8mb4', ['string']);
         $dbname  = $config->get('dbname', '', ['string']);
 
