@@ -731,20 +731,27 @@ if (! function_exists('ospath')) {
     function ospath(...$items) : string
     {
         $path = '';
-        $ds   = DIRECTORY_SEPARATOR;
+
+        ospath_main($items, $path);
+
+        return $path;
+    }
+}
+if (! function_exists('ospath_main')) {
+    function ospath_main(array $items, string &$path = '')
+    {
         foreach ($items as $item) {
             if (is_scalar($item)) {
                 $item = (string) $item;
-                $path = (0 === mb_strpos($item, $ds)) ? $path.$item : join($ds, [$path, $item]);
+                $join = ($path === '') ? [$item] : [$path, $item];
+                $path = join(DIRECTORY_SEPARATOR, $join);
                 continue;
             }
             if (is_array($item)) {
-                $path .= ospath(...$item);
+                ospath_main($item, $path);
                 continue;
             }
         }
-
-        return $path;
     }
 }
 if (! function_exists('fdate')) {

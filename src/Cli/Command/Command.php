@@ -481,7 +481,8 @@ class Command
      */
     public function testFramework($console)
     {
-        $tests = ospath(__DIR__.'/../../..', ['tests']);
+        $tests = ospath(Kernel::root(), ['tests']);
+
         $this->__test($console, $tests, [
             ospath($tests, 'run.php'),
             ospath($tests, 'data'),

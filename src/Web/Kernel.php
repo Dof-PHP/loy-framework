@@ -34,6 +34,7 @@ final class Kernel
         'cgi-fcgi' => true,
         'cgi' => true,
         'cli-server' => true,
+        'apache2handler' => true,
     ];
 
     private static $booted = false;
