@@ -691,7 +691,7 @@ class MySQLBuilder
 
         $result = $this->get();
 
-        return $this->sql ? $result : ($result > 0);
+        return $this->sql ? $result : (($result['cnt'] ?? 0) > 0);
     }
 
     public function pk(string $pk = 'id')
