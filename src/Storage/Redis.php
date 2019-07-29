@@ -18,8 +18,6 @@ class Redis extends Storage implements Storable, Cachable, Queuable
     /** @var array: Commands executed in the lifetime of this instance */
     private $cmds = [];
 
-    private $needdb = true;
-    
     public function __call(string $method, array $params = [])
     {
         $start = microtime(true);
@@ -208,11 +206,13 @@ class Redis extends Storage implements Storable, Cachable, Queuable
 
     private function appendCMD(float $start, string $cmd, ...$params)
     {
-        $this->cmds[] = [
-            microtime(true) - $start,
-            $cmd,
-            $params
-        ];
+        if ($this->logging) {
+            $this->cmds[] = [
+                microtime(true) - $start,
+                $cmd,
+                $params
+            ];
+        }
 
         return $this;
     }

@@ -17,8 +17,6 @@ class MySQL extends Storage implements Storable
     /** @var array: Sqls executed in this instance lifetime */
     private $sqls = [];
 
-    private $needdb = true;
-
     public function builder() : MySQLBuilder
     {
         return (new MySQLBuilder)->setOrigin($this);
@@ -376,9 +374,11 @@ class MySQL extends Storage implements Storable
 
     private function appendSQL(string $sql, $start, array $params = null)
     {
-        $sql = trim($sql);
+        if ($this->logging) {
+            $sql = trim($sql);
 
-        $this->sqls[] = [microftime('T Ymd His', '.', $start), $sql, $params, microtime(true)-$start];
+            $this->sqls[] = [microftime('T Ymd His', '.', $start), $sql, $params, microtime(true)-$start];
+        }
 
         return $this;
     }

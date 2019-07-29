@@ -12,6 +12,10 @@ class Storage
 
     protected $connection;
 
+    protected $needdb = true;
+
+    protected $logging = true;
+
     /** @var Closure: The getter to get acutal connection */
     protected $connectionGetter;
 
@@ -52,5 +56,12 @@ class Storage
     public function annotations()
     {
         return $this->annotations;
+    }
+
+    public function logging(bool $logging = true)
+    {
+        $this->logging = $logging;
+
+        return $this;
     }
 }
