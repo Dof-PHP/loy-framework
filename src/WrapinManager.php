@@ -215,7 +215,7 @@ final class WrapinManager
                 // Empty value for specific rules who does not need it
                 if ($annotation === 'NEED') {
                     $need = true;
-                    if ($value === '0') {
+                    if (ci_equal($value, 0)) {
                         continue;
                     }
 
