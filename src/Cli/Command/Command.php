@@ -828,7 +828,7 @@ class Command
                 }
             } else {
                 $_force = $force ? ' (FORCE) ' : '';
-                $console->render("Syncing{$_force}... {$storage} ... ", $console::INFO_COLOR, true);
+                $console->render("Syncing{$_force} ... {$storage} ... ", $console::INFO_COLOR, true);
                 $res ? $console->success('OK') : $console->fail('FAILED', true);
             }
         };
