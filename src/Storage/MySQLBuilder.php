@@ -129,14 +129,14 @@ class MySQLBuilder
         return $this;
     }
 
-    public function inRaw(string $column, $value)
+    public function inRaw(string $column, string $value)
     {
         $this->whereRaw[] = [$column, 'INRAW', $value];
 
         return $this;
     }
 
-    public function notinRaw(string $column, $value)
+    public function notinRaw(string $column, string $value)
     {
         $this->whereRaw[] = [$column, 'NOTINRAW', $value];
 
