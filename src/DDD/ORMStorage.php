@@ -343,4 +343,24 @@ class ORMStorage extends Storage
 
         return $this;
     }
+
+    /**
+     * Flush entity cache only - single
+     *
+     * @param int $pk
+     */
+    final public function flush(int $pk)
+    {
+        RepositoryManager::remove(static::class, $pk);
+    }
+
+    /**
+     * Flush entity cache only - multiples
+     *
+     * @param array $pks
+     */
+    final public function flushs(array $pks)
+    {
+        RepositoryManager::removes(static::class, $pks);
+    }
 }

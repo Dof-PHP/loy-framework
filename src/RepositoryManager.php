@@ -212,6 +212,30 @@ final class RepositoryManager
         $cache->del($key);
     }
 
+    public static function removes(string $storage, array $pks)
+    {
+        if (! self::isORMCacheEnabled($storage)) {
+            return null;
+        }
+
+        $_cache = ConfigManager::getDomainFinalEnvByNamespace($storage, 'ORM_STORAGE_CACHE');
+
+        foreach ($pks as $pk) {
+            if (! is_int($pk)) {
+                continue;
+            }
+
+            $key = self::formatStorageCacheKey($storage, $pk);
+            $cache = CacheManager::get($storage, $key, $_cache);
+
+            if (! $cache) {
+                continue;
+            }
+
+            $cache->del($key);
+        }
+    }
+
     /**
      * Update/Reset ORM storage record in cache
      *
