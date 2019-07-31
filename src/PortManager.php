@@ -489,7 +489,11 @@ final class PortManager
         $validators = [];
         foreach ($properties as $key => $arg) {
             $_doc = $arg['doc'] ?? [];
-            if (is_null($_doc['NEED:0'] ?? null)) {
+            $neednot = isset($_doc['NEED:0']) || ci_equal($_doc['NEED'] ?? '', 0);
+
+            if ($neednot) {
+                unset($_doc['NEED:0'], $_doc['NEED']);
+            } else {
                 $_doc['NEED'] = 1;
             }
 

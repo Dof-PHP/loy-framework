@@ -295,6 +295,18 @@ if (! function_exists('logif')) {
         logging($level, $message, ...$context);
     }
 }
+if (! function_exists('trace')) {
+    function trace(string $tracer, string $message, ...$context)
+    {
+        logging('log', $tracer, $message, ...$context);
+    }
+}
+if (! function_exists('debug')) {
+    function debug(string $message, ...$context)
+    {
+        logging('log', 'debug', $message, ...$context);
+    }
+}
 if (! function_exists('logger')) {
     function logger()
     {
