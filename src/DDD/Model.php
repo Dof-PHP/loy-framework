@@ -227,7 +227,11 @@ abstract class Model
 
     final public function __toArray()
     {
-        return (array) get_object_vars($this);
+        $array = get_object_vars($this);
+
+        unset($array['__singleton__']);
+
+        return $array;
     }
 
     final public function toArray()
