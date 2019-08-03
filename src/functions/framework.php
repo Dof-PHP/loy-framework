@@ -109,8 +109,8 @@ if (! function_exists('domain')) {
                 return \Dof\Framework\DomainManager::collectByFile($file);
             }
         }
-        if (\Dof\Framework\DomainManager::hasKey($key)) {
-            return \Dof\Framework\DomainManager::collectByKey($key);
+        if (\Dof\Framework\DomainManager::hasKey($_key = strtolower($key))) {
+            return \Dof\Framework\DomainManager::collectByKey($_key);
         }
         if (class_exists($key)) {
             return \Dof\Framework\DomainManager::collectByNamespace($key);

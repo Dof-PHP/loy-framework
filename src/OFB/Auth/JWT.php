@@ -86,6 +86,23 @@ class JWT
         return $token;
     }
 
+    public function parse(string $token) : array
+    {
+        $data = [];
+        $components = array_trim_from_string($token, '.');
+        if ($header = ($components[0] ?? null)) {
+            $data['header'] = $this->decode($header);
+        }
+        if ($payload = ($components[1] ?? null)) {
+            $data['payload'] = $this->decode($payload);
+        }
+        if ($signature = ($components[2] ?? null)) {
+            $data['signature'] = $signature;
+        }
+
+        return $data;
+    }
+
     /**
      * Verify a JWT token signed by dof
      *

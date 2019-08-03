@@ -25,6 +25,17 @@ final class CacheManager
     /** @var array: Domain class Namespace <=> Cache Storage Instance */
     private static $namespaces = [];
 
+    /** @var array: Domain key <=> Cache Storage Instance */
+    private static $domains = [];
+
+    public static function getByDomain(string $domain, string $key, string $driver = null) : ?Cachable
+    {
+        $instance = self::$domains[$domain][$key] ?? null;
+        if ($instance) {
+            return $instance;
+        }
+    }
+
     /**
     * Get a cache driver instance of a domain, based on domain configurations
     *

@@ -245,9 +245,9 @@ final class StorageManager
                     Kernel::appendContext($driver, $instance->__logging(), $namespace);
                 } catch (Throwable $e) {
                     Log::log('exception', 'GetStorageLoggingContextFailed', [
-                            'storage' => $storage,
-                            'message' => $e->getMessage(),
-                        ]);
+                        'storage' => $storage,
+                        '__previous' => parse_throwable($e),
+                    ]);
                 }
             });
         }
@@ -257,9 +257,9 @@ final class StorageManager
                     $instance->__cleanup();
                 } catch (Throwable $e) {
                     Log::log('exception', 'CleanUpStorageFailed', [
-                            'storage' => $storage,
-                            'message' => $e->getMessage(),
-                        ]);
+                        'storage' => $storage,
+                        '__previous' => parse_throwable($e),
+                    ]);
                 }
             });
         }

@@ -226,6 +226,10 @@ final class DomainManager
 
                 return is_null($val) ? $default : $val;
             }
+            public function cache(string $key)
+            {
+                return CacheManager::getByDomain($this->key, $key);
+            }
             public function config(string $type = null, $default = null)
             {
                 $val = $type ? $this->__config()->get($type) : $this->__config();
