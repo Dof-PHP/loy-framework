@@ -200,7 +200,7 @@ final class RepositoryManager
         }
 
         $key = self::formatStorageCacheKey($storage, $pk);
-        $cache = CacheManager::get(
+        $cache = CacheManager::getByNamespace(
             $storage,
             $key,
             ConfigManager::getDomainFinalEnvByNamespace($storage, 'ORM_STORAGE_CACHE')
@@ -226,7 +226,7 @@ final class RepositoryManager
             }
 
             $key = self::formatStorageCacheKey($storage, $pk);
-            $cache = CacheManager::get($storage, $key, $_cache);
+            $cache = CacheManager::getByNamespace($storage, $key, $_cache);
 
             if (! $cache) {
                 continue;
@@ -249,7 +249,7 @@ final class RepositoryManager
         }
 
         $key = self::formatStorageCacheKey($storage, $entity->getPk());
-        $cache = CacheManager::get(
+        $cache = CacheManager::getByNamespace(
             $storage,
             $key,
             ConfigManager::getDomainFinalEnvByNamespace($storage, 'ORM_STORAGE_CACHE')
@@ -274,7 +274,7 @@ final class RepositoryManager
         }
 
         $key = self::formatStorageCacheKey($storage, $pk);
-        $cache = CacheManager::get(
+        $cache = CacheManager::getByNamespace(
             $storage,
             $key,
             ConfigManager::getDomainFinalEnvByNamespace($storage, 'ORM_STORAGE_CACHE')

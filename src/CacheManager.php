@@ -28,45 +28,88 @@ final class CacheManager
     /** @var array: Domain key <=> Cache Storage Instance */
     private static $domains = [];
 
+    /** @var array: Default cache key <=> Cache Storage Instance */
+    private static $defaults = [];
+
+    public static function getDefault(string $key) : ?Cachable
+    {
+        $driver = ConfigManager::getEnv('CACHE_DRIVER');
+        if (! $driver) {
+            exception('MissingDefaultCacheStorageDriver', compact('key'));
+        }
+
+        $driver = strtolower($driver);
+        $config = ConfigManager::getDefault($driver);
+        if (! $config) {
+            return null;
+        }
+
+        return self::$defaults[$key] = self::get($key, $driver, $config);
+    }
+
+    /**
+    * Get a cache driver instance of a domain by domain key, based on domain configurations
+    *
+    * @param string $domain: Key  of domain class
+    * @param string $key: Cache key used to select a node for caching
+    * @param string $driver: Cache driver name
+    * @return Cachable|null
+    */
     public static function getByDomain(string $domain, string $key, string $driver = null) : ?Cachable
     {
         $instance = self::$domains[$domain][$key] ?? null;
         if ($instance) {
             return $instance;
         }
+        if (! $driver) {
+            $driver = ConfigManager::getDomainFinalEnvByKey($domain, 'CACHE_DRIVER');
+        }
+        if (! $driver) {
+            exception('MissingDomainCacheStorageDriver', compact('domain'));
+        }
+        $driver = strtolower($driver);
+        $config = ConfigManager::getDomainFinalByKey($domain, $driver);
+        if (! $config) {
+            return null;
+        }
+
+        return self::$domains[$domain][$key] = self::get($key, $driver, $config);
     }
 
     /**
-    * Get a cache driver instance of a domain, based on domain configurations
+    * Get a cache driver instance of a domain by namespace, based on domain configurations
     *
     * @param string $namespace: Namespace of domain class
     * @param string $key: Cache key used to select a node for caching
     * @param string $driver: Cache driver name
     * @return Cachable|null
     */
-    public static function get(string $namespace, string $key, string $driver = null) : ?Cachable
+    public static function getByNamespace(string $namespace, string $key, string $driver = null) : ?Cachable
     {
         $instance = self::$namespaces[$namespace][$key] ?? null;
         if ($instance) {
             return $instance;
         }
-
         if (! $driver) {
             $driver = ConfigManager::getDomainFinalEnvByNamespace($namespace, 'CACHE_DRIVER');
         }
         if (! $driver) {
             exception('MissingDomainCacheStorageDriver', compact('namespace'));
         }
-
         $driver = strtolower($driver);
-        $cachable = self::SUPPORT_DRIVERS[$driver] ?? null;
-        if (! $cachable) {
-            exception('UnSupportedCacheDriver', compact('driver', 'namespace'));
-        }
-
         $config = ConfigManager::getDomainFinalByNamespace($namespace, $driver);
         if (! $config) {
             return null;
+        }
+
+        return self::$namespaces[$namespace][$key] = self::get($key, $driver, $config);
+    }
+
+    public static function get(string $key, string $driver, array $config) : ?Cachable
+    {
+        $cachable = self::SUPPORT_DRIVERS[$driver] ?? null;
+        if (! $cachable) {
+            exception('UnSupportedCacheDriver', compact('driver'));
         }
 
         $pool = $config['pool'] ?? [];
@@ -98,9 +141,9 @@ final class CacheManager
                     Kernel::appendContext("cache.{$driver}", $instance->__logging(), $namespace);
                 } catch (Throwable $e) {
                     Log::log('exception', 'GetCacheStorageLoggingContextFailed', [
-                            'namespace' => $namespace,
-                            'message' => $e->getMessage(),
-                        ]);
+                        'namespace' => $namespace,
+                        '__previous' => parse_throwable($e),
+                    ]);
                 }
             });
         }
@@ -110,14 +153,14 @@ final class CacheManager
                     $instance->__cleanup();
                 } catch (Throwable $e) {
                     Log::log('exception', 'CleanUpCacheStorageFailed', [
-                            'namespace' => $namespace,
-                            'message' => $e->getMessage(),
-                        ]);
+                        'namespace' => $namespace,
+                        '__previous' => parse_throwable($e),
+                    ]);
                 }
             });
         }
 
-        return self::$namespaces[$namespace][$key] = $instance;
+        return $instance;
     }
 
     public static function buildAnnotationsByDriver(string $driver, string $key, array $config = [])

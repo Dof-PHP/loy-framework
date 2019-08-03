@@ -126,6 +126,36 @@ if (! function_exists('config')) {
         return \Dof\Framework\ConfigManager::get(join('.', [$type, $key]));
     }
 }
+if (! function_exists('cache')) {
+    function cache(string $key, string $domain = null)
+    {
+        return new class($key, $domain) {
+            private $key;
+            private $domain;
+            private $cachable;
+            public function __construct(string $key, string $domain = null)
+            {
+                $this->key = $key;
+                $this->domain = $domain;
+                $this->cachable = $domain
+                    ? \Dof\Framework\CacheManager::getByDomain($domain, $key)
+                    : \Dof\Framework\CacheManager::getDefault($key);
+            }
+            public function __call(string $method, array $params)
+            {
+                if (! $this->cachable) {
+                    exception('NoCachableForGivenKey', [
+                        'domain' => $this->domain,
+                        'key' => $this->key,
+                    ]);
+                }
+
+                array_unshift($params, $this->key);
+                return $this->cachable->{$method}(...$params);
+            }
+        };
+    }
+}
 if (! function_exists('service')) {
     function service($service, array $params = [])
     {

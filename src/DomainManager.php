@@ -228,7 +228,29 @@ final class DomainManager
             }
             public function cache(string $key)
             {
-                return CacheManager::getByDomain($this->key, $key);
+                return new class($key, $this->key) {
+                    private $key;
+                    private $domain;
+                    private $cachable;
+                    public function __construct(string $key, string $domain)
+                    {
+                        $this->key = $key;
+                        $this->domain = $domain;
+                        $this->cachable = CacheManager::getByDomain($domain, $key);
+                    }
+                    public function __call(string $method, array $params)
+                    {
+                        if (! $this->cachable) {
+                            exception('NoCachableForThisKey', [
+                                'domain' => $this->domain,
+                                'key' => $this->key,
+                            ]);
+                        }
+
+                        array_unshift($params, $this->key);
+                        return $this->cachable->{$method}(...$params);
+                    }
+                };
             }
             public function config(string $type = null, $default = null)
             {
