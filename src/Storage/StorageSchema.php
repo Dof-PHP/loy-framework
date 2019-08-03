@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework\Storage;
 
+use Throwable;
 use Dof\Framework\StorageManager;
 
 final class StorageSchema
@@ -42,25 +43,33 @@ final class StorageSchema
     {
         list($driver, $annotations) = self::prepare($storage);
 
-        return singleton($driver)->reset()
-            ->setStorage($storage)
-            ->setAnnotations($annotations)
-            ->setDriver(StorageManager::init($storage, false))
-            ->setForce($force)
-            ->setDump($dump)
-            ->sync();
+        try {
+            return singleton($driver)->reset()
+                ->setStorage($storage)
+                ->setAnnotations($annotations)
+                ->setDriver(StorageManager::init($storage, false))
+                ->setForce($force)
+                ->setDump($dump)
+                ->sync();
+        } catch (Throwable $e) {
+            exception('SyncORMStorageException', compact('storage', 'force', 'dump'), $e);
+        }
     }
 
     public static function init(string $storage, bool $force = false, bool $dump = false)
     {
         list($driver, $annotations) = self::prepare($storage);
 
-        return singleton($driver)->reset()
-            ->setStorage($storage)
-            ->setAnnotations($annotations)
-            ->setDriver(StorageManager::init($storage, false))
-            ->setForce($force)
-            ->setDump($dump)
-            ->init();
+        try {
+            return singleton($driver)->reset()
+                ->setStorage($storage)
+                ->setAnnotations($annotations)
+                ->setDriver(StorageManager::init($storage, false))
+                ->setForce($force)
+                ->setDump($dump)
+                ->init();
+        } catch (Throwable $e) {
+            exception('InitORMStorageException', compact('storage', 'force', 'dump'), $e);
+        }
     }
 }
