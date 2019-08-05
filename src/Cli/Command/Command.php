@@ -83,6 +83,11 @@ class Command
             $console->info('* Comment: '.$comment);
             $console->line();
             $console->title('* Options: ');
+            $options['ascii'] = [
+                'NOTES' => 'Whether display command output as plain ascii text',
+                'default' => 'false',
+            ];
+
             foreach ($options as $option => $_attr) {
                 extract($_attr);
                 $default = $DEFAULT ?: 'NULL';
@@ -880,9 +885,22 @@ class Command
      */
     public function getGlobalConfig($console)
     {
-        $key = $console->getParams()[0] ?? null;
+        $key = $console->first();
+        $val = ConfigManager::getDefault($key);
 
-        $console->success(json_pretty(ConfigManager::getDefault($key)));
+        if (is_null($val)) {
+            if ($console->hasOption('ascii')) {
+                return;
+            }
+            $console->warning('null');
+            return;
+        }
+        if (is_scalar($val)) {
+            $console->success((string) $val);
+            return;
+        }
+
+        $console->success(json_pretty($val));
     }
 
     /**
@@ -892,9 +910,22 @@ class Command
      */
     public function getFrameworkConfig($console)
     {
-        $key = $console->getParams()[0] ?? null;
+        $key = $console->first();
+        $val = ConfigManager::getFramework($key);
 
-        $console->success(json_pretty(ConfigManager::getFramework($key)));
+        if (is_null($val)) {
+            if ($console->hasOption('ascii')) {
+                return;
+            }
+            $console->warning('null');
+            return;
+        }
+        if (is_scalar($val)) {
+            $console->success((string) $val);
+            return;
+        }
+
+        $console->success(json_pretty($val));
     }
 
     /**
@@ -914,9 +945,21 @@ class Command
             $console->exception('DomainNotExists', compact($domain));
         }
 
-        $key = $console->getParams()[0] ?? null;
+        $key = $console->first();
+        $val = ConfigManager::getDomainByKey($domain, $key);
+        if (is_null($val)) {
+            if ($console->hasOption('ascii')) {
+                return;
+            }
+            $console->warning('null');
+            return;
+        }
+        if (is_scalar($val)) {
+            $console->success((string) $val);
+            return;
+        }
 
-        $console->success(json_pretty(ConfigManager::getDomainByKey($domain, $key)));
+        $console->success(json_pretty($val));
     }
 
     /**

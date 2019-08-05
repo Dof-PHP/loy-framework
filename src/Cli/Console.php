@@ -54,6 +54,11 @@ class Console
         'LIGHT_PURPLE' => '1;35',
     ];
 
+    public function __construct()
+    {
+        $this->options = collect([]);
+    }
+
     public function di(string $namespace)
     {
         return Container::di($namespace);
@@ -176,13 +181,14 @@ class Console
 
     public function render(string $text, string $color, bool $output = false) : ?string
     {
-        if (! isset(self::COLORS[$color])) {
-            $this->exception('ConsoleColorNotFound', compact('color'));
+        if (! $this->hasOption('ascii')) {
+            if (! isset(self::COLORS[$color])) {
+                $this->exception('ConsoleColorNotFound', compact('color'));
+            }
+            $_color = self::COLORS[$color];
+            $text = "\033[{$_color}m{$text}\033[0m";
         }
 
-        $_color = self::COLORS[$color];
-
-        $text = "\033[{$_color}m{$text}\033[0m";
         if ($output) {
             return $this->output($text);
         }
