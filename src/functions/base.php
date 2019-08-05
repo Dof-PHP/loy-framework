@@ -807,7 +807,7 @@ if (! function_exists('array_get_by_chain_key')) {
         string $explode = '.',
         $default = null
     ) {
-        if ((! $haystack) || (! $key) || ((! is_array($haystack)) && (! is_object($haystack)))) {
+        if ((! $haystack) || is_null($key) || ($key === '') || ((! is_array($haystack)) && (! is_object($haystack)))) {
             return $default;
         }
         if (is_object($haystack)) {
