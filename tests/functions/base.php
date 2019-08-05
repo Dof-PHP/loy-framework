@@ -1,5 +1,11 @@
 <?php
 
+GWT('Test PHP Version', PHP_VERSION, function ($given) {
+    return version_compare($given, '7.1');
+}, function ($result) {
+    return $result >= 0;
+});
+
 GWT('Test get_file_of_namespace() #1', \Dof\Framework\Kernel::class, function ($given) {
     return get_file_of_namespace($given);
 }, function ($result) {
