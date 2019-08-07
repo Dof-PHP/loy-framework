@@ -349,6 +349,9 @@ final class ConfigManager
         return $default;
     }
 
+    /**
+     * Get default/global environment variables
+     */
     public static function getEnv(string $key = null, $default = null)
     {
         $val = array_get_by_chain_key(self::$default['env'] ?? [], $key);

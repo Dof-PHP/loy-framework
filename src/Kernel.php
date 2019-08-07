@@ -56,8 +56,10 @@ final class Kernel
      */
     public static function boot(string $root)
     {
-        self::$uptime   = microtime(true);
+        self::$uptime = microtime(true);
         self::$upmemory = memory_get_usage();
+
+        self::alias();
 
         // Do some cleaning works before PHP process exit, like:
         // - Clean up database locks
@@ -138,6 +140,21 @@ final class Kernel
         EventManager::load($domains);
 
         // ErrorManager::load($domains);
+    }
+
+    private static function alias()
+    {
+        class_alias(ConfigManager::class, 'ConfigManager');
+        class_alias(DomainManager::class, 'DomainManager');
+        class_alias(EntityManager::class, 'EntityManager');
+        class_alias(ModelManager::class, 'ModelManager');
+        class_alias(StorageManager::class, 'StorageManager');
+        class_alias(RepositoryManager::class, 'RepositoryManager');
+        class_alias(CommandManager::class, 'CommandManager');
+        class_alias(WrapinManager::class, 'WrapinManager');
+        class_alias(PortManager::class, 'PortManager');
+        class_alias(EventManager::class, 'EventManager');
+        class_alias(CacheManager::class, 'CacheManager');
     }
 
     public static function register(string $event, Closure $callback)
