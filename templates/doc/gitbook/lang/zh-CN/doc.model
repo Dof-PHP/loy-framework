@@ -1,0 +1,18 @@
+## `<?= $key ?>`
+
+### <?= $model ?>
+
+| 属性 | 名称 | 基本类型 | 可接受参数 | 备注 |
+| :--- | :--- | :--- | :--- | :--- |
+<?php if ($properties ?? false) : ?>
+<?php foreach ($properties as $property) : ?>
+<?php
+    extract($property, EXTR_OVERWRITE);
+    $_arguments = '-';
+    if ($arguments) {
+        $_arguments = '`'.enjson($arguments).'`';
+    }
+?>
+| `<?= $name ?>` | <?= $title ?> | <?= ucfirst($type) ?> | <?= $_arguments ?> | <?= $notes ?: '-' ?> |
+<?php endforeach ?>
+<?php endif ?>

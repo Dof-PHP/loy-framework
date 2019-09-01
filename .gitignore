@@ -1,0 +1,11 @@
+/* Composer */
+composer.lock
+vendor/
+
+/* Vim  */
+/**/.php_cs.cache
+/**/.tags
+/**/*.swp
+
+/**/*.log
+/**/php_errors

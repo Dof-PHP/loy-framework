@@ -1,0 +1,31 @@
+{
+    "name": "dof-php/framework",
+    "description": "The core of DOF PHP framework",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "dof-php",
+            "email": "me@dof.php"
+        }
+    ],
+    "require": {
+        "php": "^7.1"
+    },
+	"autoload": {
+		"psr-4": {
+			"Dof\\Framework\\": "./src/"
+		},
+		"files": [
+			"./src/functions/base.php",
+			"./src/functions/framework.php"
+		],
+		"exclude-from-classmap": [
+       ]
+    },
+    "autoload-dev": {
+        "psr-4": { 
+           "Dof\\Framework\\Tests\\": "./tests/" 
+        }
+    }
+}
