@@ -24,6 +24,15 @@ class JWT
     /** @var string: Name of selected hashing algorithm (hash_hmac_algos()) */
     private $algo = 'sha256';
 
+    /** @var bool: Remember me or not option */
+    private $remember = false;
+
+    /** @var string: JWT processing environment */
+    private $env;
+
+    /** @var bool: Enable enviornment detection or not */
+    private $envDetection = false;
+
     private $beforeIssue;
     private $afterIssue;
 
@@ -70,7 +79,19 @@ class JWT
             'exp' => $ts + $this->ttl,    // Expiration Time
         ];
 
-        $payload   = $this->encode([$claims, unsplat(...$params)]);
+        if ($this->remember) {
+            $claims['rmb'] = 1;    // Auto renewal lifetime of this JWT
+        }
+
+        if ($this->envDetection) {
+            if (! $this->env) {
+                exception('UnknownJWTEnvironment');
+            }
+
+            $claims['env'] = $this->env;    // Environment elements of this JWT when issuing or verifying
+        }
+
+        $payload = $this->encode([$claims, unsplat(...$params)]);
         $signature = $this->sign(join('.', [$header, $payload]), $this->algo, $this->secretKey);
 
         $token = join('.', [$header, $payload, $signature]);
@@ -120,7 +141,6 @@ class JWT
         if (! $this->secretKey) {
             exception('MissingTokenSecret');
         }
-
         if ($this->beforeVerify && (true !== ($res = ($this->beforeVerify)($token)))) {
             exception('BeforeVerifyHookFailed', compact('res'));
         }
@@ -157,12 +177,30 @@ class JWT
         if ((! $tza) || (! ci_equal($tza, date('T')))) {
             exception('InvalidTokenTimezone', compact('tza'));
         }
+        $env = $data[0]['env'] ?? null;
+        if ($this->envDetection) {
+            if (! $env) {
+                exception('MissingEnvironmentInClaims');
+            }
+            if (! $this->env) {
+                exception('UnknownJWTEnvironment');
+            }
+            if ($env !== $this->env) {
+                exception('InvalidJWTEnvironment');
+            }
+        }
+
         $exp = $data[0]['exp'] ?? null;
         if ((! $exp) || (! is_timestamp($exp))) {
             exception('InvalidTokenExpireTime', compact('exp'));
         }
         $params = $data[1] ?? [];
         if (time() > $exp) {
+            // $rmb = $data[0]['rmb'] ?? null;
+            // if ($rmb) {
+            // TODO
+            // }
+
             if ($this->onTokenVerifyExpired) {
                 try {
                     ($this->onTokenVerifyExpired)($token, $params);
@@ -292,6 +330,27 @@ class JWT
     public function setAlgo(string $algo)
     {
         $this->algo = strtolower($algo);
+
+        return $this;
+    }
+
+    public function setRemember(bool $remember)
+    {
+        $this->remember = $remember;
+
+        return $this;
+    }
+
+    public function setEnv(string $env)
+    {
+        $this->env = $env;
+
+        return $this;
+    }
+
+    public function setEnvDetection(bool $envDetection)
+    {
+        $this->envDetection = $envDetection;
 
         return $this;
     }

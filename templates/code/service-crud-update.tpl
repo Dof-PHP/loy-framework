@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Domain\__DOMAIN__\Service\CRUD;
 
 use Throwable;
-use Dof\Framework\EXCP;
 use Dof\Framework\DDD\Service;
+use Dof\Framework\EXCP as EX;
+use Dof\Framework\IS;
+// use Domain\__DOMAIN__\EXCP;
+// use Domain\__DOMAIN__\AUX;
 use Domain\__DOMAIN__\Repository\__ENTITY__Repository;
 
 class Update__ENTITY__ extends Service
@@ -51,7 +54,7 @@ class Update__ENTITY__ extends Service
         try {
             return $this->repository->save($this->entity);
         } catch (Throwable $e) {
-            if (EXCP::is($e, EXCP::VIOLATED_UNIQUE_CONSTRAINT)) {
+            if (IS::excp($e, EX::VIOLATED_UNIQUE_CONSTRAINT)) {
                 $this->exception('Duplicate__ENTITY__Attr1', ['attr1' => $this->attr1]);
             }
 

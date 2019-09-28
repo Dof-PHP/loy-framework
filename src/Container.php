@@ -212,7 +212,7 @@ final class Container
             return $class;
         }
 
-        $implementor = self::$interfaces[$namespace]['implementor'] ?? false;
+        $implementor = self::$interfaces[$namespace] ?? null;
         if ($implementor) {
             $class = self::$classes[$implementor] ?? false;
             if ($class) {

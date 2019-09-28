@@ -8,7 +8,7 @@ use Throwable;
 use Dof\Framework\ConfigManager;
 use Dof\Framework\Facade\JWT;
 use Dof\Framework\Facade\Response;
-use Dof\Framework\Web\ERR;
+use Dof\Framework\EXCP;
 
 /**
  * AUTHORIZATION: Bearer {token}
@@ -36,7 +36,7 @@ class BearerAuth
         $token  = '';
         if ($header) {
             if (! ci_equal(mb_substr($header, 0, 7), 'Bearer ')) {
-                Response::abort(401, ERR::INVALID_BEARER_TOKEN, [], $port->get('class'));
+                Response::abort(401, EXCP::INVALID_BEARER_TOKEN, [], $port->get('class'));
             }
 
             $token = mb_substr($header, 7);
@@ -47,23 +47,23 @@ class BearerAuth
 
         $token = trim($token);
         if (! $token) {
-            Response::abort(401, ERR::MISSING_TOKEN_HEADER_OR_PARAMETER, [], $port->get('class'));
+            Response::abort(401, EXCP::MISSING_TOKEN_HEADER_OR_PARAMETER, [], $port->get('class'));
         }
 
         $secret = ConfigManager::getDomainFinalEnvByNamespace(static::class, $this->secret);
         if (! $secret) {
-            Response::abort(500, ERR::TOKEN_SECRET_MISSING, [
+            Response::abort(500, EXCP::TOKEN_SECRET_MISSING, [
                 'key' => $this->secret,
                 'ns'  => static::class,
             ], $port->get('class'));
         }
         $id = $secret[0] ?? null;
         if (is_null($id)) {
-            Response::abort(500, ERR::TOKEN_SECRET_ID_MISSING, [], $port->get('class'));
+            Response::abort(500, EXCP::TOKEN_SECRET_ID_MISSING, [], $port->get('class'));
         }
         $key = $secret[1] ?? null;
         if (is_null($key) || (! $key)) {
-            Response::abort(500, ERR::TOKEN_SECRET_KEY_MISSING, [], $port->get('class'));
+            Response::abort(500, EXCP::TOKEN_SECRET_KEY_MISSING, [], $port->get('class'));
         }
 
         try {
@@ -86,6 +86,10 @@ class BearerAuth
 
             // $parse = [];
             // $argvs = $jwt->verify($token, $parse);
+            if ($this->envDetection()) {
+                $jwt->setEnvDetection(true)->setEnv($this->getJWTEnv($request));
+            }
+
             $argvs = $jwt->verify($token);
 
             $route->params->pipe->set(static::class, collect([
@@ -98,11 +102,25 @@ class BearerAuth
             $context = parse_throwable($e, $context);
             $context['__error'] = $message;
 
-            Response::abort(401, ERR::JWT_TOKEN_VERIFY_FAILED, $context, $port->get('class'));
+            Response::error(401, EXCP::JWT_TOKEN_VERIFY_FAILED, $context, $port->get('class'));
         }
 
         $this->token = $token;
 
         return true;
+    }
+
+    protected function envDetection() : bool
+    {
+        return false;
+    }
+
+    protected function getJWTEnv($request) : string
+    {
+        return md5(join('.', [
+            $request->getClientUA(),
+            $request->getClientIp(),
+            $request->getClientIp(true)
+        ]));
     }
 }

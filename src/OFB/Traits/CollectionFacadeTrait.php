@@ -23,7 +23,7 @@ trait CollectionFacadeTrait
     public static function getInstance()
     {
         if (! self::$instance) {
-            self::$instance = collect(self::$data, __CLASS__);
+            self::$instance = collect(self::$data, static::class);
         }
 
         return self::$instance;

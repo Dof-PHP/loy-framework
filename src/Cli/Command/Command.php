@@ -28,21 +28,18 @@ use Dof\Framework\CommandManager;
 use Dof\Framework\WrapinManager;
 use Dof\Framework\PortManager;
 use Dof\Framework\EventManager;
+use Dof\Framework\ExcpManager;
 use Dof\Framework\Web\Kernel as WebKernel;
+use Dof\Framework\OFB\AUX\ASCIINonce;
 
 class Command
 {
     /**
      * @CMD(version)
      * @Desc(Get Dof version)
-     * @Option(raw){notes=Get the raw version count of framework}
      */
     public function version($console)
     {
-        if ($console->hasOption('raw')) {
-            $console->success((string) get_dof_version_raw(), true);
-        }
-
         $console->success(get_dof_version(), true);
     }
 
@@ -85,7 +82,7 @@ class Command
             $console->title('* Options: ');
             $options['ascii'] = [
                 'NOTES' => 'Whether display command output as plain ascii text',
-                'default' => 'false',
+                'DEFAULT' => 'false',
             ];
 
             foreach ($options as $option => $_attr) {
@@ -121,10 +118,20 @@ class Command
 
     /**
      * @CMD(php)
-     * @Desc(Execute a standalone php script)
+     * @Desc(Execute a standalone php script, alias of `run`)
      * @Argv(1){notes=The php script file to run}
      */
     public function php($console)
+    {
+        $this->run($console);
+    }
+
+    /**
+     * @CMD(run)
+     * @Desc(Execute a standalone php script)
+     * @Argv(1){notes=The php script file to run}
+     */
+    public function run($console)
     {
         $php = $console->getParams()[0] ?? null;
         if (! $php) {
@@ -164,14 +171,23 @@ class Command
     /**
      * @CMD(cmd.domain)
      * @Desc(List domain commands in current project)
+     * @Option(domain){notes=List commands in given domains}
      */
     public function listDomainCMD($console)
     {
         $commands = CommandManager::getDomain();
         ksort($commands);
-        
+        $domains = $console->getOption('domain', '');
+        if ($domains) {
+            $domains = array_trim_from_string(strtolower($domains), ',');
+        }
+
         $console->line();
         foreach ($commands as $domain => $cmds) {
+            if ($domains && (! in_array($domain, $domains))) {
+                continue;
+            }
+
             $title = ConfigManager::getDomainDomainByKey($domain, 'title', strtoupper($domain));
             $path = str_replace(Kernel::getRoot().'/', '', DomainManager::getByKey($domain));
             $console->title(join(' | ', [$domain, $title, $path]));
@@ -542,6 +558,7 @@ class Command
             ospath($tests, 'data'),
         ]);
     }
+
     /**
     * @CMD(test.class)
     * @Desc(Testing all classes in dof project and detecting problems like uninjectable dependencies, unimported namesapces, undefined methods, etc.)
@@ -864,6 +881,8 @@ class Command
 
         EventManager::flush();
 
+        ExcpManager::flush();
+
         $console->success('Cleared!');
     }
 
@@ -900,6 +919,8 @@ class Command
 
             EventManager::compile($domains, true);
 
+            ExcpManager::compile($domains, true);
+
             $console->success('Compiled!', true);
         } catch (Throwable $e) {
             $console->exception('CompileFailed', [], $e);
@@ -912,6 +933,7 @@ class Command
      * @Option(orm){notes=The single orm class filepath or namespace to init}
      * @Option(force){notes=Whether execute the dangerous operations like drop/delete&default=false}
      * @Option(dump){notes=Dump the sqls will be executed rather than execute them directly&default=false}
+     * @Option(logging){notes=Logging SQLs executed during init process&default=false}
      */
     public function initORM($console)
     {
@@ -933,8 +955,9 @@ class Command
 
         $force = $console->hasOption('force');
         $dump  = $console->hasOption('dump');
+        $logging = confirm($console->getOption('logging', '0'));
 
-        $res = StorageSchema::init($class, $force, $dump);
+        $res = StorageSchema::init($class, $force, $dump, $logging);
         if ($dump) {
             foreach ($res as $sql) {
                 $console->line($sql, 2);
@@ -954,6 +977,7 @@ class Command
     * @Option(domain){notes=The domain name used to sync orm classes schema}
     * @Option(dump){notes=Dump the sqls will be executed rather than execute them directly&default=false}
     * @Option(skip){notes=The orm class files to exclude, using `,` to separate}
+     * @Option(logging){notes=Logging SQLs executed during init process&default=false}
     */
     public function syncORM($console)
     {
@@ -986,6 +1010,7 @@ class Command
 
             $force = $console->hasOption('force');
             $dump = $console->hasOption('dump');
+            $logging = confirm($console->getOption('logging', '0'));
 
             if (in_array($storage, $excludes)) {
                 if ($dump) {
@@ -998,7 +1023,7 @@ class Command
                 );
             }
 
-            $res = StorageSchema::sync($storage, $force, $dump);
+            $res = StorageSchema::sync($storage, $force, $dump, $logging);
             if ($dump) {
                 foreach ($res as $sql) {
                     $console->line($sql, 2);
@@ -1829,7 +1854,7 @@ PHP;
         if (! $path) {
             $console->exception('DomainNotExists', [$domain]);
         }
-        $name = $console->getOption('cmd');
+        $name = $console->getOption('cmd', null, true);
         $name = underline2camelcase($name);
 
         $class = ospath($path, Kernel::COMMAND, "{$name}.php");
@@ -2179,7 +2204,7 @@ PHP;
      * @CMD(ns)
      * @Desc(Get namespace of php file, or get php filepath of namespace)
      * @Option(full){notes=Print full namespace/filepath or not; default: TRUE - get namespace, FALSE - get filepath}
-     * @Argv(#1){File path of Class/Interface/Trait, or namespace}
+     * @Argv(1){File path of Class/Interface/Trait, or namespace}
      */
     public function getNamespaceOfFile($console)
     {
@@ -2198,5 +2223,49 @@ PHP;
 
         $ns = get_namespace_of_file($target, boolval($console->getOption('full', true)));
         $ns ? $console->success($ns) : $console->warning('nil');
+    }
+
+    /**
+     * @CMD(nonce)
+     * @Desc(Get a nonce string with given length)
+     * @Option(mode){notes=Mode of nonce source&default=7}
+     * @Option(exclude){notes=Exclude default special punctuation marks in result&default=true}
+     * @Option(excludes){notes=Characters you want to exclude in result&default=null}
+     * @Argv(1){notes=Length of nonce string}
+     */
+    public function nonce($console)
+    {
+        $length = intval($console->first());
+        $mode = intval($console->getOption('mode', ASCIINonce::STR));
+        $excludes = $console->getOption('excludes');
+        if (! $excludes) {
+            $excludes = $console->getOption('exclude', true) ? ASCIINonce::EXCLUDE : null;
+        }
+
+        $console->success(ASCIINonce::get($length, $mode, $excludes));
+    }
+
+    /**
+     * @CMD(u2c)
+     * @Desc(Convert a underline string to camelcase)
+     */
+    public function u2c($console)
+    {
+        $str = $console->first();
+        if ($str) {
+            $console->success(underline2camelcase($str));
+        }
+    }
+
+    /**
+     * @CMD(c2u)
+     * @Desc(Convert a camelcase string to underline)
+     */
+    public function c2u($console)
+    {
+        $str = $console->first();
+        if ($str) {
+            $console->success(camelcase2underline($str));
+        }
     }
 }

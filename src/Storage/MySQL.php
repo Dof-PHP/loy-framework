@@ -302,6 +302,31 @@ class MySQL extends Storage implements Storable
         }
     }
 
+    public function begin()
+    {
+        $this->appendSQLAfterExecute(function () {
+            $this->getConnection()->beginTransaction();
+        }, 'BEGIN');
+    }
+
+    public function commit()
+    {
+        $this->appendSQLAfterExecute(function () {
+            $this->getConnection()->commit();
+        }, 'COMMIT');
+    }
+
+    public function rollback()
+    {
+        $connection = $this->getConnection();
+
+        if ($connection->inTransaction()) {
+            $this->appendSQLAfterExecute(function () use ($connection) {
+                $connection->rollBack();
+            }, 'ROLLBACK');
+        }
+    }
+
     public function transaction(Closure $transaction)
     {
         $connection = $this->getConnection();

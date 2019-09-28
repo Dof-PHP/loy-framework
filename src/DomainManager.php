@@ -207,24 +207,13 @@ final class DomainManager
             {
                 $this->key = $key;
             }
-            public function domain(string $key = null)
+            public function domain(string $key = null, $default = null)
             {
-                $domain = $this->__config()->get('domain');
-
-                $val = $key ? $domain->get($key) : $domain;
-
-                return is_null($val) ? $default : $val;
+                return $this->__config()->get("domain.{$key}", $default);
             }
             public function env(string $key = null, $default = null)
             {
-                $env = $this->__config()->get('env');
-                if (! $env) {
-                    return null;
-                }
-
-                $val = $key ? $env->get($key) : $env;
-
-                return is_null($val) ? $default : $val;
+                return $this->__config()->get("env.{$key}", $default);
             }
             public function cache(string $key)
             {
@@ -266,11 +255,9 @@ final class DomainManager
                     {
                         $this->domain = $domain;
                     }
-                    public function get(string $key)
+                    public function get(string $key, $default = null)
                     {
-                        $config = ConfigManager::getDomainByKey($this->domain, $key);
-
-                        return is_array($config) ? collect($config, $this) : $config;
+                        return ConfigManager::getDomainByKey($this->domain, $key, $default);
                     }
                     public function __get(string $attr)
                     {

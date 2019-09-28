@@ -125,6 +125,10 @@ class Response
 
     private function stringBody($body)
     {
+        if (is_string($body)) {
+            return $body;
+        }
+
         $alias = array_search($this->mime, self::$mimes);
         if ($alias) {
             $formatter = 'formatBody'.ucfirst($alias);

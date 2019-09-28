@@ -251,6 +251,9 @@ abstract class Model
         $array = get_object_vars($this);
 
         unset($array['__singleton__']);
+        unset($array['__onCreated']);
+        unset($array['__onRemoved']);
+        unset($array['__onUpdated']);
 
         return $array;
     }
@@ -269,6 +272,11 @@ abstract class Model
     {
         return enjson($this->toArray());
     }
+
+    // public function __sleep()
+    // {
+    // return array_keys($this->__toArray());
+    // }
 
     final public function __toString()
     {

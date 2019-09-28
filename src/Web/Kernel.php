@@ -8,6 +8,7 @@ use Throwable;
 use Closure;
 use Dof\Framework\Kernel as Core;
 use Dof\Framework\EXCP;
+use Dof\Framework\IS;
 use Dof\Framework\Container;
 use Dof\Framework\PortManager;
 use Dof\Framework\WrapinManager;
@@ -17,6 +18,7 @@ use Dof\Framework\Validator;
 use Dof\Framework\Facade\Log;
 use Dof\Framework\Facade\Request;
 use Dof\Framework\Facade\Response;
+use Dof\Framework\OFB\AUX\Num;
 
 /**
  * Dof Framework Web Kernel
@@ -70,84 +72,88 @@ final class Kernel
 
             Core::boot($root);
         } catch (Throwable $e) {
-            Kernel::throw(ERR::KERNEL_BOOT_FAILED, ['root' => $root], 500, $e);
+            Kernel::throw(EXCP::KERNEL_BOOT_FAILED, ['root' => $root], 500, $e);
         }
 
         if (is_file($flag = ospath($root, Kernel::HALT_FLAG))) {
             $status = ConfigManager::getFramework('web.halt.status', 503);
-            Kernel::throw(ERR::SERVER_CLOSED, dejson($flag, true, true), $status);
+            Kernel::throw(EXCP::SERVER_CLOSED, dejson($flag, true, true), $status);
         }
 
         try {
             self::preflight();
         } catch (Throwable $e) {
-            Kernel::throw(ERR::PREFLIGHT_EXCEPTION, [], 500, $e);
+            Kernel::throw(EXCP::PREFLIGHT_EXCEPTION, [], 500, $e);
         }
 
         try {
             self::routing();
         } catch (Throwable $e) {
-            Kernel::throw(ERR::ROUTING_ERROR, [], 500, $e);
+            Kernel::throw(EXCP::ROUTING_ERROR, [], 500, $e);
         }
 
         $class  = Port::get('class');
         $method = Port::get('method');
         if ((! $class) || (! class_exists($class))) {
-            Kernel::throw(ERR::PORT_CLASS_NOT_EXIST, compact('class'));
+            Kernel::throw(EXCP::PORT_CLASS_NOT_EXIST, compact('class'));
         }
         if ((! $method) || (! method_exists($class, $method))) {
-            Kernel::throw(ERR::PORT_METHOD_NOT_EXIST, compact('class', 'method'), 500, null, $class);
+            Kernel::throw(EXCP::PORT_METHOD_NOT_EXIST, compact('class', 'method'), 500, null, $class);
         }
 
         try {
             self::pipingin();
         } catch (Throwable $e) {
-            Kernel::throw(ERR::PIPEIN_ERROR, [], 500, $e, $class);
+            self::throwIfService($e, $class, function () use ($class, $e) {
+                Kernel::throw(EXCP::PIPEIN_ERROR, [], 500, $e, $class);
+            });
         }
 
         try {
             self::validate();
         } catch (Throwable $e) {
-            Kernel::throw(ERR::REQUEST_VALIDATE_ERROR, [], 500, $e, $class);
+            Kernel::throw(EXCP::REQUEST_VALIDATE_ERROR, [], 500, $e, $class);
         }
 
         try {
             $params = self::build();
         } catch (Throwable $e) {
-            Kernel::throw(ERR::BUILD_PORT_METHOD_PARAMETERS_FAILED, [], 500, $e, $class);
+            Kernel::throw(EXCP::BUILD_PORT_METHOD_PARAMETERS_FAILED, [], 500, $e, $class);
         }
 
         try {
             $result = (new $class)->{$method}(...$params);
         } catch (Throwable $e) {
             self::throwIfService($e, $class, function () use ($class, $method, $e) {
-                Kernel::throw(ERR::RESULTING_RESPONSE_FAILED, compact('class', 'method'), 500, $e, $class);
+                Kernel::throw(EXCP::RESULTING_RESPONSE_FAILED, compact('class', 'method'), 500, $e, $class);
             });
         }
 
         try {
             $result = self::pipingout($result);
         } catch (Throwable $e) {
-            Kernel::throw(ERR::PIPEOUT_ERROR, [], 500, $e, $class);
+            self::throwIfService($e, $class, function () use ($class, $e) {
+                Kernel::throw(EXCP::PIPEOUT_ERROR, [], 500, $e, $class);
+            });
         }
 
         try {
             $result = self::packing($result);
         } catch (Throwable $e) {
-            Kernel::throw(ERR::PACKAGE_RESULT_FAILED, [], 500, $e, $class);
+            Kernel::throw(EXCP::PACKAGE_RESULT_FAILED, [], 500, $e, $class);
         }
 
         try {
             self::logging();
         } catch (Throwable $e) {
             Log::log('port-logging-failure', join('@', [$class, $method]), parse_throwable($e));
-            // Kernel::throw(ERR::LOGGING_REQUEST_FAILED, [], 500, $e, $class);
+            // Kernel::throw(EXCP::LOGGING_REQUEST_FAILED, [], 500, $e, $class);
         }
 
         try {
             Response::setStatus(Port::get('codeok', 200))->setBody($result)->send();
         } catch (Throwable $e) {
-            Kernel::throw(ERR::SENDING_RESPONSE_FAILED, [], 500, $e, $class);
+            Kernel::throw(EXCP::SENDING_RESPONSE_FAILED, [], 500, $e, $class);
         }
     }
 
@@ -163,10 +169,10 @@ final class Kernel
 
         foreach ($preflights as $preflight) {
             if (! class_exists($preflight)) {
-                Kernel::throw(ERR::PREFLIGHT_NOT_EXISTS, compact('preflight'));
+                Kernel::throw(EXCP::PREFLIGHT_NOT_EXISTS, compact('preflight'));
             }
             if (! method_exists($preflight, self::PREFLIGHT_HANDLER)) {
-                Kernel::throw(ERR::PREFLIGHT_HANDLER_NOT_EXISTS, [
+                Kernel::throw(EXCP::PREFLIGHT_HANDLER_NOT_EXISTS, [
                     'preflight' => $preflight,
                     'handler'   => self::PREFLIGHT_HANDLER,
                 ]);
@@ -176,7 +182,7 @@ final class Kernel
                 Request::getInstance(),
                 Response::getInstance()
             ]))) {
-                Kernel::throw(ERR::PREFLIGHT_FAILED, compact('result'));
+                Kernel::throw(EXCP::PREFLIGHT_FAILED, compact('result'));
             }
         }
     }
@@ -195,11 +201,11 @@ final class Kernel
         $route = PortManager::find($uri, $verb, $mimes);
         if (! $route) {
             $mime = Request::getMimeShort();
-            Response::error(404, ERR::ROUTE_NOT_EXISTS, compact('verb', 'uri', 'mime'));
+            Response::abort(404, EXCP::ROUTE_NOT_EXISTS, compact('verb', 'uri', 'mime'));
         }
         $port = PortManager::get($route);
         if (! $port) {
-            Kernel::throw(ERR::BAD_ROUTE_WITHOUT_PORT, compact('route'), 500);
+            Kernel::throw(EXCP::BAD_ROUTE_WITHOUT_PORT, compact('route'), 500);
         }
 
         Route::setData($route);
@@ -207,7 +213,7 @@ final class Kernel
         Response::setMimeAlias(Response::mimeout());
 
         if (($mimein = Port::get('mimein')) && (! Request::isMimeAlias($mimein))) {
-            Response::error(400, ERR::INVALID_REQUEST_MIME, [
+            Response::error(400, EXCP::INVALID_REQUEST_MIME, [
                 'current' => Request::getMimeShort(),
                 'require' => Request::getMimeByAlias($mimein, '?'),
             ], Route::get('class'));
@@ -245,12 +251,12 @@ final class Kernel
                     $context['wrapins'][] = $wrapin;
                 }
 
-                Response::error(400, ERR::WRAPIN_VALIDATE_FAILED, $context, Route::get('class'));
+                Response::error(400, EXCP::WRAPIN_VALIDATE_FAILED, $context, Route::get('class'));
             }
 
             Port::getInstance()->argument = collect($validator->getResult(), null, false);
         } catch (Throwable $e) {
-            Kernel::throw(ERR::REQEUST_PARAMETER_VALIDATION_ERROR, compact('wrapin'), 500, $e, Route::get('class'));
+            Kernel::throw(EXCP::REQEUST_PARAMETER_VALIDATION_ERROR, compact('wrapin'), 500, $e, Route::get('class'));
         }
     }
 
@@ -268,7 +274,7 @@ final class Kernel
         $shouldPipeInBeIgnored = function ($pipein, $noin) : bool {
             foreach ($noin as $exclude => $ext) {
                 if ((! $exclude) || (! class_exists($exclude))) {
-                    Kernel::throw(ERR::NOPIPEIN_CLASS_NOT_EXISTS, [
+                    Kernel::throw(EXCP::NOPIPEIN_CLASS_NOT_EXISTS, [
                         'nopipein' => $exclude,
                         'class'    => Route::get('class'),
                         'method'   => Route::get('method'),
@@ -287,14 +293,14 @@ final class Kernel
                 continue;
             }
             if ((! $pipe) || (! class_exists($pipe))) {
-                Kernel::throw(ERR::PIPEIN_CLASS_NOT_EXISTS, [
+                Kernel::throw(EXCP::PIPEIN_CLASS_NOT_EXISTS, [
                     'port'   => Route::get('class'),
                     'method' => Route::get('method'),
                     'pipein' => $pipe,
                 ], 500, null, Route::get('class'));
             }
             if (! method_exists($pipe, Kernel::PIPEIN_HANDLER)) {
-                Kernel::throw(ERR::PIPEIN_HANDLER_NOT_EXISTS, [
+                Kernel::throw(EXCP::PIPEIN_HANDLER_NOT_EXISTS, [
                     'pipein'  => $pipe,
                     'hanlder' => Kernel::PIPEIN_HANDLER
                 ], 500, null, Route::get('class'));
@@ -310,7 +316,7 @@ final class Kernel
             } catch (Throwable $e) {
                 self::throwIfService($e, Route::get('class'), function () use ($pipe, $e) {
                     $error = is_anonymous($e) ? 400 : 500;
-                    Kernel::throw(ERR::PIPEIN_THROUGH_FAILED, compact('pipe'), $error, $e, Route::get('class'));
+                    Kernel::throw(EXCP::PIPEIN_THROUGH_FAILED, compact('pipe'), $error, $e, Route::get('class'));
                 });
             }
         }
@@ -333,10 +339,10 @@ final class Kernel
             $class  = Route::get('class');
             $method = Route::get('method');
             if (is_exception($e, 'TypeHintConvertFailed')) {
-                Response::error(400, ERR::INVALID_ROUTE_PARAMETER, parse_throwable($e), $class);
+                Response::error(400, EXCP::INVALID_ROUTE_PARAMETER, parse_throwable($e), $class);
             }
 
-            Kernel::throw(ERR::BUILD_PORT_METHOD_PARAMETERS_FAILED, compact('class', 'method'), 500, $e, $class);
+            Kernel::throw(EXCP::BUILD_PORT_METHOD_PARAMETERS_FAILED, compact('class', 'method'), 500, $e, $class);
         }
     }
 
@@ -357,7 +363,7 @@ final class Kernel
         $shouldPipeOutBeIgnored = function ($pipeout, $noout) : bool {
             foreach ($noout as $exclude => $ext) {
                 if ((! $exclude) || (! class_exists($exclude))) {
-                    Kernel::throw(ERR::NOPIPEOUT_CLASS_NOT_EXISTS, [
+                    Kernel::throw(EXCP::NOPIPEOUT_CLASS_NOT_EXISTS, [
                         'nopipeout' => $exclude,
                         'class'     => Route::get('class'),
                         'method'    => Route::get('method'),
@@ -377,14 +383,14 @@ final class Kernel
                 continue;
             }
             if ((! $pipe) || (! class_exists($pipe))) {
-                Kernel::throw(ERR::PIPEOUT_CLASS_NOT_EXISTS, [
+                Kernel::throw(EXCP::PIPEOUT_CLASS_NOT_EXISTS, [
                     'port'    => Route::get('class'),
                     'method'  => Route::get('method'),
                     'pipeout' => $pipe,
                 ], 500, null, Route::get('class'));
             }
             if (! method_exists($pipe, Kernel::PIPEOUT_HANDLER)) {
-                Kernel::throw(ERR::PIPEOUT_HANDLER_NOT_EXISTS, [
+                Kernel::throw(EXCP::PIPEOUT_HANDLER_NOT_EXISTS, [
                     'pipeout' => $pipe,
                     'hanlder' => Kernel::PIPEOUT_HANDLER
                 ], 500, null, Route::get('class'));
@@ -396,11 +402,18 @@ final class Kernel
                     [$_result, Route::getInstance(), Port::getInstance(), Request::getInstance(), Response::getInstance()]
                 );
             } catch (Throwable $e) {
-                if (EXCP::is($e, EXCP::INPUT_FIELDS_SENTENCE_GRAMMER_ERROR)) {
-                    Kernel::throw(ERR::INPUT_FIELDS_SENTENCE_GRAMMER_ERROR, compact('pipe'), 400, $e, Route::get('class'));
+                if (IS::excp($e, EXCP::INPUT_FIELDS_SENTENCE_GRAMMER_ERROR)) {
+                    $context = parse_throwable($e);
+                    $context['pipe'] = $pipe;
+                    Response::error(
+                        400,
+                        EXCP::INPUT_FIELDS_SENTENCE_GRAMMER_ERROR,
+                        $context,
+                        Route::get('class')
+                    );
                 }
 
-                Kernel::throw(ERR::PIPEOUT_THROUGH_FAILED, compact('pipe'), 500, $e, Route::get('class'));
+                Kernel::throw(EXCP::PIPEOUT_THROUGH_FAILED, compact('pipe'), 500, $e, Route::get('class'));
             }
         }
 
@@ -489,25 +502,35 @@ final class Kernel
 
     public static function throwIfService(Throwable $e, string $domain, Closure $ifNot)
     {
-        if (is_anonymous($e) && (is_exception($e, EXCP::DOF_SERVICE_EXCEPTION))) {
+        if (is_anonymous($e) && IS::excp($e, EXCP::DOF_SERVICE_EXCEPTION)) {
             $previous = parse_throwable($e)['__previous'] ?? [];
             $message = $previous['message'] ?? null;
             $context = $previous['context'] ?? [];
 
-            $errors = $context['__errors'] ?? [];
-            $error  = ERR::DOF_SERVICE_EXCEPTION;
+            $errors = $context['__errors__'] ?? [];
+            $error  = EXCP::DOF_SERVICE_EXCEPTION;
             $status = 503;
+
             if ($_error = ($errors[$message] ?? null)) {
                 $error  = [($_error[0] ?? -1), $message];
-                $status = $_error[1] ?? 503;
+                $_status = intval($_error[1] ?? 0);
+                if (Num::between($_status, 100, 599)) {
+                    $status = $_status;
+                }
                 if ($info = ($_error[2] ?? null)) {
                     $context['__info'] = $info;
+                }
+            } elseif ($excp = ($context['__excp__'] ?? null)) {
+                $error = $excp;
+                $_status = intval(substr(strval($excp[0] ?? ''), 0, 3));
+                if (Num::between($_status, 100, 599)) {
+                    $status = $_status;
                 }
             } else {
                 $context['__info'] = $message;
             }
 
-            unset($context['__errors']);
+            unset($context['__errors__'], $context['__excp__']);
 
             if ($status >= 500) {
                 Response::exception($status, $error, $context, $domain);

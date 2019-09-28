@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dof\Framework;
 
+use Throwable;
+
 class IS
 {
     public static function bint($value, bool $force = true) : bool
@@ -101,5 +103,25 @@ class IS
     public static function email($value) : bool
     {
         return false !== filter_var($value, FILTER_VALIDATE_EMAIL);
+    }
+
+    public static function excp(Throwable $e, array $excp) : bool
+    {
+        $name = strval($excp[1] ?? null);
+        if (! $name) {
+            return false;
+        }
+
+        return is_exception($e, $name);
+    }
+
+    public static function timestamp($timestamp) : bool
+    {
+        return TypeHint::isPint($timestamp);
+    }
+
+    public static function microtime($timestamp) : bool
+    {
+        return TypeHint::isPint($timestamp);
     }
 }

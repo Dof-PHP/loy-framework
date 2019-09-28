@@ -7,7 +7,7 @@ namespace Dof\Framework\OFB\Pipe;
 use Throwable;
 use Dof\Framework\Facade\Response;
 use Dof\Framework\EXCP;
-use Dof\Framework\Web\ERR;
+use Dof\Framework\IS;
 use Dof\Framework\OFB\Auth\HttpHmac;
 
 /**
@@ -19,25 +19,25 @@ abstract class HttpHmacAuth
     {
         $header = trim((string) $request->getHeader('AUTHORIZATION'));
         if (! $header) {
-            Response::abort(401, ERR::MISSING_HTTP_HMAC_TOKEN_HEADER);
+            Response::abort(401, EXCP::MISSING_HTTP_HMAC_TOKEN_HEADER);
         }
         if (! ci_equal(mb_substr($header, 0, 10), 'http-hmac ')) {
-            Response::abort(401, ERR::INVALID_HTTP_HMAC_TOKEN, [], $port->get('class'));
+            Response::abort(401, EXCP::INVALID_HTTP_HMAC_TOKEN, [], $port->get('class'));
         }
 
         $token = mb_substr($header, 10);
         if (! $token) {
-            Response::abort(401, ERR::MISSING_TOKEN_IN_HEADER, [], $port->get('class'));
+            Response::abort(401, EXCP::MISSING_TOKEN_IN_HEADER, [], $port->get('class'));
         }
 
         $data = base64_decode($token);
         if (! is_string($data)) {
-            Response::abort(401, ERR::INVALID_TOKEN_IN_HEADER, ['err' => 'Non-string token raw'], $port->get('class'));
+            Response::abort(401, EXCP::INVALID_TOKEN_IN_HEADER, ['err' => 'Non-string token raw'], $port->get('class'));
         }
         $data = explode("\n", $data);
         $data = array_values($data);
         if (count($data) !== 10) {
-            Response::abort(401, ERR::INVALID_TOKEN_IN_HEADER, ['err' => 'Params count mis-match'], $port->get('class'));
+            Response::abort(401, EXCP::INVALID_TOKEN_IN_HEADER, ['err' => 'Params count mis-match'], $port->get('class'));
         }
         list(
             $version,
@@ -52,13 +52,8 @@ abstract class HttpHmacAuth
             $signature
         ) = $data;
         if (! $signature) {
-            Response::abort(401, ERR::MISSING_SIGNATURE_IN_TOKEN, [], $port->get('class'));
+            Response::abort(401, EXCP::MISSING_SIGNATURE_IN_TOKEN, [], $port->get('class'));
         }
-
-        $verb = $route->get('verb');
-        $host = $request->getHost();
-        $path = $request->getUriRaw();
-        $params = $request->all();
 
         $_more = [];
         parse_str(urldecode($more), $_more);
@@ -76,11 +71,11 @@ abstract class HttpHmacAuth
                 ->setClient($client)
                 ->setTimestamp(intval($timestamp))
                 ->setNonce($nonce)
-                ->setParameters($params)
+                ->setParameters($this->parameters($request))
                 ->setMore($_more)
-                ->setHost($host)
-                ->setVerb($verb)
-                ->setPath($path)
+                ->setHost($this->host($request))
+                ->setVerb($this->verb($request))
+                ->setPath($this->path($request))
                 ->setHeaders($_headers)
                 ->setTimeoutCheck(boolval($this->timeoutCheck()))
                 ->setTimeoutDeviation(intval($this->timeoutDeviation()))
@@ -88,14 +83,19 @@ abstract class HttpHmacAuth
                 ->verify();
 
             if ($result !== true) {
-                Response::abort(401, ERR::INVALID_HTTP_HMAC_TOKEN_SIGNATURE, [], $port->get('class'));
+                Response::abort(401, EXCP::INVALID_HTTP_HMAC_TOKEN_SIGNATURE, [], $port->get('class'));
             }
+
+            $route->params->pipe->set(static::class, collect([
+                'appid' => $client,
+                'client' => $realm,
+            ]));
 
             return true;
         } catch (Throwable $e) {
-            $excp = ERR::HTTP_HMAC_TOKEN_VERIFY_FAILED;
-            if (EXCP::is($e, EXCP::TIMEOUTED_HMAC_SIGNATURE)) {
-                $excp = ERR::TIMEOUTED_HMAC_SIGNATURE;
+            $excp = EXCP::HTTP_HMAC_TOKEN_VERIFY_FAILED;
+            if (IS::excp($e, EXCP::TIMEOUTED_HMAC_SIGNATURE)) {
+                $excp = EXCP::TIMEOUTED_HMAC_SIGNATURE;
             }
 
             $context = [];
@@ -117,6 +117,42 @@ abstract class HttpHmacAuth
     public function timestampCheck()
     {
         return true;
+    }
+
+    public function parameters($request) : array
+    {
+        if ($request->hasHeader('DOF-HTTP-HMAC-ARGV')) {
+            return (array) dejson($request->getHeader('DOF-HTTP-HMAC-ARGV'));
+        }
+    
+        return $request->all();
+    }
+
+    public function path($request) : string
+    {
+        if ($request->hasHeader('DOF-HTTP-HMAC-PATH')) {
+            return $request->getHeader('DOF-HTTP-HMAC-PATH');
+        }
+
+        return $request->getUriRaw();
+    }
+
+    public function host($request) : string
+    {
+        if ($request->hasHeader('DOF-HTTP-HMAC-HOST')) {
+            return $request->getHeader('DOF-HTTP-HMAC-HOST');
+        }
+
+        return $request->getHost();
+    }
+
+    public function verb($request) : string
+    {
+        if ($request->hasHeader('DOF-HTTP-HMAC-VERB')) {
+            return $request->getHeader('DOF-HTTP-HMAC-VERB');
+        }
+
+        return $request->getMethod();
     }
 
     /**

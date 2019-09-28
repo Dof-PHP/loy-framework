@@ -63,7 +63,11 @@ if (! function_exists('et')) {
             if (is_scalar($var)) {
                 echo $var;
                 if ($next) {
-                    echo is_scalar($next) ? ' => ' : PHP_EOL;
+                    is_scalar($next)
+                        ? print($next)
+                        : print_r($next);
+
+                    echo PHP_EOL;
                 }
             } else {
                 print_r($var);
@@ -379,7 +383,17 @@ if (! function_exists('dexml')) {
 if (! function_exists('json_pretty')) {
     function json_pretty($data) : string
     {
-        return json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        $json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        if (! is_string($json)) {
+            $error = JSON_ERROR_NONE === json_last_error() ? 'UnknownJsonEncodeError' : json_last_error_msg();
+
+            trigger_error($error);
+
+            return '';
+        }
+
+        return $json;
     }
 }
 if (! function_exists('xml_pretty')) {
@@ -397,6 +411,33 @@ if (! function_exists('enjson')) {
     function enjson($data)
     {
         $json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        switch (json_last_error()) {
+            case JSON_ERROR_NONE:
+                return $json;
+            case JSON_ERROR_DEPTH:
+                return exception('JsonErrorDepth');
+            case JSON_ERROR_STATE_MISMATCH:
+                return exception('JsonErrorStateMismatch');
+            case JSON_ERROR_CTRL_CHAR:
+                return exception('JsonErrorCtrlChar');
+            case JSON_ERROR_SYNTAX:
+                return exception('JsonErrorSyntax');
+            case JSON_ERROR_RECURSION:
+                return exception('JsonErrorRecursion');
+            case JSON_ERROR_INF_OR_NAN:
+                return exception('JsonErrorInfOrNan');
+            case JSON_ERROR_UNSUPPORTED_TYPE:
+                return exception('JsonErrorUnsupportedType');
+            case JSON_ERROR_INVALID_PROPERTY_NAME:
+                return exception('JsonErrorUnsupportedType');
+            case JSON_ERROR_UTF16:
+                return exception('JsonErrorUTF16');
+            case JSON_ERROR_UTF8:
+                return exception('JsonErrorUTF8');
+            default:
+                return exception('UnknownJsonEncodeError');
+        }
 
         return $json ?: '';
     }
@@ -421,9 +462,9 @@ if (! function_exists('subsets')) {
     // See: <https://stackoverflow.com/questions/6092781/finding-the-subsets-of-an-array-in-php>
     function subsets(array $data, int $minLen = 1) : array
     {
-        $count   = count($data);
-        $times   = pow(2, $count);
-        $result  = [];
+        $count  = count($data);
+        $times  = pow(2, $count);
+        $result = [];
         for ($i = 0; $i < $times; ++$i) {
             // $bin = sprintf('%0'.$count.'b', $i);
             $tmp = [];
@@ -438,6 +479,7 @@ if (! function_exists('subsets')) {
                 $result[] = $tmp;
             }
         }
+
         return $result;
     }
 }
@@ -1499,5 +1541,23 @@ if (! function_exists('camelcase2underline')) {
         }
 
         return implode('', $arr);
+    }
+}
+if (! function_exists('milliseconds')) {
+    function milliseconds() : int
+    {
+        return intval(microtime(true) * 1000);
+    }
+}
+if (! function_exists('microseconds')) {
+    function microseconds() : int
+    {
+        return intval(microtime(true) * 1000000);
+    }
+}
+if (! function_exists('nanoseconds')) {
+    function nanoseconds() : int
+    {
+        return intval(microtime(true) * 1000000000);
     }
 }

@@ -16,20 +16,15 @@ class Response extends Facade
     protected static $singleton = true;
     protected static $namespace = Instance::class;
 
-    public static function abort(int $status, array $error, array $context = [], string $domain = null)
-    {
-        return self::error($status, $error, $context, $domain);
-    }
-
     /**
-     * It's a user level error
+     * It's a user level error - no logging
      *
      * @param int $status: HTTP response status
      * @param array $error: Error code with message
      * @param array $context: Error context
      * @param string $domain: Domain class namespace
      */
-    public static function error(int $status, array $error, array $context = [], string $domain = null)
+    public static function abort(int $status, array $error, array $context = [], string $domain = null)
     {
         $code = (int) ($error[0] ?? -1);
         $info = ($error[1] ?? -1);
@@ -69,9 +64,68 @@ class Response extends Facade
         }
 
         Response::getInstance()
+            ->setError(true)
             ->setStatus($status)
             ->setMimeAlias(self::mimeout('json'))
+            ->setBody($body)
+            ->send();
+    }
+
+    /**
+     * It's a user level error - with logging
+     *
+     * @param int $status: HTTP response status
+     * @param array $error: Error code with message
+     * @param array $context: Error context
+     * @param string $domain: Domain class namespace
+     */
+    public static function error(int $status, array $error, array $context = [], string $domain = null)
+    {
+        $context['__request'] = Request::getContext();
+        Log::log('fail', join('-', $error), $context);
+        unset($context['__request']);
+        
+        $code = (int) ($error[0] ?? -1);
+        $info = ($error[1] ?? -1);
+        if ($_info = ($context['__info'] ?? null)) {
+            $context['__info'] = $info;
+            $info = $_info;
+        }
+        if ($text = $error[2] ?? null) {
+            $context['__info'] = $info;
+            $info = $text;
+        }
+
+        // TODO
+        // $lang = 'zh';
+        // $info = i18n($info, $lang, $domain);
+
+        $debug = $domain
+            ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_DEBUG', false)
+            : ConfigManager::getEnv('HTTP_DEBUG', false);
+
+        $body = $debug ? [$code, stringify($info), $context] : [$code, stringify($info)];
+
+        // We dont record user error coz it might be huge amount abused reqeusts
+
+        $wraperr = Port::get('wraperr');
+        $wraperr = $wraperr ? $wraperr : ConfigManager::getFramework('web.error.wrapper', null);
+        if ($wraperr) {
+            if (is_array($wraperr)) {
+                $body = self::wraperr($body, $wraperr);
+            } elseif (class_exists($wraperr)) {
+                try {
+                    $body = self::wraperr($body, wrapper($wraperr, 'err'));
+                } catch (Throwable $e) {
+                    // ignore if any exception thrown to avoid empty response
+                }
+            }
+        }
+
+        Response::getInstance()
             ->setError(true)
+            ->setStatus($status)
+            ->setMimeAlias(self::mimeout('json'))
             ->setBody($body)
             ->send();
     }
@@ -101,6 +155,10 @@ class Response extends Facade
             $info = $text;
         }
 
+        // TODO
+        // $lang = 'zh';
+        // $info = i18n($info, $lang, $domain);
+
         $debug = $domain
             ? ConfigManager::getDomainFinalEnvByNamespace($domain, 'HTTP_DEBUG', false)
             : ConfigManager::getEnv('HTTP_DEBUG', false);
@@ -124,7 +182,7 @@ class Response extends Facade
         Response::getInstance()
         ->setError(true)
         ->setStatus($status)
-        ->setMimeAlias('json')
+        ->setMimeAlias(self::mimeout('json'))
         ->setBody($body)
         ->send();
     }

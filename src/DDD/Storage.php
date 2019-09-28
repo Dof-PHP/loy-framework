@@ -68,7 +68,16 @@ abstract class Storage implements Repository
      */
     final public function convert(array $result = null) : ?Model
     {
-        return RepositoryManager::map(static::class, $result);
+        if (! $result) {
+            return null;
+        }
+
+        $storage = static::class;
+        if (! is_assoc_array($result)) {
+            exception('ConvertNonAssocArrayResult', compact('result', 'storage'));
+        }
+
+        return RepositoryManager::map($storage, $result);
     }
 
     /**
@@ -92,7 +101,7 @@ abstract class Storage implements Repository
         }
 
         if (! is_index_array($result)) {
-            exception('UnConvertableStorageOrigin', compact('result', 'storage'));
+            exception('ConvertsNonIndexArrayResult', compact('result', 'storage'));
         }
 
         foreach ($result as &$item) {

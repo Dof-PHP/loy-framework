@@ -78,6 +78,6 @@ class CLIA
 
     public static function compile(string $cli) : array
     {
-        return CLIA::assemble(array_filter(explode(' ', $cli)));
+        return CLIA::build(array_filter(explode(' ', $cli)));
     }
 }

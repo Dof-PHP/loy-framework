@@ -1172,7 +1172,7 @@ class MySQLBuilder
                 foreach ($_params as $param) {
                     array_push($params, $param);
                 }
-                if (false !== next($htis->orsHaving)) {
+                if (false !== next($this->orsHaving)) {
                     $having .= ' OR ';
                 }
             }

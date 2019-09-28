@@ -31,6 +31,6 @@ class DebugLogging
     {
         $config = ConfigManager::getEnv('HTTP_DEBUG_LOGGING', []);
 
-        return $config[$key] ?? false;
+        return (bool) ($config[$key] ?? false);
     }
 }

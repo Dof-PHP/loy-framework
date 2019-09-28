@@ -8,7 +8,14 @@ use Closure;
 use ErrorException;
 use Dof\Framework\Facade\Log;
 use Dof\Framework\Web\Kernel as WebKernel;
+use Dof\Framework\Web\Port;
+use Dof\Framework\Web\Route;
 use Dof\Framework\Cli\Kernel as CliKernel;
+use Dof\Framework\OFB\AUX\ASCIINonce;
+use Dof\Framework\OFB\AUX\Str;
+use Dof\Framework\OFB\AUX\Num;
+use Dof\Framework\DSL\IFRSN;
+use Dof\Framework\Facade\CURL;
 
 /**
  * Dof Framework Core Kernel
@@ -101,7 +108,7 @@ final class Kernel
                 Kernel::getSapiContext(true),
             ];
 
-            Log::log('error', $errstr, $context);
+            Log::error($errstr, $context);
             // throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
         });
 
@@ -139,7 +146,7 @@ final class Kernel
 
         EventManager::load($domains);
 
-        // ErrorManager::load($domains);
+        ExcpManager::load($domains);
     }
 
     private static function alias()
@@ -155,15 +162,22 @@ final class Kernel
         class_alias(PortManager::class, 'PortManager');
         class_alias(EventManager::class, 'EventManager');
         class_alias(CacheManager::class, 'CacheManager');
-        // class_alias(ErrorManager::class, 'ErrorManager');
-        class_alias(\Dof\Framework\DSL\IFRSN::class, 'IFRSN');
-        class_alias(\Dof\Framework\Facade\Curl::class, 'CURL');
+        class_alias(ExcpManager::class, 'ExcpManager');
+        class_alias(Container::class, 'Container');
+        class_alias(IFRSN::class, 'IFRSN');
+        class_alias(CURL::class, 'CURL');
+        class_alias(Port::class, 'Port');
+        class_alias(Route::class, 'Route');
+        class_alias(Log::class, 'Log');
         class_alias(GWT::class, 'GWT');
         class_alias(IS::class, 'IS');
         class_alias(EXCP::class, 'EXCP');
         class_alias(Paginator::class, 'Paginator');
         class_alias(Reflector::class, 'Reflect');
         class_alias(TypeHint::class, 'TypeHint');
+        class_alias(ASCIINonce::class, 'ASCIINonce');
+        class_alias(Str::class, 'Str');
+        class_alias(Num::class, 'Num');
     }
 
     public static function register(string $event, Closure $callback)

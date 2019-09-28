@@ -6,7 +6,7 @@ namespace Dof\Framework\Doc;
 
 use Dof\Framework\Kernel;
 use Dof\Framework\PortManager;
-use Dof\Framework\ErrorManager;
+use Dof\Framework\ExcpManager;
 use Dof\Framework\EntityManager;
 use Dof\Framework\ModelManager;
 use Dof\Framework\WrapinManager;
@@ -56,7 +56,7 @@ final class Generator
             ->setApiData(PortManager::getDocs())
             ->setWrapinData(WrapinManager::getWrapins())
             ->setModelData(self::getModels())
-            ->setErrorData([ErrorManager::getDefault(), ErrorManager::getDomains()])
+            ->setErrorData([ExcpManager::getDefault(), ExcpManager::getDomains()])
             ->buildAll();
     }
 
@@ -93,7 +93,7 @@ final class Generator
             ->setLanguage($lang)
             ->setOutput($save)
             ->setApiData(PortManager::getDocs())
-            ->setErrorData([ErrorManager::getDefault(), ErrorManager::getDomains()])
+            ->setErrorData([ExcpManager::getDefault(), ExcpManager::getDomains()])
             ->buildHttp(true);
     }
 }

@@ -22,7 +22,7 @@ class Logging extends Entity
 
     /**
      * @Title(Operator ID performed the action)
-     * @Type(Uint)
+     * @Type(Int)
      */
     protected $operatorId;
 

@@ -21,6 +21,7 @@ final class TypeHint
         'bool' => true,
         'boolean' => true,
         'array' => true,
+        'idarray' => true,
         'listarrayofreference' => true,
         'model' => true,
         'entity' => true,

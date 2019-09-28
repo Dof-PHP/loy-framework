@@ -69,6 +69,41 @@ class Redis extends Storage implements Storable, Cachable, Queuable
         return "__CACHE_RAW_TYPE__:{$key}";
     }
 
+    /**
+     * The real redis string get() method
+     */
+    public function getRaw(string $key)
+    {
+        $start = microtime(true);
+        $result = $this->getConnection()->get($key);
+        $this->appendCMD($start, 'get', $key);
+
+        if ($result === false) {
+            return null;
+        }
+
+        return $result;
+    }
+
+    /**
+     * The real redis string set() method
+     */
+    public function setRaw(string $key, string $value, $option = null)
+    {
+        $start = microtime(true);
+
+        if ($option) {
+            $this->getConnection()->set($key, $value, $option);
+        } else {
+            $this->getConnection()->set($key, $value);
+        }
+
+        $this->appendCMD($start, 'set', $key, $value, $option);
+    }
+
+    /**
+     * Cachable getter not the redis string get() method
+     */
     public function get(string $key)
     {
         $start = microtime(true);
@@ -80,7 +115,29 @@ class Redis extends Storage implements Storable, Cachable, Queuable
 
         $_result = unserialize($result);
 
-        return $_result === false ? $result : $_result;
+        // https://stackoverflow.com/questions/1369936/check-to-see-if-a-string-is-serialized
+        if (($result === 'b:0;') || ($_result !== false)) {
+            return $_result;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Cachable setter not the redis string set() method
+     */
+    public function set(string $key, $value, int $expiration = 0)
+    {
+        $_value = serialize($value);
+
+        $start = microtime(true);
+        if ($expiration > 0) {
+            $this->getConnection()->setEx($key, $expiration, $_value);
+            $this->appendCMD($start, 'set', $key, $expiration, $_value);
+        } else {
+            $this->getConnection()->set($key, $_value);
+            $this->appendCMD($start, 'set', $key, $_value);
+        }
     }
 
     public function dels(array $keys)
@@ -95,20 +152,6 @@ class Redis extends Storage implements Storable, Cachable, Queuable
         $start = microtime(true);
         $this->getConnection()->del($key);
         $this->appendCMD($start, 'del', $key);
-    }
-
-    public function set(string $key, $value, int $expiration = 0)
-    {
-        $_value = serialize($value);
-
-        $start = microtime(true);
-        if ($expiration > 0) {
-            $this->getConnection()->setEx($key, $expiration, $_value);
-            $this->appendCMD($start, 'set', $key, $expiration, $_value);
-        } else {
-            $this->getConnection()->set($key, $_value);
-            $this->appendCMD($start, 'set', $key, $_value);
-        }
     }
 
     public function enqueue(string $queue, Job $job)

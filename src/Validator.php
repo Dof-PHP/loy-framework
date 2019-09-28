@@ -229,7 +229,7 @@ class Validator
 
     private function validateObjectarray($key)
     {
-        return $htis->validateAssocarray($key);
+        return $this->validateAssocarray($key);
     }
 
     private function validateAssocarray($key)
@@ -600,6 +600,20 @@ class Validator
         }
 
         return is_date_format($value, $format);
+    }
+
+    private function validateMicrotime(string $key)
+    {
+        $value = $this->data[$key] ?? null;
+
+        return $value && IS::microtime($value);
+    }
+
+    private function validateTimestamp(string $key)
+    {
+        $value = $this->data[$key] ?? null;
+
+        return $value && IS::timestamp($value);
     }
 
     private function addFail(string $fail, array $context = [])

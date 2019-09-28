@@ -6,7 +6,7 @@ namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
 
 // use Dof\Framework\OFB\Pipe\Paginate;
 // use Dof\Framework\OFB\Pipe\Sorting;
-// use Domain\__DOMAIN__\Http\ERR;
+// use Domain\__DOMAIN__\EXCP;
 // use Dof\Framework\OFB\Wrapper\Pagination;
 // use Domain\__DOMAIN__\Service\__NAME__ as Service;
 
@@ -26,6 +26,9 @@ namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
  * @_PipeIn()
  * @_WrapOut()
  * @_Group(__NAME__)
+ * @_NotRoute(1)
+ * @_NoDump(1)
+ * @_NoDoc(1)
  * @_Logging(Domain\Logging\Repository\__NAME__LogRepository)
  * @_InfoOK(Success)
  * @_LogMaskKey()
@@ -37,13 +40,14 @@ class __NAME__
      * @Title(Parameter Title)
      * @Type(String)
      * @Need(1)
+     * @_Compatible()
      */
     private $param1;
 
     // public function execute(Service $service)
     public function execute()
     {
-        // $service->error(ERR::_, 500);
+        // $service->error(EXCP::_, 500);
 
         // extract(pargvs());
 

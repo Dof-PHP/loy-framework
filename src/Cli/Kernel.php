@@ -40,17 +40,17 @@ final class Kernel
                 ]), self::getContext(false));
 
                 // Reset file/directory permission
-                $runtime = ospath(Core::getRoot(), Core::RUNTIME);
-                if (is_dir($runtime)) {
-                    if ($owner = ConfigManager::getFramework('runtime.permission.owner')) {
-                        chownr($runtime, $owner);
-                    }
-                    if ($group = ConfigManager::getFramework('runtime.permission.group')) {
-                    }
-                    if ($mode = ConfigManager::getFramework('runtime.permission.mode', 0644)) {
-                        chmodr($runtime, $mode);
-                    }
-                }
+                // $runtime = ospath(Core::getRoot(), Core::RUNTIME);
+                // if (is_dir($runtime)) {
+                    // if ($owner = ConfigManager::getFramework('runtime.permission.owner')) {
+                        // chownr($runtime, $owner);
+                    // }
+                    // if ($group = ConfigManager::getFramework('runtime.permission.group')) {
+                    // }
+                    // if ($mode = ConfigManager::getFramework('runtime.permission.mode', 0644)) {
+                        // chmodr($runtime, $mode);
+                    // }
+                // }
             });
 
             Core::boot($root);
@@ -61,10 +61,22 @@ final class Kernel
         list($entry, $cmd, $options, $params) = CLIA::build($argvs);
         if (! $cmd) {
             $cmd = 'dof';
+        } else {
+            $cmd = strtolower($cmd);
         }
-        $_cmd = CommandManager::get(strtolower($cmd));
+
+        $_cmd = CommandManager::get($cmd);
         if (! $_cmd) {
-            Kernel::throw('CommandNotFound', compact('cmd'));
+            $suggest = [];
+            $cmds = CommandManager::getCommands();
+            foreach ($cmds as $name => list('comment' => $comment)) {
+                if (false === strstr($name, $cmd)) {
+                    continue;
+                }
+                $suggest[] = [$name => $comment];
+            }
+
+            Kernel::throw('CommandNotFound', compact('cmd', 'suggest'));
         }
         $class = $_cmd['class'] ?? null;
         if ((! $class) || (! class_exists($class))) {

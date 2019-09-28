@@ -6,10 +6,12 @@ namespace Domain\__DOMAIN__\Service\CRUD;
 
 use Throwable;
 use Dof\Framework\DDD\Service;
+use Dof\Framework\IS;
+use Dof\Framework\EXCP as EX;
+// use Domain\__DOMAIN__\EXCP;
+// use Domain\__DOMAIN__\AUX;
 use Domain\__DOMAIN__\Repository\__ENTITY__Repository;
 use Domain\__DOMAIN__\Entity\__ENTITY__;
-// use Dof\Framework\EXCP;
-// use Domain\__DOMAIN__\EXCP as ERR;
 
 class Create__ENTITY__ extends Service
 {
@@ -38,9 +40,9 @@ class Create__ENTITY__ extends Service
         try {
             return $this->repository->add($this->entity);
         } catch (Throwable $e) {
-            // if (EXCP::is($e, EXCP::VIOLATED_UNIQUE_CONSTRAINT)) {
-            //   $this->exception('Duplicate__ENTITY__Attr1', ['attr1' => $this->entity->attr1]);
-            // }
+            if (IS::excp($e, EX::VIOLATED_UNIQUE_CONSTRAINT)) {
+                $this->exception('Duplicate__ENTITY__Attr1', ['attr1' => $this->entity->attr1]);
+            }
 
             $this->exception('Create__ENTITY__Failed', [], $e);
         }

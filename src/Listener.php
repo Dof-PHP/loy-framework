@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework;
 
+use Throwable;
 use Dof\Framework\Facade\Log;
 use Dof\Framework\Queue\Job;
 use Dof\Framework\OFB\Traits\Enqueuable;
@@ -21,13 +22,23 @@ abstract class Listener implements Job
 
     protected $event;
 
-    public function handle()
+    public function handle(bool $instant = false)
     {
+        if ($instant) {
+            $this->execute();
+            return;
+        }
+
         $listener = static::class;
 
         $async = ConfigManager::getDomainEnvByNamespace($listener, self::LISTENER_ASYNC, []);
         if ((! $async) || (! array_key_exists($listener, $async))) {
-            $this->execute();
+            try {
+                $this->execute();
+            } catch (Throwable $e) {
+                Log::log('listener-handle-exception', static::class, parse_throwable($e));
+            }
+
             return;
         }
 

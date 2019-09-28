@@ -47,7 +47,7 @@ class __NAME__ORM extends ORMStorage implements __NAME__Repository
      * @Type(int)
      * @Comment(Operator ID performed the action)
      * @Length(10)
-     * @UnSigned(1)
+     * @_UnSigned(1)
      * @Default(0)
      */
     protected $operatorId;
@@ -84,6 +84,7 @@ class __NAME__ORM extends ORMStorage implements __NAME__Repository
      * @Type(varchar)
      * @Length(191)
      * @Comment(Action value parameters , vary from api type)
+     * @Default()
      */
     protected $actionParams;
 

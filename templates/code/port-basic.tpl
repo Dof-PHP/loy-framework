@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
 
 // use Dof\Framework\OFB\Pipe\Paginate;
-// use Domain\__DOMAIN__\Http\ERR;
+// use Domain\__DOMAIN__\EXCP;
 // use Domain\__DOMAIN__\Service\Action__NAME__;
 // use Dof\Framework\OFB\Wrapper\Pagination;
 
@@ -25,6 +25,7 @@ class __NAME__
     /**
      * @Title(Parameter Title)
      * @Type(String)
+     * @_Compatible()
      */
     private $param1;
 
@@ -34,6 +35,9 @@ class __NAME__
      * @Route(/)
      * @Verb(POST)
      * @Argument(param1)
+     * @_NotRoute(1)
+     * @_NoDump(1)
+     * @_NoDoc(1)
      * @_Assembler(Domain\__DOMAIN__\Assembler\__NAME__)
      * @_Model(Domain\__DOMAIN__\Entity\__NAME__)
      * @_Logging(Domain\__DOMAIN__\Repository\__NAME__LogRepository)
@@ -43,7 +47,7 @@ class __NAME__
      */
     public function action(Action__NAME__ $service)
     {
-        // $service->error(ERR::_, 500);
+        // $service->error(EXCP::_, 500);
 
         // extract(pargvs());
 

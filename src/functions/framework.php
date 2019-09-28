@@ -11,43 +11,17 @@ if (! function_exists('pathof')) {
         return ospath(\Dof\Framework\Kernel::getRoot(), $params);
     }
 }
-if (! function_exists('get_dof_version_raw')) {
-    function get_dof_version_raw() : int
-    {
-        $path = ospath(dirname(dirname(dirname(__FILE__))), '.VER.DOF');
-        if (! is_file($path)) {
-            return 0;
-        }
-
-        return intval(file_get_contents($path));
-    }
-}
 if (! function_exists('get_dof_version')) {
-    // --------------------------------------------
-    //     The version format used in Dof:
-    //     [major].[minor].[release].[build]
-    //     2 commits = 1 build
-    //     1 release = 16 build  = 32 commits
-    //     1 minor   = 8 release = 256 commits
-    //     1 major   = 4 minor   = 1024 commits
-    // --------------------------------------------
-    function get_dof_version()
+    // Get semantic versioning string from VERSION file
+    // See more: <https://semver.org>
+    function get_dof_version() : string
     {
-        $raw = get_dof_version_raw();
-        if (0 === $raw) {
-            return '0.0.0.0';
+        $path = ospath(dirname(dirname(dirname(__FILE__))), 'VERSION');
+        if (! is_file($path)) {
+            return 'unknown version';
         }
 
-        $ver = $left = $raw;
-        $major   = floor($left / 1024);
-        $left    = $ver - $major*1024;
-        $minor   = floor($left / 256);
-        $left    = $left - $minor*256;
-        $release = floor($left / 32);
-        $left    = $left - $release*32;
-        $build   = floor($left / 2);
-
-        return $major.'.'.$minor.'.'.$release.'.'.$build;
+        return trim(file_get_contents($path));
     }
 }
 if (! function_exists('collect')) {
@@ -265,7 +239,7 @@ if (! function_exists('get_annotation_ns')) {
             exception('NonStringAnnotatinForNamespace', compact('annotation', 'type'));
         }
         if (namespace_exists($annotation)) {
-            return $annotation;
+            return formatns($annotation);
         }
 
         if ('::class' === mb_substr($annotation, -7, 7)) {
@@ -273,7 +247,7 @@ if (! function_exists('get_annotation_ns')) {
         }
 
         if (namespace_exists($annotation)) {
-            return $annotation;
+            return formatns($annotation);
         }
 
         $uses = get_used_classes($origin);
@@ -295,7 +269,7 @@ if (! function_exists('get_annotation_ns')) {
         $_origin[count($_origin) - 1] = $annotation;
         $samens  = join('\\', $_origin);
         if (namespace_exists($samens)) {
-            return $samens;
+            return formatns($samens);
         }
 
         return false;
@@ -552,9 +526,9 @@ if (! function_exists('id_array')) {
     }
 }
 if (! function_exists('id_list')) {
-    function id_list(string $list)
+    function id_list(string $list, string $separator = ',')
     {
-        $ids = array_filter(array_trim_from_string($list, ','));
+        $ids = array_filter(array_trim_from_string($list, $separator));
 
         array_filter($ids, function ($id) {
             return \Dof\Framework\TypeHint::isPint($id);
@@ -565,5 +539,29 @@ if (! function_exists('id_list')) {
         });
 
         return $ids;
+    }
+}
+if (! function_exists('formatns')) {
+    function formatns(string $namespace, bool $root = false) : string
+    {
+        $namespace = trim($namespace);
+
+        if (! $namespace) {
+            return '';
+        }
+        if ($namespace === '\\') {
+            return '\\';
+        }
+
+        $namespace = join('\\', array_trim_from_string($namespace, '\\'));
+        if (! $namespace) {
+            return '\\';
+        }
+
+        if ($root) {
+            return '\\'.$namespace;
+        }
+
+        return $namespace;
     }
 }

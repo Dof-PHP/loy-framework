@@ -61,11 +61,11 @@ trait HttpTrait
     public function convertStringAsMime(string $input, string $mime = null)
     {
         if ($mime === 'json') {
-            $data = json_decode($input, true);
+            $data = dejson($input, true);
             return is_array($data) ? $data : [];
         }
         if ($mime === 'xml') {
-            $data = json_decode($input, true);
+            $data = dexml($input, true);
             return is_array($data) ? $data : [];
         }
         if ($mime === 'form') {

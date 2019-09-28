@@ -163,7 +163,7 @@ final class ConfigManager
             return null;
         }
 
-        $config = self::$domains[$domain] ?? null;
+        $config = self::$domains[strtolower($domain)] ?? null;
 
         if (is_null($key)) {
             return $config;

@@ -110,7 +110,7 @@ class Request
     public function getInputRaw() : string
     {
         return $this->getOrSet('inputRaw', function () {
-            return urldecode(trim((string) file_get_contents('php://input')));
+            return trim((string) file_get_contents('php://input'));
         });
     }
 
@@ -256,7 +256,13 @@ class Request
 
     public function hasHeader(string $keyupper) : bool
     {
-        return isset($this->getHeaders()[strtoupper($keyupper)]);
+        $keyupper = strtoupper($keyupper);
+        $headers = $this->getHeaders();
+        if (isset($headers[$keyupper])) {
+            return true;
+        }
+
+        return isset($headers[str_replace('-', '_', $keyupper)]);
     }
 
     public function getHeaders() : array

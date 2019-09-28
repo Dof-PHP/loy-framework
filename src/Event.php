@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework;
 
+use Throwable;
 use Dof\Framework\DDD\Model;
 use Dof\Framework\Facade\Log;
 use Dof\Framework\Queue\Job;
@@ -30,15 +31,29 @@ abstract class Event extends Model implements Job
     const EVENT_ASYNC = 'ASYNC_EVENT';
 
     private $__meta;
+    private $__instance = false;
 
-    final public function publish()
+    final public function instant(bool $instant)
     {
+        $this->__instant = $instant;
+
+        return $this;
+    }
+
+    final public function publish(bool $instant = false)
+    {
+        $this->__instant = $instant;
+
         if ($this->standalone()) {
             return $this->execute();
         }
 
         $listeners = $this->listeners();
         if (! $listeners) {
+            return;
+        }
+        if ($this->__instant) {
+            $this->broadcast();
             return;
         }
 
@@ -82,7 +97,11 @@ abstract class Event extends Model implements Job
         }
 
         foreach ($listeners as $listener) {
-            $listener::init()->setEvent($this)->handle();
+            try {
+                $listener::init()->setEvent($this)->handle($this->__instant);
+            } catch (Throwable $e) {
+                Log::log('listener-handle-exception', $listener, parse_throwable($e));
+            }
         }
     }
 

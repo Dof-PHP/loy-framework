@@ -6,7 +6,7 @@ namespace Dof\Framework\OFB\Pipe;
 
 use Dof\Framework\Facade\Response;
 use Dof\Framework\DSL\IFRSN;
-use Dof\Framework\Web\ERR;
+use Dof\Framework\EXCP;
 
 class Sorting
 {
@@ -27,7 +27,7 @@ class Sorting
             $field = $sortField;
         }
         if ($sortOrder = $request->all('__sort_order', null)) {
-            $order = 'desc';
+            $order = $sortOrder;
         }
 
         if (! ciin($order, ['asc', 'desc'])) {
@@ -37,11 +37,11 @@ class Sorting
         if ($field) {
             $allow = $port->pipein->get(static::class)->fields;    // annotation extra parameter named as `fields`
             if ((! is_null($allow))&& (! in_list($field, $allow))) {
-                Response::abort(401, ERR::INVALID_SORTING_FIELD, compact('field', 'allow'), $port->get('class'));
+                Response::abort(400, EXCP::INVALID_SORTING_FIELD, compact('field', 'allow'), $port->get('class'));
             }
         }
 
-        $route->params->pipe->set(__CLASS__, collect([
+        $route->params->pipe->set(static::class, collect([
             'field' => $field,
             'order' => $order,
         ]));

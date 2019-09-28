@@ -77,8 +77,11 @@ final class EventManager
         if (! $namespace) {
             return;
         }
+        if (! is_subclass_of($namespace, Event::class)) {
+            exception('InvalidEventSubClass', compact('namespace'));
+        }
         if ($exists = (self::$events[$namespace] ?? false)) {
-            exception('DuplicateEventNamespace', ['namespace' => $namespace]);
+            exception('DuplicateEventNamespace', compact('namespace'));
         }
         if (! ($ofClass['doc']['TITLE'] ?? false)) {
             exception('MissingEventTitle', ['event' => $namespace]);

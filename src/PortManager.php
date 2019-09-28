@@ -299,7 +299,7 @@ final class PortManager
         $defaultRemark  = $docClass['REMARK']  ?? ($docClass['NOTES'] ?? null);
         $defaultStatus  = $docClass['STATUS']  ?? null;
         $defaultGroup   = $docClass['GROUP']   ?? [];
-        $defaultModels  = $docClass['MODEL']   ?? null;
+        $defaultModel   = $docClass['MODEL']   ?? null;
         $defaultRoute   = $docClass['ROUTE']   ?? null;
         $defaultVerbs   = $docClass['VERB']    ?? [];
         $defaultSuffix  = $docClass['SUFFIX']  ?? [];
@@ -332,8 +332,8 @@ final class PortManager
         $version = $attrs['VERSION'] ?? $defaultVersion;
         $infoOK  = $attrs['INFOOK']  ?? $defaultInfoOK;
         $codeOK  = $attrs['CODEOK']  ?? $defaultCodeOK;
-        $models  = $attrs['MODEL']   ?? $defaultModels;
-        $models  = (($attrs['MODEL'] ?? null) === '_') ? null : $models;
+        $model   = $attrs['MODEL']   ?? $defaultModel;
+        $model   = (($attrs['MODEL'] ?? null) === '_') ? null : $model;
         $mimein  = $attrs['MIMEIN']  ?? $defaultMimein;
         $mimein  = (($attrs['MIMEIN'] ?? null) === '_') ? null : $mimein;
         $mimeout = $attrs['MIMEOUT'] ?? $defaultMimeout;
@@ -355,10 +355,10 @@ final class PortManager
         $nopipein  = $attrs['NOPIPEIN'] ?? [];
         $nopipeout = $attrs['NOPIPEOUT'] ?? [];
         $arguments = $attrs['ARGUMENT'] ?? [];
-        $remark = ($attrs['REMARK'] ?? ($attrs['NOTES'] ?? null)) ?? $defaultRemark;
         $logging = $attrs['LOGGING'] ?? $defaultLogging;
         $logging = (($attrs['LOGGING'] ?? null) === '_') ? null : $logging;
         $logMaskKey = $attrs['LOGMASKKEY'] ?? [];
+        $remark = ($attrs['REMARK'] ?? ($attrs['NOTES'] ?? null)) ?? $defaultRemark;
         $nodump = $attrs['NODUMP'] ?? $defaultNoDump;
 
         // Decide version prefix in route definition
@@ -416,7 +416,7 @@ final class PortManager
             'remark' => $remark,
             'infook' => $infoOK,
             'codeok' => $codeOK,
-            'model'  => $models,
+            'model'  => $model,
             'author' => $author,
             'suffix' => $suffix,
             'mimein' => $mimein,
@@ -547,19 +547,19 @@ final class PortManager
             'route' => $urlpath,
             'auth'  => $auth,
             'verbs' => $verbs,
-            'class'  => $class,
+            'class' => $class,
             'method' => $method,
-            'title' => $title,
+            'title'  => $title,
             'remark' => $remark,
-            'nodump'  => $nodump,
-            'models'  => self::formatDocNamespace($models),
+            'nodump' => $nodump,
+            'model'  => $model,
             'author'  => $author,
             'status'  => $status,
             'version' => $_version,
             'params'  => $params,
             'suffixs' => $suffix,
             'fields'  => [
-                'model' => self::formatDocModel($models),
+                'model' => self::formatDocModel($model),
                 'compatibles' => ($assembler ? singleton($assembler)->compatibles() : []),
             ],
             'wrapout' => self::formatDocWrapout($wrapout),
@@ -934,6 +934,7 @@ final class PortManager
     public static function __annotationFilterArgument(string $arg, array $ext = [], string $namespace = null) : array
     {
         $params = [];
+
         foreach ($ext as $rule => $error) {
             $arr = array_trim_from_string($rule, ':');
             $_rule = $arr[0] ?? false;
@@ -972,7 +973,7 @@ final class PortManager
             return null;
         }
         if (class_exists($pipein)) {
-            return [$pipein => $ext];
+            return [formatns($pipein) => $ext];
         }
         if ((! $namespace) || (! class_exists($namespace))) {
             exception('MissingPipeInUseClass', compact('pipein', 'namespace'));
@@ -993,7 +994,7 @@ final class PortManager
             return null;
         }
         if (class_exists($nopipein)) {
-            return [$nopipein => $ext];
+            return [formatns($nopipein) => $ext];
         }
         if ((! $namespace) || (! class_exists($namespace))) {
             exception('MissingNoPipeInUseClass', compact('nopipein', 'namespace'));
@@ -1014,7 +1015,7 @@ final class PortManager
             return null;
         }
         if (class_exists($nopipeout)) {
-            return [$nopipeout => $ext];
+            return [formatns($nopipeout) => $ext];
         }
         if ((! $namespace) || (! class_exists($namespace))) {
             exception('MissingNoPipeOutUseClass', compact('nopipeout', 'namespace'));
@@ -1035,7 +1036,7 @@ final class PortManager
             return null;
         }
         if (class_exists($pipeout)) {
-            return [$pipeout => $ext];
+            return [formatns($pipeout) => $ext];
         }
         if ((! $namespace) || (! class_exists($namespace))) {
             exception('MissingPipeOutUseClass', compact('pipeout', 'namespace'));

@@ -32,15 +32,18 @@
 <?php
     $suffixs = array_map(function ($val) { return "`{$val}`"; }, $suffixs);
     $suffixs = $suffixs ? join('<br>', $suffixs) : '-';
-    if ($models) {
-        $_models = <<<LINK
-<a href='javascript:void(0);' onclick='goDofDoc("_model/{$models}.html")'>{$models}</a>
+    if (! ($model ?? false)) {
+        $_model = '-';
+    } elseif (\EntityManager::get($model) || \ModelManager::get($model)) {
+        $model = \PortManager::formatDocNamespace($model);
+        $_model = <<<LINK
+<a href='javascript:void(0);' onclick='goDofDoc("_model/{$model}.html")'>{$model}</a>
 LINK;
     } else {
-        $_models = '-';
+        $_model = \PortManager::formatDocNamespace($model);
     }
 ?>
-| <?= $auth ?> | <?= $_models ?> | <?= $version ?> | <?= $suffixs ?> | <?= $status ?> | <?= $author ?> | <?= $updatedAt ?> |
+| <?= $auth ?> | <?= $_model ?> | <?= $version ?> | <?= $suffixs ?> | <?= $status ?> | <?= $author ?> | <?= $updatedAt ?> |
 
 <?php if ($headers['in'] ?? []) : ?>
 ### 请求头
@@ -64,6 +67,10 @@ LINK;
     $default = $default ? "`{$default}`" : '-';
     $rules = [];
     foreach ($validators as $rule => $err) {
+        if (substr($rule, 0, 1) === '_') {
+            continue;
+        }
+
         if (false === mb_strpos($rule, ':')) {
             if (($rule == 'WRAPIN') && $err) {
                 $_rule = $rule; 
@@ -141,7 +148,7 @@ LINK;
 <?php if ($fields['model'] ?? []) : ?>
 ### 关联数据模型
 
-#### `<?= $models ?>` | <?= $fields['model']['title'] ?? $_models ?>
+#### `<?= $model ?>` | <?= $fields['model']['title'] ?? $_model ?>
 
 <?php if ($fields['model']['properties'] ?? []) : ?>
 | 属性 | 名称 | 基本类型 | 可接受参数 | 备注 |

@@ -6,7 +6,7 @@ namespace Domain\__DOMAIN__\Http\Port__NAMESPACE__;
 
 use Dof\Framework\OFB\Pipe\Paginate;
 use Dof\Framework\OFB\Pipe\Sorting;
-use Domain\__DOMAIN__\Http\ERR;
+use Domain\__DOMAIN__\EXCP;
 use Domain\__DOMAIN__\Service\CRUD\Create__NAME__;
 use Domain\__DOMAIN__\Service\CRUD\Delete__NAME__;
 use Domain\__DOMAIN__\Service\CRUD\Update__NAME__;
@@ -30,6 +30,7 @@ class __NAME__
     /**
      * @Title(__NAME__ ID)
      * @Type(Pint)
+     * @_Compatible()
      */
     private $id;
 
@@ -51,6 +52,9 @@ class __NAME__
      * @_SubTitle(Sub Title Create Resource __NAME__)
      * @Route(/)
      * @Verb(POST)
+     * @_NotRoute(1)
+     * @_NoDump(1)
+     * @_NoDoc(1)
      * @Argument(param1)
      * @_HeaderStatus(201){Created Success}
      * @_Logging(Domain\__DOMAIN__\Repository\Create__NAME__LogRepository)
@@ -60,7 +64,7 @@ class __NAME__
      */
     public function create(Create__NAME__ $service)
     {
-        // $service->error(ERR::_, 500);
+        // $service->error(EXCP::_, 500);
         // extract(pargvs());
 
         return $service
@@ -72,6 +76,9 @@ class __NAME__
      * @Title(Delete Resource __NAME__)
      * @Route({id})
      * @Verb(DELETE)
+     * @_NotRoute(1)
+     * @_NoDump(1)
+     * @_NoDoc(1)
      * @Argument(id){inroute}
      * @Assembler(_)
      * @Model(_)
@@ -82,7 +89,7 @@ class __NAME__
      */
     public function delete(int $id, Delete__NAME__ $service)
     {
-        // $service->error(ERR::__NAME___NOT_EXISTS, 404);
+        // $service->error(EXCP::__NAME___NOT_EXISTS, 404);
 
         $service->setId($id)->execute();
 
@@ -94,6 +101,9 @@ class __NAME__
      * @Title(Update Resource __NAME__)
      * @Route({id})
      * @Verb(PUT)
+     * @_NotRoute(1)
+     * @_NoDump(1)
+     * @_NoDoc(1)
      * @Argument(id){inroute}
      * @Argument(param1){need:0}
      * @_Logging(Domain\__DOMAIN__\Repository\Update__NAME__LogRepository)
@@ -101,8 +111,8 @@ class __NAME__
      */
     public function update(int $id, Update__NAME__ $service)
     {
-        // $service->error(ERR::__NAME___NOT_EXISTS, 404);
-        // $service->error(ERR::NOTHING_TO_UPDATE, 202);
+        // $service->error(EXCP::__NAME___NOT_EXISTS, 404);
+        // $service->error(EXCP::NOTHING_TO_UPDATE, 202);
 
         // extract(pargvs());
 
@@ -116,6 +126,9 @@ class __NAME__
      * @Title(Show Resource __NAME__ Detail)
      * @Route({id})
      * @Verb(GET)
+     * @_NotRoute(1)
+     * @_NoDump(1)
+     * @_NoDoc(1)
      * @Argument(id){inroute}
      * @_Logging(Domain\__DOMAIN__\Repository\Show__NAME__LogRepository)
      */
@@ -128,6 +141,9 @@ class __NAME__
      * @Title(List Resource __NAME__ with Pagination)
      * @Route(/)
      * @Verb(GET)
+     * @_NotRoute(1)
+     * @_NoDump(1)
+     * @_NoDoc(1)
      * @PipeIn(Paginate)
      * @PipeIn(Sorting){fields:id,createdAt,updatedAt}
      * @Argument(search){need:0}

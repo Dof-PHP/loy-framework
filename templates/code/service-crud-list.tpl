@@ -7,6 +7,8 @@ namespace Domain\__DOMAIN__\Service\CRUD;
 use Throwable;
 use Dof\Framework\Collection;
 use Dof\Framework\DDD\Service;
+// use Domain\__DOMAIN__\EXCP;
+// use Domain\__DOMAIN__\AUX;
 use Domain\__DOMAIN__\Repository\__ENTITY__Repository;
 
 class List__ENTITY__ extends Service

@@ -83,8 +83,8 @@ final class CommandManager
      */
     public static function assemble(array $ofClass, array $ofMethods, string $type)
     {
-        $namespace    = $ofClass['namespace']     ?? null;
-        $cmdPrefix    = $ofClass['doc']['CMD']    ?? null;
+        $namespace = $ofClass['namespace']  ?? null;
+        $cmdPrefix = $ofClass['doc']['CMD'] ?? null;
         $commentGroup = $ofClass['doc']['DESC']   ?? null;
         $optionGroup  = $ofClass['doc']['OPTION'] ?? [];
 
@@ -97,6 +97,9 @@ final class CommandManager
             $command = $cmdPrefix ? join('.', [$cmdPrefix, $cmd]) : $cmd;
             $comment = $docMethod['DESC'] ?? null;
             $comment = $commentGroup ? join(': ', [$commentGroup, $comment]) : $comment;
+            if (! $comment) {
+                exception('MissingCMDDescription', compact('namespace', 'method'));
+            }
             $options = $docMethod['OPTION'] ?? [];
             $options = array_merge($optionGroup, $options);
             $argvs = $docMethod['ARGV'] ?? [];

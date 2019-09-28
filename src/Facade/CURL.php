@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Dof\Framework\Facade;
 
 use Dof\Framework\Facade;
-use Dof\Framework\Curl as Instance;
+use Dof\Framework\CURL as Instance;
 
-class Curl extends Facade
+class CURL extends Facade
 {
-    public static $singleton = true;
+    public static $singleton = false;
     protected static $namespace = Instance::class;
 }

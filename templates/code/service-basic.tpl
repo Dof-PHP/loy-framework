@@ -6,6 +6,8 @@ namespace Domain\__DOMAIN__\Service__NAMESPACE__;
 
 use Throwable;
 use Dof\Framework\DDD\Service;
+// use Domain\__DOMAIN__\AUX;
+// use Domain\__DOMAIN__\EXCP;
 // use Domain\__DOMAIN__\Repository\EntityRepository;
 
 class __NAME__ extends Service

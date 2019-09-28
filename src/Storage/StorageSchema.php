@@ -39,15 +39,19 @@ final class StorageSchema
      *
      * @param string $storage: Namespace of storage orm class
      */
-    public static function sync(string $storage, bool $force = false, bool $dump = false)
-    {
+    public static function sync(
+        string $storage,
+        bool $force = false,
+        bool $dump = false,
+        bool $logging = false
+    ) {
         list($driver, $annotations) = self::prepare($storage);
 
         try {
             return singleton($driver)->reset()
                 ->setStorage($storage)
                 ->setAnnotations($annotations)
-                ->setDriver(StorageManager::init($storage, false))
+                ->setDriver(StorageManager::init($storage)->logging($logging))
                 ->setForce($force)
                 ->setDump($dump)
                 ->sync();
@@ -56,15 +60,19 @@ final class StorageSchema
         }
     }
 
-    public static function init(string $storage, bool $force = false, bool $dump = false)
-    {
+    public static function init(
+        string $storage,
+        bool $force = false,
+        bool $dump = false,
+        bool $logging = false
+    ) {
         list($driver, $annotations) = self::prepare($storage);
 
         try {
             return singleton($driver)->reset()
                 ->setStorage($storage)
                 ->setAnnotations($annotations)
-                ->setDriver(StorageManager::init($storage, false))
+                ->setDriver(StorageManager::init($storage)->logging($logging))
                 ->setForce($force)
                 ->setDump($dump)
                 ->init();

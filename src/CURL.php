@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dof\Framework;
 
-final class Curl
+final class CURL
 {
     private $url = null;
     private $ch  = null;
@@ -12,6 +12,7 @@ final class Curl
     private $urlencode = true;
     private $sendAsJson = false;
     private $sendAsXml  = false;
+    private $debug = false;
     private $method  = null;
     private $params  = null;
     private $headers = [];
@@ -86,6 +87,13 @@ final class Curl
         if ($asJson) {
             $this->sendAsXml = false;
         }
+
+        return $this;
+    }
+
+    public function debug(bool $debug)
+    {
+        $this->debug = $debug;
 
         return $this;
     }
@@ -214,6 +222,10 @@ final class Curl
         if ($this->headers) {
             curl_setopt($this->ch, CURLOPT_HTTPHEADER, $this->encodeHeadersKV($this->headers));
         }
+        if ($this->debug) {
+            curl_setopt($this->ch, CURLOPT_VERBOSE, true);
+        }
+
         curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($this->ch, CURLOPT_HEADERFUNCTION, [$this, 'responseHeaderHandler']);
 
@@ -280,6 +292,22 @@ final class Curl
             public function bodyAsJson(bool $assoc = true)
             {
                 return dejson($this->body, $assoc);
+            }
+            public function __toArray()
+            {
+                return $this->toArray();
+            }
+            public function toArray()
+            {
+                return get_object_vars($this);
+            }
+            public function __toString()
+            {
+                return $this->toString();
+            }
+            public function toString()
+            {
+                return enjson($this->toArray());
             }
         };
     }

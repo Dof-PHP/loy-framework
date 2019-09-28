@@ -18,11 +18,11 @@ class GraphQLAlike
 
     public function pipeout($result, $route, $port, $request, $response)
     {
-        if (! $route->params->pipe->has(__CLASS__)) {
+        if (! $route->params->pipe->has(static::class)) {
             $this->findAndSetFeilds($request, $route, false);
         }
 
-        $fields = $route->params->pipe->get(__CLASS__);
+        $fields = $route->params->pipe->get(static::class);
         if (! $fields) {
             return null;
         }
@@ -49,7 +49,7 @@ class GraphQLAlike
             return $exception ? exception('InvalidGraphQLFields', compact('fields')) : null;
         }
 
-        $route->params->pipe->set(__CLASS__, ($_fields['graphql'] ?? null));
+        $route->params->pipe->set(static::class, ($_fields['graphql'] ?? null));
     }
 
     private function getFieldsParameterName() : string

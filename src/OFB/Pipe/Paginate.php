@@ -17,7 +17,7 @@ class Paginate
         $page = 1;
         $paginate = $request->all('__paginate');
 
-        if ($paginate) {
+        if ($paginate && is_string($paginate)) {
             $paginate = sprintf('paginate(%s)', $paginate);
             $paginate = IFRSN::parse($paginate);
             $paginate = $paginate['paginate']['fields'] ?? null;
@@ -34,7 +34,7 @@ class Paginate
             $page = $paginatePage;
         }
 
-        $route->params->pipe->set(__CLASS__, collect([
+        $route->params->pipe->set(static::class, collect([
             'size' => $this->validateSize($size, $port),
             'page' => $this->validatePage($page, $port),
         ]));
