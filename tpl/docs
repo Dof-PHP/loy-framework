@@ -1,0 +1,13 @@
+<?php
+
+// The global docs settings and should be version controlled
+
+return [
+	'appendixes' => [
+		// ['title' => 'foo-bar', 'path' => 'docs/foo.md']
+	],
+
+	'assets' => [
+		// 'docs/images/bar.png',
+	],
+];

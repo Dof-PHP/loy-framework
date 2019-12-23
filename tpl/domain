@@ -1,0 +1,26 @@
+<?php
+
+// The global domain settings and should be version controlled
+
+return [
+	//'ENABLE_I18N' => false,
+	//'LANG_DEFAULT' => 'en',
+	//'LANG_HTTP_PARAM' => '__language',
+	//'LANG_HTTP_HEADER' => 'LANGUAGE',
+
+	'MAX_PAGINATE_SIZE' => 100,
+
+	'http.port.CODEOK' => 0,
+
+	'http.port.PREFLIGHT' => [
+		\DOF\HTTP\Preflight\CORS::class,
+	],
+
+	'http.port.PIPEOUT' => [
+		\DOF\HTTP\Pipe\ResponseSupport::class,
+		//\DOF\HTTP\Pipe\GraphQLAlike::class,
+	],
+
+	'http.port.WRAPOUT' => \DOF\Util\Wrapper\Classic::class,
+	'http.port.WRAPERR' => \DOF\Util\Wrapper\Classic::class,
+];

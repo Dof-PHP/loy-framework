@@ -1,0 +1,6 @@
+<?php
+
+// The global framework settings and should be version controlled
+
+return [
+];

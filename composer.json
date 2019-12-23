@@ -10,22 +10,27 @@
         }
     ],
     "require": {
-        "php": "^7.1"
+        "php": "^7.3",
+        "dof-php/utils": "dev-master",
+        "dof-php/logging": "dev-master"
+    },
+    "require-dev": {
+        "dof-php/testing": "dev-master"
     },
 	"autoload": {
 		"psr-4": {
-			"Dof\\Framework\\": "./src/"
+			"DOF\\": "./src/"
 		},
 		"files": [
-			"./src/functions/base.php",
-			"./src/functions/framework.php"
 		],
 		"exclude-from-classmap": [
        ]
     },
     "autoload-dev": {
-        "psr-4": { 
-           "Dof\\Framework\\Tests\\": "./tests/" 
+        "psr-4": {
+			"DOF\\Test\\": "./test/"
         }
-    }
+    },
+	"minimum-stability": "dev",
+    "prefer-stable": true
 }

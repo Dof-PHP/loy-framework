@@ -1,0 +1,50 @@
+<?php
+
+return [
+	//'TIMEZONE' => 'UTC',
+
+	//'ENABLE_I18N' => false,
+	//'LANG_DEFAULT' => 'en',
+	//'LANG_HTTP_PARAM' => '__language',
+	//'LANG_HTTP_HEADER' => 'LANGUAGE',
+
+	'INIT_CONTAINER_ONBOOT' => false,
+	'LOAD_I18N_ONBOOT' => true,
+
+	'HTTP_DEBUG' => false,
+	'MAX_PAGINATE_SIZE' => 200,
+
+	'FILE_LOGGING_SINGLE' => true,
+
+	'MANAGER_COMPILE_CACHE' => false,
+
+	'ENABLE_ORM_CACHE' => false,
+	'ORM_CACHE_DRIVER' => 'file',
+	//'ORM_CACHE_DRIVER' => 'memcached',
+	//'ORM_CACHE_DRIVER' => 'redis',
+
+	'DISABLE_QUEUE_FORMATTING' => false,
+	'QUEUE_DRIVER' => 'redis',
+	//'EVENT_QUEUE_DRIVER' => 'redis',
+	//'LISTENER_QUEUE_DRIVER' => 'redis',
+
+	'ASYNC_EVENT' => [
+		//\DOF\DDD\Event\EntityCreated::class => 5,
+		//\DOF\DDD\Event\EntityRemoved::class => true,
+		//\DOF\DDD\Event\EntityUpdated::class => null,
+		//\Domain\User\Event\FooEventTriggered::class => false,
+	],
+
+	'ASYNC_LISTENER' => [
+		//\Domain\User\Listener\DoSthOnEventTriggered::class => true,
+	],
+	
+	'BEAR_AUTH_TOKEN_SECRET' => [1, 'secret'],    // [int - secret id, string - secret key]
+
+	//'CORS_ACCESS_CONTROL_ALLOW_ORIGIN' => ['*'],
+	//'CORS_ACCESS_CONTROL_EXPOSE_HEADERS' => ['UUID'],
+	//'CORS_ACCESS_CONTROL_ALLOW_HEADERS' => ['*'],
+	//'CORS_ACCESS_CONTROL_ALLOW_METHODS' => ['*'],
+	//'CORS_ACCESS_CONTROL_MAX_AGE' => 86400,
+	//'CORS_ACCESS_CONTROL_ALLOW_CREDENTIALS' => true,
+];
