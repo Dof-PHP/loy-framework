@@ -31,7 +31,7 @@ final class Log extends Surrogate
         $logger = new File;
 
         if ($root = DOF::root()) {
-            $logger->setDirectory(FS::path($root, Convention::DIR_RUNTIME));
+            $logger->setDirectory(ENV::systemGet('FILE_LOGGING_PATH', $root));
             $logger->setSingle(ENV::systemGet('FILE_LOGGING_SINGLE', true));
         }
 

@@ -14,6 +14,7 @@ return [
 	'HTTP_DEBUG' => false,
 	'MAX_PAGINATE_SIZE' => 200,
 
+	//'FILE_LOGGING_PATH' => '/path/to/dof-file-logging',
 	'FILE_LOGGING_SINGLE' => true,
 
 	'MANAGER_COMPILE_CACHE' => false,
