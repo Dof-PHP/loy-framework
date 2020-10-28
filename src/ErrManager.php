@@ -89,6 +89,18 @@ final class ErrManager
             }
 
             self::$data[$code] = [$class, $const, $desc, $suggestion];
+
+            switch ($type) {
+                case Convention::SRC_DOMAIN:
+                    self::$domain[DMN::name($class)][] = $code;
+                    break;
+                case Convention::SRC_SYSTEM:
+                    self::$system[$code] = \count(self::$data) - 1;
+                    break;
+                case Convention::SRC_VENDOR:
+                    self::$vendor[self::vendor($class)] = $code;
+                    break;
+            }
         }
     }
 
