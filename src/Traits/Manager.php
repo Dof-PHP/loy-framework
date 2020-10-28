@@ -6,6 +6,7 @@ namespace DOF\Traits;
 
 use Closure;
 use DOF\ENV;
+use DOF\DMN;
 use DOF\Convention;
 use DOF\Exceptor\ManagerExceptor;
 use DOF\Util\FS;
@@ -27,7 +28,7 @@ trait Manager
         Convention::SRC_DOMAIN => [],
     ];
 
-    protected static $data = [];
+    private static $data = [];
 
     private static $system = [];
     private static $vendor = [];
@@ -119,30 +120,40 @@ trait Manager
         return self::$system;
     }
 
-    final public static function vendor(string $root, string $bootDir, string $bootFile)
+    final public static function vendor(string $origin)
     {
-        $bootDir = FS::path($root, $bootDir);
-        if (\is_dir($bootDir)) {
-            FS::ll($bootDir, function ($vendors, $dir) use ($bootFile) {
-                foreach ($vendors as $vendor) {
-                    $_vendor = FS::path($dir, $vendor);
-                    if (! \is_dir($_vendor)) {
-                        continue;
-                    }
-                    FS::ll($_vendor, function ($packages, $dir) use ($vendor, $bootFile) {
-                        foreach ($packages as $package) {
-                            $booter = FS::path($dir, $package, $bootFile);
-                            if (!\is_file($booter)) {
-                                continue;
-                            }
-                            if ($src = Arr::load($booter, false)) {
-                                self::addVendor(\join('/', [$vendor, $package]), $src);
-                            }
-                        }
-                    });
-                }
-            });
+        foreach ((self::$list[Convention::SRC_VENDOR] ?? []) as $vendor => $list) {
+            if (\in_array($origin, $list)) {
+                return $vendor;
+            }
         }
+
+        return $origin;
+    }
+
+    final public static function vendorBoot(string $root, string $bootDir, string $bootFile)
+    {
+        if (! \is_dir($bootDir = FS::path($root, $bootDir))) {
+            return;
+        }
+
+        FS::ls(function ($vendors, $dir) use ($bootFile) {
+            foreach ($vendors as $vendor) {
+                if (! \is_dir($_vendor = FS::path($dir, $vendor))) {
+                    continue;
+                }
+                FS::ls(function ($packages, $dir) use ($vendor, $bootFile) {
+                    foreach ($packages as $package) {
+                        if (! \is_file($booter = FS::path($dir, $package, $bootFile))) {
+                            continue;
+                        }
+                        if ($src = Arr::load($booter, false)) {
+                            self::addVendor(\join('/', [$vendor, $package]), $src);
+                        }
+                    }
+                }, $_vendor);
+            }
+        }, $bootDir);
     }
 
     /**
@@ -153,7 +164,7 @@ trait Manager
     final public static function addVendor(string $vendor, $item)
     {
         self::addItem($item, function ($item) use ($vendor) {
-            self::$list[Convention::SRC_VENDOR][$vendor] = $item;
+            self::$list[Convention::SRC_VENDOR][$vendor][] = $item;
         });
     }
 
@@ -170,7 +181,7 @@ trait Manager
     public static function addDomain(string $domain, $item)
     {
         self::addItem($item, function ($item) use ($domain) {
-            self::$list[Convention::SRC_DOMAIN][$domain] = $item;
+            self::$list[Convention::SRC_DOMAIN][$domain][] = $item;
         });
     }
 
