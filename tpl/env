@@ -40,7 +40,14 @@ return [
 		//\Domain\User\Listener\DoSthOnEventTriggered::class => true,
 	],
 	
-	'BEAR_AUTH_TOKEN_SECRET' => [1, 'secret'],    // [int - secret id, string - secret key]
+	'BEAR_AUTH_TOKEN_SECRET_KID' => [
+		'user' => 1,
+		'admin' => 2,
+	],
+	'BEAR_AUTH_TOKEN_SECRET' => [
+		1 => 'secret-user'    // [int - secret key id, string - secret key]
+		2 => 'secret-admin'    // [int - secret key id, string - secret key]
+	,
 
 	//'CORS_ACCESS_CONTROL_ALLOW_ORIGIN' => ['*'],
 	//'CORS_ACCESS_CONTROL_EXPOSE_HEADERS' => ['UUID'],
