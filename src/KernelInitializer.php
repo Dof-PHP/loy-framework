@@ -49,7 +49,7 @@ abstract class KernelInitializer
     public function __construct(string $sapi = PHP_SAPI)
     {
         $this->uptime = \microtime(true);
-        $this->upcpu = getrusage()['ru_utime.tv_usec'] ?? 0;
+        $this->upcpu = \getrusage()['ru_utime.tv_usec'] ?? 0;
         $this->upfiles = \count(get_included_files());
         $this->upmemory = \memory_get_usage();
         $this->sapi = $sapi;
@@ -66,7 +66,7 @@ abstract class KernelInitializer
             $this->logger()->log($sapi, $this->user, [
                 [
                     \microtime(true) - $this->uptime,
-                    [$this->upcpu, getrusage()['ru_utime.tv_usec'] ?? 0],
+                    [$this->upcpu, \getrusage()['ru_utime.tv_usec'] ?? 0],
                     [$this->upmemory, \memory_get_usage(), \memory_get_peak_usage()],
                     [$this->upfiles, \count(get_included_files())],
                 ],
@@ -79,14 +79,14 @@ abstract class KernelInitializer
         // - Clean up database locks
         // - Rollback uncommitted transactions
         // - Reset some file permissions
-        register_shutdown_function(function () {
+        \register_shutdown_function(function () {
             $error = error_get_last();
             if (! \is_null($error)) {
                 $this->logger()->error('PHP_SHUTDOWN_LAST_ERROR', $error);
             }
             foreach (($this->__CALLBACK__['before-shutdown'] ?? []) as $item) {
                 foreach ($item as $origin => $callback) {
-                    if (is_callable($callback)) {
+                    if (\is_callable($callback)) {
                         try {
                             $callback();
                         } catch (Throwable $th) {
@@ -97,7 +97,7 @@ abstract class KernelInitializer
             }
             foreach (($this->__CALLBACK__['shutdown'] ?? []) as $item) {
                 foreach ($item as $origin => $callback) {
-                    if (is_callable($callback)) {
+                    if (\is_callable($callback)) {
                         try {
                             $callback();
                         } catch (Throwable $th) {
@@ -109,12 +109,12 @@ abstract class KernelInitializer
         });
 
         // Record every uncatched exceptions
-        set_exception_handler(function ($e) {
+        \set_exception_handler(function ($e) {
             $this->logger()->exception('UNCATCHED_EXCEPTION', [Format::throwable($e), $this->__CONTEXT__]);
         });
 
         // Record every uncatched error regardless to the setting of the error_reporting setting
-        set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+        \set_error_handler(function ($errno, $errstr, $errfile, $errline) {
             $this->logger()->error($errstr, [
                 'code' => $errno,
                 'file' => $errfile,

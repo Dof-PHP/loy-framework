@@ -56,7 +56,7 @@ trait Tracker
 
     /**
      * Unregister a event on trace root
-     * 
+     *
      * @Annotation(0)
      */
     final public function unregister(string $event, string $origin = null)
@@ -93,7 +93,7 @@ trait Tracker
 
     /**
      * Register a event on trace root
-     * 
+     *
      * @Annotation(0)
      */
     final public function register(string $event, string $origin, Closure $callback)
@@ -116,10 +116,10 @@ trait Tracker
   
     /**
      * Append a group of context by key on trace root
-     * 
+     *
      * @Annotation(0)
      */
-   final public function context(string $key, array $context, string $_key = null)
+    final public function context(string $key, array $context, string $_key = null)
     {
         if ($this->__TRACE_ROOT__) {
             if (\is_null($_key)) {
@@ -201,11 +201,13 @@ trait Tracker
      */
     final public function logging(string $component, bool $logging = null) : bool
     {
+        $component = \strtolower($component);
+
         if (\is_null($logging)) {
-            return $this->__LOGGING__[\strtolower($component)] ?? true;
+            return $this->__TRACE_ROOT__ ? ($this->__TRACE_ROOT__->__LOGGING__[$component] ?? true) : ($this->__LOGGING__[$component] ?? true);
         }
 
-        return $this->__LOGGING__[\strtolower($component)] = $logging;
+        return $this->__TRACE_ROOT__ ? ($this->__TRACE_ROOT__->__LOGGING__[$component] = $logging) : ($this->__LOGGING__[$component] = $logging);
     }
 
     /**
