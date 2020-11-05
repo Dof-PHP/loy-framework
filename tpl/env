@@ -17,6 +17,8 @@ return [
 	//'FILE_LOGGING_PATH' => '/path/to/dof-file-logging',
 	'FILE_LOGGING_SINGLE' => true,
 
+	//'CACHE_DRIVER' = 'file',
+
 	'MANAGER_COMPILE_CACHE' => false,
 
 	'ENABLE_ORM_CACHE' => false,

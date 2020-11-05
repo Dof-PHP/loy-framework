@@ -86,7 +86,6 @@ final class DOF
         \class_alias(\DOF\INI::class, 'INI');
         \class_alias(\DOF\DMN::class, 'DMN');
         \class_alias(\DOF\I18N::class, 'I18N');
-        \class_alias(\DOF\Domain::class, 'Domain');
         \class_alias(\DOF\ErrManager::class, 'ErrManager');
         \class_alias(\DOF\Container::class, 'Container');
         \class_alias(\DOF\Convention::class, 'Convention');
