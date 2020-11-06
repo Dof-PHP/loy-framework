@@ -37,6 +37,16 @@ trait ObjectData
         return \get_object_vars($this);
     }
 
+    final public function __clone()
+    {
+        list(, $properties, ) = Annotation::getByNamespace(\get_class($this));
+        foreach (\get_object_vars($this) as $key => $value) {
+            if ($properties[$key] ?? null) {
+                $this->{$key} = $value;
+            }
+        }
+    }
+
     final public function __trim__(object $object = null) : object
     {
         $object = $object ?? $this;

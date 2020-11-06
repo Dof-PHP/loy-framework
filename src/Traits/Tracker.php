@@ -142,7 +142,7 @@ trait Tracker
      */
     final public function tracer()
     {
-        return new Tracer($this->__TRACE_ROOT__ ?? $this, $this->__TRACE_ID__);
+        return new Tracer($this->__TRACE_ROOT__ ?? $this, $this->__TRACE_ID__ ?? 0);
     }
 
     /**
