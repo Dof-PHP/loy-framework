@@ -37,6 +37,27 @@ trait ObjectData
         return \get_object_vars($this);
     }
 
+    final public function __trim__(object $object = null) : object
+    {
+        $object = $object ?? $this;
+        if (IS::closure($object)) {
+            return $object;
+        }
+
+        list(, $properties, ) = Annotation::getByNamespace(\get_class($object));
+        $_object = clone $object;
+
+        foreach (\get_object_vars($object) as $key => $value) {
+            if ($properties[$key] ?? null) {
+                continue;
+            }
+
+            unset($_object->{$key});
+        }
+
+        return $_object;
+    }
+
     final public function __data__(object $object = null) : array
     {
         $object = $object ?? $this;
