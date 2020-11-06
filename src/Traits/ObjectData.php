@@ -37,35 +37,22 @@ trait ObjectData
         return \get_object_vars($this);
     }
 
+    // Deep copy and reset all meta properties
     final public function __clone()
     {
         list(, $properties, ) = Annotation::getByNamespace(\get_class($this));
         foreach (\get_object_vars($this) as $key => $value) {
-            if ($properties[$key] ?? null) {
-                $this->{$key} = $value;
+            if (\array_key_exists($key, $properties)) {
+                $this->{$key} = \is_object($value) ? (clone $value) : $value;
+            } else {
+                $this->{$key} = (new static)->{$key} ?? null;    // reset meta properties as default
             }
         }
     }
 
-    final public function __trim__(object $object = null) : object
+    final public function __clone__()
     {
-        $object = $object ?? $this;
-        if (IS::closure($object)) {
-            return $object;
-        }
-
-        list(, $properties, ) = Annotation::getByNamespace(\get_class($object));
-        $_object = clone $object;
-
-        foreach (\get_object_vars($object) as $key => $value) {
-            if ($properties[$key] ?? null) {
-                continue;
-            }
-
-            unset($_object->{$key});
-        }
-
-        return $_object;
+        // empty method for flag using
     }
 
     final public function __data__(object $object = null) : array
@@ -84,7 +71,7 @@ trait ObjectData
         // \get_object_vars($object) -> pubilc
         // see: https://www.php.net/manual/en/function.get-object-vars
         foreach (\get_object_vars($object) as $key => $value) {
-            if ($properties[$key] ?? null) {
+            if (\array_key_exists($key, $properties)) {
                 $data[$key] = \is_object($value) ? $this->__data__($value) : $value;
             }
         }
